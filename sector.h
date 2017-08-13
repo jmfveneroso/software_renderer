@@ -15,10 +15,17 @@ typedef struct {
   WallList* walls;
   double height;
   int color;
+  double heights[3];
 } Sector;
 
+int first_sector;
 int num_sectors;
 Sector* sectors[20];
+
+int num_tri_sectors;
+Sector* tri_sectors[40];
+
+WallStack* bla_stack;
 
 Sector* new_sector() {
   Sector* s = (Sector*) malloc(sizeof(Sector));
@@ -211,11 +218,129 @@ void create_sectors_aux(BSPNode* node, Sector* s) {
   }
 }
 
-void create_sectors() {
+int sector_num_walls(Sector* sector) {
+  int num_walls = 0;
+  WallList* temp = sector->walls;
+  while (temp != NULL) {
+    ++num_walls;
+    temp = temp->next;
+  }
+  return num_walls;
+}
+
+
+
+
+
+void create_triangular_sectors(BSPNode* node, Point point_array[], int array_size, int second_point) {
+  printf("bla %d %d\n", array_size, second_point);
+  Wall wall1 = create_wall_p(point_array[0], point_array[second_point]);
+  Wall wall2 = create_wall_p(point_array[second_point], point_array[second_point + 1]);
+
+  Wall* wall3 = (Wall*) malloc(sizeof(Wall));
+  *wall3 = create_wall_p(point_array[second_point + 1], point_array[0]);
+
+  Sector* s = new_sector();
+  sector_add_wall(s, wall1, 1, false);
+  sector_add_wall(s, wall2, 1, false);
+  sector_add_wall(s, *wall3, 1, false);
+  sectors[num_sectors] = s; 
+
+  if (array_size == second_point + 2) {
+    node->sector = num_sectors;  
+    ++num_sectors;
+    return;
+  }
+
+  push(bla_stack, wall3);
+  node->sector = -1;
+  node->splitter = &bla_stack->walls[bla_stack->top];
+
+  BSPNode* front = (BSPNode*) malloc(sizeof(BSPNode));
+  front->splitter = NULL;
+  front->sector = -1;
+  front->front = NULL;
+  front->back = NULL;
+  node->front = front;
+
+  BSPNode* back = (BSPNode*) malloc(sizeof(BSPNode));
+  back->splitter = NULL;
+  back->sector = -1;
+  back->front = NULL;
+  back->back = NULL;
+  node->back = back;
+
+  if (classify_point(*wall3, point_array[second_point + 1]) == 1) {
+    front->sector = num_sectors;
+    ++num_sectors;
+    create_triangular_sectors(back, point_array, array_size, second_point + 1);
+  } else {
+    back->sector = num_sectors;
+    ++num_sectors;
+    create_triangular_sectors(front, point_array, array_size, second_point + 1);
+  }
+}
+
+void make_triangles(BSPNode* node) {
+  if (node == NULL) return;
+
+  // Is not a sector.
+  if (node->sector == -1) {
+    make_triangles(node->front);
+    make_triangles(node->back);
+    return;
+  }
+
+  Sector* sector = sectors[node->sector];
+  int num_points = sector_num_walls(sector);
+  int arr_size = 0;
+  Point point_array[100];
+
+  WallList* temp = sector->walls;
+  point_array[arr_size++] = temp->wall.p1;
+  point_array[arr_size++] = temp->wall.p2;
+
+  WallList* cur_wall = temp;
+  Point cur_point = temp->wall.p2;
+  while (arr_size < num_points) {
+    temp = sector->walls;
+    while (temp != NULL) {
+      if (temp == cur_wall) {
+        temp = temp->next;
+        continue;
+      }
+
+      if (point_eq(cur_point, temp->wall.p1)) {
+        point_array[arr_size++] = temp->wall.p2;
+        cur_wall = temp;
+        cur_point = temp->wall.p2;
+      } else if (point_eq(cur_point, temp->wall.p2)) {
+        point_array[arr_size++] = temp->wall.p1;
+        cur_wall = temp;
+        cur_point = temp->wall.p1;
+      }
+      temp = temp->next;
+    }
+  }
+
+  create_triangular_sectors(node, point_array, arr_size, 1);
+
+  // DEBUG.
+  printf("New sector\n");
+  for (int i = 0; i < num_points; ++i) {
+    printf("%f %f, ", point_array[i].x, point_array[i].y);
+  }
+  printf("\n");
+}
+
+void create_sectors(WallStack* wall_stack) {
+  bla_stack = wall_stack;
+
   Sector* world = new_sector();
   for (int i = 0; i < 4; i++)
     sector_add_wall(world, boundary_walls[i], 1, false);
 
+  first_sector = 0;
   num_sectors = 0;
   create_sectors_aux(root, world);
   
@@ -226,13 +351,22 @@ void create_sectors() {
   sectors[4]->color = 9;
   sectors[5]->color = 1;
   sectors[6]->color = 2;
-  sectors[4]->height = 200;
+  // sectors[4]->height = 200;
   // sectors[5]->height = 200;
+
+  first_sector = num_sectors;
+  make_triangles(root);
+  sectors[20]->height = 200;
+  sectors[21]->height = 200;
 
   // DEBUG.
   printf("num sectors: %d\n", num_sectors);
   for (int i = 0; i < num_sectors; ++i) { 
     printf("Sector %d\n", i);
+
+    sectors[i]->heights[0] = 0;
+    sectors[i]->heights[1] = 0;
+    sectors[i]->heights[2] = 0;
     WallList* cur_wall = sectors[i]->walls;
     while (cur_wall != NULL) {
       Wall* w = &cur_wall->wall;
@@ -240,6 +374,15 @@ void create_sectors() {
       cur_wall = cur_wall->next;
     }
   }
+
+  sectors[8]->heights[0] = 500;
+  sectors[9]->heights[0] = 500;
+  sectors[20]->heights[0] = 200;
+  sectors[20]->heights[1] = 200;
+  sectors[20]->heights[2] = 200;
+  sectors[21]->heights[0] = 200;
+  sectors[21]->heights[1] = 200;
+  sectors[21]->heights[2] = 200;
 }
 
 #endif

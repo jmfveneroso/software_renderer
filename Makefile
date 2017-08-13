@@ -19,4 +19,4 @@ LIBS=-L/usr/X11/lib -L/usr/local/lib -lglfw -lglew -lpng -framework OpenGL -fram
 _DEPS = bsp_tree.h vector.h level.h render.h player.h visual_engine.h sector.h textures.h
 
 main: main.cpp $(_DEPS)
-	$(CC) -o $@ $< $(LIBS) $(C_FLAGS) $(INC) -g
+	$(CC) -o $@ $< $(LIBS) $(C_FLAGS) $(INC) -g -O3

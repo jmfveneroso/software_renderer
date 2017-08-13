@@ -14,12 +14,25 @@ typedef struct {
 } Point;
 
 typedef struct {
+  double x;
+  double y;
+  double z;
+  double u;
+  double v;
+  bool null;
+} Point3;
+
+typedef struct {
   Point p1;
   Point p2;
   Point normal;
   unsigned long int color;
   double height;
 } Wall;
+
+bool point_eq(Point p1, Point p2) {
+  return abs(p1.x - p2.x) <= 0.00001 && abs(p1.y - p2.y) <= 0.00001;
+}
 
 Point create_point(double x, double y) {
   Point p;
@@ -34,6 +47,17 @@ Wall create_wall(double x1, double y1, double x2, double y2) {
   w.p1 = create_point(x1, y1);
   w.p2 = create_point(x2, y2);
   return w;
+}
+
+Wall create_wall_p(Point p1, Point p2) {
+  Wall w;
+  w.p1 = p1;
+  w.p2 = p2;
+  return w;
+}
+
+void print_wall(Wall w) {
+  printf("Wall %f %f %f %f\n", w.p1.x, w.p1.y, w.p2.x, w.p2.y);
 }
 
 // It is possible to solve it with a cross product between the vector and 
@@ -62,6 +86,14 @@ Point vec_sub(Point p1, Point p2) {
   return result;
 }
 
+Point3 vec3_sub(Point3 p1, Point3 p2) {
+  Point3 result;
+  result.x = p1.x - p2.x;
+  result.y = p1.y - p2.y;
+  result.z = p1.z - p2.z;
+  return result;
+}
+
 Point vec_scalar(double scalar, Point p1) {
   Point result;
   result.x = scalar * p1.x;
@@ -82,6 +114,10 @@ Point get_normal_vec(Point vec) {
 
 double vec_norm(Point vec) {
   return sqrt(vec.x * vec.x + vec.y * vec.y);
+}
+
+double vec3_norm(Point3 vec) {
+  return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
 }
 
 Point intersection(Point p1, Point p2, Point p3, Point p4) {
@@ -145,5 +181,66 @@ Point segment_intersection(Wall l1, Wall l2) {
   return p;
 }
 
+Point3 cross_product(Point3 p1, Point3 p2) {
+  Point3 result;
+  result.x = p1.y + p2.z - p1.z - p2.y;
+  result.y = p1.z + p2.x - p1.x - p2.z;
+  result.z = p1.x + p2.y - p1.y - p2.x;
+  return result;
+}
+
+double dot_product3(Point3 p1, Point3 p2) {
+  return p1.x * p2.x + p1.y * p2.y + p1.z * p2.z;
+}
+
+Point3 create_point3(double x, double y, double z) {
+  Point3 p;
+  p.x = x;
+  p.y = y;
+  p.z = z;
+  p.null = false;
+  return p;
+}
+
+double determinant3(double matrix[]) {
+  double det = matrix[0] * matrix[4] * matrix[8];
+  det += matrix[1] * matrix[5] * matrix[6];
+  det += matrix[2] * matrix[3] * matrix[7];
+  det -= matrix[2] * matrix[4] * matrix[6];
+  det -= matrix[1] * matrix[3] * matrix[8];
+  det -= matrix[0] * matrix[5] * matrix[7];
+  return det;
+}
+
+Point3 PlaneIntersection(Point3 a, Point3 b, Point3 v0, Point3 v1, Point3 v2) {
+  double matrix[9];
+  matrix[0] = (a.x - b.x); matrix[1] = (v1.x - v0.x); matrix[2] = (v2.x - v0.x);
+  matrix[3] = (a.y - b.y); matrix[4] = (v1.y - v0.y); matrix[5] = (v2.y - v0.y);
+  matrix[6] = (a.z - b.z); matrix[7] = (v1.z - v0.z); matrix[8] = (v2.z - v0.z);
+
+  double det = determinant3(matrix);
+  
+  matrix[0] = (a.x - v0.x); matrix[3] = (a.y - v0.y); matrix[6] = (a.z - v0.z); 
+  double det_t =  determinant3(matrix);
+  matrix[0] = (a.x - b.x); matrix[3] = (a.y - b.y); matrix[6] = (a.z - b.z); 
+
+  matrix[1] = (a.x - v0.x); matrix[4] = (a.y - v0.y); matrix[7] = (a.z - v0.z); 
+  double det_u = determinant3(matrix);
+  matrix[1] = (v1.x - v0.x); matrix[4] = (v1.y - v0.y); matrix[7] = (v1.z - v0.z); 
+
+  matrix[2] = (a.x - v0.x); matrix[5] = (a.y - v0.y); matrix[8] = (a.z - v0.z); 
+  double det_v = determinant3(matrix);
+  matrix[2] = (v2.x - v0.x); matrix[5] = (v2.y - v0.y); matrix[8] = (v2.z - v0.z); 
+
+  double t = det_t / det;
+  double u = det_u / det;
+  double v = det_v / det;
+
+  Point3 result;
+  result.x = a.x + (b.x - a.x) * t;
+  result.y = a.y + (b.y - a.y) * t;
+  result.z = a.z + (b.z - a.z) * t;
+  return result;
+}
 
 #endif

@@ -66,6 +66,13 @@ void ReserveCanvasFloor(int y, int x1, int x2, short reservation) {
   }
 }
 
+double z_buffer[1000][600];
+void ResetZBuffer() {
+  for (int i = 0; i < 1000; ++i)
+    for (int j = 0; j < 600; ++j)
+      z_buffer[i][j] = 100000;
+}
+
 int windowWidth = 1000;
 int windowHeight = 600;
 unsigned char* data;
@@ -76,6 +83,15 @@ void DrawPixel(int x, int y, int r, int g, int b) {
   data[y * windowWidth * 3 + x * 3]     = b;
   data[y * windowWidth * 3 + x * 3 + 1] = g;
   data[y * windowWidth * 3 + x * 3 + 2] = r;
+}
+
+void DrawPixelZ(int x, int y, int r, int g, int b, double distance) {
+  if (x >= windowWidth || x < 0 || y >= windowHeight || y < 0) return;
+
+  if (distance < z_buffer[x][y]) {
+    z_buffer[x][y] = distance;
+    DrawPixel(x, y, r, g, b);
+  }
 }
 
 Texture textures[10];
@@ -276,10 +292,10 @@ void DrawFloor(int y, int x1, int x2, Point floor_p1, Point floor_p2, int color)
       int actual_tex_x = (int) tex_x % textures[1].width;
       int actual_tex_y = (int) tex_y % textures[1].height;
 
-      // png_byte* row = textures[1].row_pointers[actual_tex_y];
-      // png_byte* ptr = &(row[actual_tex_x * 4]);
-      // DrawPixel(i, y, ptr[0], ptr[1], ptr[2]);
-      DrawPixel(i, y, rgb[color][0], rgb[color][1], rgb[color][2]);
+      png_byte* row = textures[1].row_pointers[actual_tex_y];
+      png_byte* ptr = &(row[actual_tex_x * 4]);
+      DrawPixel(i, y, ptr[0], ptr[1], ptr[2]);
+      // DrawPixel(i, y, rgb[color][0], rgb[color][1], rgb[color][2]);
     }
     tex_x += step_size_x;
     tex_y += step_size_y;
