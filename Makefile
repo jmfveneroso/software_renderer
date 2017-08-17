@@ -16,7 +16,7 @@ CC=g++
 #GLEW=-lglew
 LIBS=-L/usr/X11/lib -L/usr/local/lib -lglfw -lglew -lpng -framework OpenGL -framework GLUT
 
-_DEPS = bsp_tree.h vector.h level.h render.h player.h visual_engine.h sector.h textures.h
+_DEPS = bsp_tree.h vector.h level.h render.h alternative_render.h player.h visual_engine.h sector.h textures.h
 
 main: main.cpp $(_DEPS)
 	$(CC) -o $@ $< $(LIBS) $(C_FLAGS) $(INC) -g -O3

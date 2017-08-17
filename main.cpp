@@ -213,7 +213,7 @@ int main() {
 
 
 
-  double speed = 2;
+  double speed = 5;
   player.pos.x = 10;
   player.pos.y = 10;
   player.angle = 0;
@@ -226,7 +226,6 @@ int main() {
   InitVisualEngine();
   CreateWalls();
   InitRenderer();
-
 
   do {
     // Measure speed
@@ -260,11 +259,11 @@ int main() {
     }
 
     if (glfwGetKey( window, GLFW_KEY_Q ) == GLFW_PRESS){
-      player.height -= 5;
+      player.height -= 20;
     }
 
     if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
-      player.height += 5;
+      player.height += 20;
     }
 
     if (glfwGetKey( window, GLFW_KEY_E ) == GLFW_PRESS){
@@ -278,9 +277,9 @@ int main() {
     }
 
     if (glfwGetKey( window, GLFW_KEY_A ) == GLFW_PRESS)
-      sectors[4]->height += 2;
+      sectors[4]->height += 10;
     if (glfwGetKey( window, GLFW_KEY_S ) == GLFW_PRESS)
-      sectors[4]->height -= 2;
+      sectors[4]->height -= 10;
 
     // Render to the screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -157,25 +157,21 @@ void DrawLine(int x1, int y1, int x2, int y2, int color) {
   int py = 2 * dx1 - dy1;
   if (dy1 <= dx1) {
     if (dx >= 0) {
-      x = x1;
-      y = y1;
-      xe = x2;
+      x = x1; y = y1; xe = x2;
     } else {
-      x = x2;
-      y = y2;
-      xe = x1;
+      x = x2; y = y2; xe = x1;
     }
     DrawPixel(x, y, rgb[color][0], rgb[color][1], rgb[color][2]);
 
     for (i = 0; x < xe; i++) {
       x = x + 1;
       if (px < 0) {
-       px = px + 2 * dy1;
+        px = px + 2 * dy1;
       } else {
         if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0)) {
-         y = y + 1;
+          y = y + 1;
         } else {
-         y = y - 1;
+          y = y - 1;
         }
         px = px + 2 * (dy1 - dx1);
       }
@@ -193,7 +189,7 @@ void DrawLine(int x1, int y1, int x2, int y2, int color) {
     }
     DrawPixel(x, y, rgb[color][0], rgb[color][1], rgb[color][2]);
 
-    for(i = 0; y < ye; i++) {
+    for (i = 0; y < ye; i++) {
       y = y + 1;
       if (py <= 0) {
         py = py + 2 * dx1;

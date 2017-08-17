@@ -24,6 +24,8 @@ typedef struct {
   png_infop info_ptr;
   int number_of_passes;
   png_bytep * row_pointers;
+
+  unsigned char *rgb;
 } Texture;
 
 void read_png_file(const char file_name[], Texture* texture) {
@@ -75,6 +77,17 @@ void read_png_file(const char file_name[], Texture* texture) {
 
   png_read_image(texture->png_ptr, texture->row_pointers);
   fclose(fp);
+
+  texture->rgb = (unsigned char*) malloc(sizeof(unsigned char) * texture->width * texture->height * 3);
+  for (y = 0; y < texture->height; y++) {
+    for (int x = 0; x < texture->width; x++) {
+      png_byte* row = texture->row_pointers[y];
+      png_byte* ptr = &(row[x * 4]);
+      texture->rgb[y * texture->width * 3 + x * 3 + 0] = ptr[0];
+      texture->rgb[y * texture->width * 3 + x * 3 + 1] = ptr[1];
+      texture->rgb[y * texture->width * 3 + x * 3 + 2] = ptr[2];
+    }
+  }
 }
 
 #endif

@@ -202,8 +202,8 @@ Point3 create_point3(double x, double y, double z) {
   return p;
 }
 
-double determinant3(double matrix[]) {
-  double det = matrix[0] * matrix[4] * matrix[8];
+float determinant3(float matrix[]) {
+  float det = matrix[0] * matrix[4] * matrix[8];
   det += matrix[1] * matrix[5] * matrix[6];
   det += matrix[2] * matrix[3] * matrix[7];
   det -= matrix[2] * matrix[4] * matrix[6];
@@ -213,28 +213,28 @@ double determinant3(double matrix[]) {
 }
 
 Point3 PlaneIntersection(Point3 a, Point3 b, Point3 v0, Point3 v1, Point3 v2) {
-  double matrix[9];
+  float matrix[9];
   matrix[0] = (a.x - b.x); matrix[1] = (v1.x - v0.x); matrix[2] = (v2.x - v0.x);
   matrix[3] = (a.y - b.y); matrix[4] = (v1.y - v0.y); matrix[5] = (v2.y - v0.y);
   matrix[6] = (a.z - b.z); matrix[7] = (v1.z - v0.z); matrix[8] = (v2.z - v0.z);
 
-  double det = determinant3(matrix);
+  float det = determinant3(matrix);
   
   matrix[0] = (a.x - v0.x); matrix[3] = (a.y - v0.y); matrix[6] = (a.z - v0.z); 
-  double det_t =  determinant3(matrix);
-  matrix[0] = (a.x - b.x); matrix[3] = (a.y - b.y); matrix[6] = (a.z - b.z); 
+  float det_t =  determinant3(matrix);
+  // matrix[0] = (a.x - b.x); matrix[3] = (a.y - b.y); matrix[6] = (a.z - b.z); 
 
-  matrix[1] = (a.x - v0.x); matrix[4] = (a.y - v0.y); matrix[7] = (a.z - v0.z); 
-  double det_u = determinant3(matrix);
-  matrix[1] = (v1.x - v0.x); matrix[4] = (v1.y - v0.y); matrix[7] = (v1.z - v0.z); 
+  // matrix[1] = (a.x - v0.x); matrix[4] = (a.y - v0.y); matrix[7] = (a.z - v0.z); 
+  // float det_u = determinant3(matrix);
+  // matrix[1] = (v1.x - v0.x); matrix[4] = (v1.y - v0.y); matrix[7] = (v1.z - v0.z); 
 
-  matrix[2] = (a.x - v0.x); matrix[5] = (a.y - v0.y); matrix[8] = (a.z - v0.z); 
-  double det_v = determinant3(matrix);
-  matrix[2] = (v2.x - v0.x); matrix[5] = (v2.y - v0.y); matrix[8] = (v2.z - v0.z); 
+  // matrix[2] = (a.x - v0.x); matrix[5] = (a.y - v0.y); matrix[8] = (a.z - v0.z); 
+  // float det_v = determinant3(matrix);
+  // matrix[2] = (v2.x - v0.x); matrix[5] = (v2.y - v0.y); matrix[8] = (v2.z - v0.z); 
 
-  double t = det_t / det;
-  double u = det_u / det;
-  double v = det_v / det;
+  float t = det_t / det;
+  // float u = det_u / det;
+  // float v = det_v / det;
 
   Point3 result;
   result.x = a.x + (b.x - a.x) * t;

@@ -6,6 +6,7 @@
 #include "bsp_tree.h"
 #include "sector.h"
 #include "visual_engine.h"
+#include "alternative_render.h"
 
 Point transform(Point p) {
   Point result;
@@ -126,162 +127,6 @@ void Draw3dWall(Wall* wall) {
   }
 }
 
-void FloodFill3dSectorAux(Sector* sector, int proj_x, int proj_y) {
-  if (proj_x < 0 || proj_x >= 1000) return;
-  int actual_proj_y = proj_y - (player.height - 150) + 1;
-  int window_bottom = 600 + player.v_angle;
-  if (window_bottom - actual_proj_y < 0 || window_bottom - actual_proj_y >= 600) return;
-  if (canvas[proj_x][proj_y] == FLOOR || canvas[proj_x][proj_y] == WALL_FRONT_FACE) return;
-
-  double floor_x = pfrustum.distance * (player.height - sector->height) / ((double) player.height - (double) proj_y);
-  double proj_x_min = (proj_x /(double) (1000 / pfrustum.size)) - (pfrustum.size / 2.0f);
-  double floor_y = proj_x_min / (pfrustum.distance / (double) floor_x);
-
-  Point floor_original = untransform(create_point(floor_x, floor_y));
-  // DrawCircle(500 + floor_x, 150 + floor_y, 10, 2);
-    
-  // printf("floor x: %f, proj_x_min: %f, floor_y: %f\n", floor_x, proj_x_min, floor_y); 
-  // printf("floor x: %f, floor_y: %f\n", floor_x, floor_y); 
-  // printf("floor x: %f, floor_y: %f\n", floor_original.x, floor_original.y); 
-  if (sector_has_point(sector, floor_original)) {
-
-    // printf("proj_x: %d, proj_y: %d\n", proj_x, window_bottom - actual_proj_y); 
-    DrawPixel(proj_x, window_bottom - actual_proj_y, rgb[sector->color][0], rgb[sector->color][1], rgb[sector->color][2]); // Red.
-    canvas[proj_x][proj_y] = FLOOR;
-    for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        if (i == j) continue;
-        FloodFill3dSectorAux(sector, proj_x - 1 + i, proj_y - 1 + j);
-      }
-    }
-  }
-}
-
-void FloodFill3dSector(Sector* sector) {
-  Point p = create_point(0, 0);
-
-  int num_points = 0;
-  WallList* cur_wall = sector->walls;
-  while (cur_wall != NULL) {
-    Point p1 = transform(cur_wall->wall.p1);
-    Point p2 = transform(cur_wall->wall.p2);
-    p.x += p1.x + p2.x;
-    p.y += p1.y + p2.y;
-    num_points += 2;
-
-    cur_wall = cur_wall->next;
-  }
-  p.x /= num_points;
-  p.y /= num_points;
-
-  DrawCircle(500 + p.x, 150 + p.y, 10, 2);
-
-  int proj_y = player.height - (pfrustum.distance / (double) p.x) * (player.height - sector->height);
-  double proj_x_min = (p.y / (double) p.x) * pfrustum.distance;
-  int proj_x = (double) (1000 / pfrustum.size) * ((pfrustum.size / 2) + proj_x_min);
-  
-  // printf("B - proj_x: %d, proj_y: %d\n", proj_x, proj_y); 
-  FloodFill3dSectorAux(sector, proj_x, proj_y);
-}
-
-void Draw3dSector(Sector* sector) {
-  int min_x = 999999, max_x = -999999;
-
-  WallList* cur_wall = sector->walls;
-  while (cur_wall != NULL) {
-    Point p1 = transform(cur_wall->wall.p1);
-    Point p2 = transform(cur_wall->wall.p2);
-    if (p1.x > max_x) max_x = p1.x;
-    if (p1.x < min_x) min_x = p1.x;
-    if (p2.x > max_x) max_x = p2.x;
-    if (p2.x < min_x) min_x = p2.x;
-
-    cur_wall = cur_wall->next;
-  }
-
-  if (max_x < pfrustum.distance) return;
-  if (min_x < pfrustum.distance) min_x = pfrustum.distance;
-
-  double floor_height = sector->height;
-  if (player.height < floor_height) return;
-
-  int proj_y_min = player.height - (pfrustum.distance / (double) min_x) * (player.height - floor_height);
-  int proj_y_max = player.height - (pfrustum.distance / (double) max_x) * (player.height - floor_height);
-
-  for (int proj_y = proj_y_min; proj_y <= proj_y_max; proj_y++) {
-    double floor_x = pfrustum.distance * (player.height - floor_height) / ((double) player.height - (double) proj_y);
-    // printf("floor_x %f\n", floor_x);
-    Wall comparison_line = create_wall(floor_x, -1000, floor_x, 1000);
-
-    double min_y = 999999;
-    double max_y = -999999;
-    WallList* cur_wall = sector->walls;
-    while (cur_wall != NULL) {
-      Wall transformed_wall;
-      transformed_wall.p1 = transform(cur_wall->wall.p1);
-      transformed_wall.p2 = transform(cur_wall->wall.p2);
-      // printf("trans %f %f %f %f\n", transformed_wall.p1.x, transformed_wall.p1.y, transformed_wall.p2.x, transformed_wall.p2.y);
-      Point origin;
-      origin.x = 500;
-      origin.y = 150;
-
-      Point inter = segment_intersection(comparison_line, transformed_wall);
-      // printf("trans %f %f %f %f\n", transformed_wall.p1.x, transformed_wall.p1.y, transformed_wall.p2.x, transformed_wall.p2.y);
-      // printf("trans %f %f %f %f\n", comparison_line.p1.x, comparison_line.p1.y, comparison_line.p2.x, comparison_line.p2.y);
-      // Point inter = intersection(comparison_line.p1, comparison_line.p2, transformed_wall.p1, transformed_wall.p2);
-      if (!inter.null) {
-        // DrawCircle(x11, origin.x + inter.x, origin.y + inter.y, 2, 10);
-        // DrawLine(x11, origin.x + comparison_line.p1.x, origin.y + comparison_line.p1.y, origin.x + comparison_line.p2.x, origin.y + comparison_line.p2.y, 2); // Red.
-        // DrawLine(x11, origin.x + transformed_wall.p1.x, origin.y + transformed_wall.p1.y, origin.x + transformed_wall.p2.x, origin.y + transformed_wall.p2.y, 3); // Red.
-        // printf("inter %f %f\n", inter.x, inter.y);
-        if (inter.y < min_y) min_y = inter.y;
-        if (inter.y > max_y) max_y = inter.y;
-      }
-      cur_wall = cur_wall->next;
-      // break;
-    }
-
-    if (min_y == 999999 || max_y == -999999) continue;
-
-    // printf("minmax %f %f\n", min_y, max_y);
-    double proj_x_min = (min_y / (double) floor_x) * pfrustum.distance;
-    double proj_x_max = (max_y / (double) floor_x) * pfrustum.distance;
-    int lft = (double) (1000 / pfrustum.size) * ((pfrustum.size / 2) + proj_x_min);
-    int rgt = (double) (1000 / pfrustum.size) * ((pfrustum.size / 2) + proj_x_max);
-
-    int actual_proj_y = proj_y - (player.height - 150) + 1;
-
-    Point floor_p1 = untransform(create_point(floor_x, min_y));
-    Point floor_p2 = untransform(create_point(floor_x, max_y));
-
-    int window_bottom = 600 + player.v_angle;
-    DrawFloor(window_bottom - actual_proj_y, lft, rgt, floor_p1, floor_p2, sector->color); // Red.
-    ReserveCanvasFloor(window_bottom - actual_proj_y, lft, rgt, FLOOR);
-    // DrawLine(x11, lft, 600 - actual_proj_y, rgt, 600 - actual_proj_y, 2); // Red.
-  }
-   
-  // DrawLine(x11, 0, 600 - proj_y_min, 500, 600 - proj_y_min, 2); // Red.
-  // DrawLine(x11, 0, 600 - proj_y_max, 500, 600 - proj_y_max, 3); // Yellow.
-  // printf("min x: %d\n", min_x); 
-  // printf("max x: %d\n", max_x); 
-  // printf("proj min x: %d\n", proj_y_min); 
-  // printf("proj max x: %d\n", proj_y_max); 
-
-  // printf("min x: %d\n", min_x); 
-  // printf("max x: %d\n", max_x); 
-}
-
-bool PointInTriangle(Point v, Point v1, Point v2, Point v3) {
-  // Cramer's rule.
-  double det   = (v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y);
-  double det_s = (v.x  - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v.y  - v1.y);
-  double det_t = (v2.x - v1.x) * (v.y  - v1.y) - (v.x  - v1.x) * (v2.y - v1.y);
-
-  double s = det_s / det;
-  double t = det_t / det;
-  return (s > 0.0f && t > 0.0f && s + t < 1.0f);
-}
-
 Point get_floor_pos_from_proj(double proj_x, double proj_y, double floor_height) {
   double numerator = proj_y - 450 - player.v_angle - player.height + floor_height;
   double denominator = player.height - floor_height;
@@ -315,6 +160,49 @@ Point uv_map(Point3 v1, Point3 v2, Point3 v3, Point u_vec, Point v_vec) {
   return uv_point; 
 }
 
+bool PointInTriangle(Point v, Point v1, Point v2, Point v3) {
+  // Cramer's rule.
+  double det   = (v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y);
+  double det_s = (v.x  - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v.y  - v1.y);
+  double det_t = (v2.x - v1.x) * (v.y  - v1.y) - (v.x  - v1.x) * (v2.y - v1.y);
+
+  double s = det_s / det;
+  double t = det_t / det;
+  return (s > 0.0f && t > 0.0f && s + t < 1.0f);
+}
+
+float sign(Point p1, Point p2, Point p3) {
+  return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+}
+
+bool PointInTri(Point pt, Point v1, Point v2, Point v3) {
+  bool b1, b2, b3;
+
+  b1 = sign(pt, v1, v2) < 0.0f;
+  b2 = sign(pt, v2, v3) < 0.0f;
+  b3 = sign(pt, v3, v1) < 0.0f;
+
+  return ((b1 == b2) && (b2 == b3));
+}
+
+Point GetTexturePoint(Point3 points[3], int x, int y, double* distance) {
+  Point3 a = create_point3(0, 0, player.height);
+
+  double view_y = x * (pfrustum.size / 1000.0f) - (pfrustum.size / 2.0f);
+  double view_z = player.height + player.v_angle + 450 - y;
+
+  Point3 b = create_point3(pfrustum.distance, view_y, view_z);
+  Point3 intersection = PlaneIntersection(a, b, points[0], points[1], points[2]);
+  
+  Point normalized;
+  Point u_vec; u_vec.x = points[1].u - points[0].u; u_vec.y = points[1].v - points[0].v;
+  Point v_vec; v_vec.x = points[2].u - points[0].u; v_vec.y = points[2].v - points[0].v;
+  normalized = uv_map(vec3_sub(points[1], points[0]), vec3_sub(points[2], points[0]), vec3_sub(intersection, points[0]), u_vec, v_vec);
+
+  *distance = vec3_norm(vec3_sub(intersection, a));
+  return normalized;
+}
+
 void Draw3dTriangle(Point3 points[3], bool uv_mapping) {
   int min_x = 999999; int min_y = 999999;
   int max_x = -1;     int max_y = -1;
@@ -335,51 +223,72 @@ void Draw3dTriangle(Point3 points[3], bool uv_mapping) {
     if (points[2].x < pfrustum.distance) return;
   }
 
-  if (min_x < 0) min_x = 0;
-  if (min_y < 0) min_y = 0;
+  if (min_x < 0)   min_x = 0;
+  if (min_y < 0)   min_y = 0;
   if (max_x > 999) max_x = 999;
   if (max_y > 599) max_y = 599;
 
-  Point v0 = proj[0];
-  Point v1 = vec_sub(proj[1], proj[0]);
-  Point v2 = vec_sub(proj[2], proj[0]);
+  Point v1 = proj[0];
+  Point v2 = proj[1];
+  Point v3 = proj[2];
+  // double det = (v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y);
 
-  for (int x = min_x; x < max_x; ++x) {
-    for (int y = min_y; y < max_y; ++y) {
-      // if (canvas[x][y] != EMPTY && canvas[x][y] != WALL_BACK_FACE) continue;
+  int size = 8;
+  int x_squares = (max_x - min_x) / size;
+  int y_squares = (max_y - min_y) / size;
+  for (int y = 0; y <= y_squares; ++y) {
+    for (int x = 0; x <= x_squares; ++x) {
+      if (y == y_squares && (max_y - min_y) % size == 0) continue;
+      if (x == x_squares && (max_x - min_x) % size == 0) continue;
 
-      if (PointInTriangle(create_point(x + 1, y + 1), proj[0], proj[1], proj[2])) {
-        Point3 a = create_point3(0, 0, player.height);
+      int size_x = size;
+      int size_y = size;
+      if (y == y_squares) size_y = (max_y - min_y) % size;
+      if (x == x_squares) size_x = (max_x - min_x) % size;
 
-        double view_y = x * (pfrustum.size / 1000.0f) - (pfrustum.size / 2.0f);
-        double view_z = player.height + player.v_angle + 450 - y;
-        // double proj_y = 450 + player.v_angle + player.height - floor_height - ((floor_x - pfrustum.distance) * (player.height - floor_height)) / floor_x;
+      double distance1, distance2, distance3;
+      Point uv1 = GetTexturePoint(points, min_x + x * size, min_y + y * size, &distance1);
+      Point uv2 = GetTexturePoint(points, min_x + x * size + size_x - 1, min_y + y * size, &distance2);
+      Point uv3 = GetTexturePoint(points, min_x + x * size, min_y + y * size + size_y - 1, &distance3);
+      // Point uv1 = create_point(0, 0);
+      // Point uv2 = create_point(0, 30);
+      // Point uv3 = create_point(30, 30);
 
-        Point3 b = create_point3(pfrustum.distance, view_y, view_z);
-        Point3 v0 = create_point3(points[0].x, points[0].y, points[0].z);
-        Point3 v1 = create_point3(points[1].x, points[1].y, points[1].z);
-        Point3 v2 = create_point3(points[2].x, points[2].y, points[2].z);
+      double u = uv1.x;
+      double v = uv1.y;
+      double step_x = (uv2.x - uv1.x) / (double) size_x;
+      double step_y = (uv2.y - uv1.y) / (double) size_y;
+      double step_x2 = (uv3.x - uv1.x) / (double) size_x;
+      double step_y2 = (uv3.y - uv1.y) / (double) size_y;
+      double step_distance = (distance2 - distance1) / (double) size_x;
+      double step_distance2 = (distance3 - distance1) / (double) size_y;
+      double distance = distance1;
 
-        Point origin; origin.x = 500; origin.y = 150;
-        Point3 intersection = PlaneIntersection(a, b, v0, v1, v2);
-      
-        Point normalized;
-        if (uv_mapping) {
-          Point u_vec; u_vec.x = points[1].u - points[0].u; u_vec.y = points[1].v - points[0].v;
-          Point v_vec; v_vec.x = points[2].u - points[0].u; v_vec.y = points[2].v - points[0].v;
-          normalized = uv_map(vec3_sub(v1, v0), vec3_sub(v2, v0), vec3_sub(intersection, v0), u_vec, v_vec);
-        } else {
-          normalized = untransform(create_point(intersection.x, intersection.y));
+      int start_x = min_x + x * size;
+      int start_y = min_y + y * size;
+      for (int j = 0; j < size_y; ++j) {
+        double old_u = u;
+        double old_v = v;
+        double old_distance = distance;
+        for (int i = 0; i < size_x; ++i) {
+          u += step_x;
+          v += step_y;
+          distance += step_distance;
+          if (!PointInTri(create_point(start_x + i + 1, start_y + j + 1), proj[0], proj[1], proj[2])) continue;
+          if (u > 0 && v > 0) {
+            int tex_x = (int) u % textures[1].width;
+            int tex_y = (int) v % textures[1].height;
+            int base = tex_y * textures[1].width * 3 + tex_x * 3;
+            unsigned char r = textures[1].rgb[base + 0];
+            unsigned char g = textures[1].rgb[base + 1];
+            unsigned char b = textures[1].rgb[base + 2];
+            DrawPixelZ(start_x + i, start_y + j, r, g, b, distance);
+          }
         }
-
-        if (normalized.x < 0 || normalized.y < 0) continue;
-        int actual_tex_x = (int) normalized.x % textures[1].width;
-        int actual_tex_y = (int) normalized.y % textures[1].height;
-        png_byte* row = textures[1].row_pointers[actual_tex_y];
-        png_byte* ptr = &(row[actual_tex_x * 4]);
-
-        DrawPixelZ(x, y, ptr[0], ptr[1], ptr[2], vec3_norm(vec3_sub(intersection, a)));
-        // canvas[x][y] = FLOOR;
+        u = old_u; v = old_v; distance = old_distance;
+        u += step_x2;
+        v += step_y2;
+        distance += step_distance2;
       }
     }
   }
@@ -402,25 +311,16 @@ void Draw3dFloor(Sector* sector) {
   Draw3dTriangle(points3, false);
 }
 
-Point rotateZ(Point p, double angle) {
+Point rotateZ(Point p, int x, int y, double angle) {
   Point result;
-  double x_dis = p.x - 100;
-  double y_dis = p.y - 100;
-  result.x = x_dis * cos(angle) + y_dis * sin(angle) + 100;
-  result.y = y_dis * cos(angle) - x_dis * sin(angle) + 100;
+  double x_dis = p.x - x;
+  double y_dis = p.y - y;
+  result.x = x_dis * cos(angle) + y_dis * sin(angle) + x;
+  result.y = y_dis * cos(angle) - x_dis * sin(angle) + y;
   return result;
 }
 
-void Draw3dCube() {
-  static double angle = 0.0f;
-  angle += 0.01f;
-
-  Point p[8];
-  p[0] = transform(rotateZ(create_point(80, 80), angle));
-  p[1] = transform(rotateZ(create_point(80, 120), angle));
-  p[2] = transform(rotateZ(create_point(120, 80), angle));
-  p[3] = transform(rotateZ(create_point(120, 120), angle));
-
+void Draw3dCube(Point p[4]) {
   // Front.
   Point3 v1[3];
   v1[0].x = p[0].x; v1[0].y = p[0].y;  v1[0].z = 2000; v1[0].u = 0;  v1[0].v = 0;
@@ -485,7 +385,6 @@ void Draw3dCube() {
   v12[1].x = p[3].x; v12[1].y = p[3].y;  v12[1].z = 2000; v12[1].u = 30; v12[1].v = 0;
   v12[2].x = p[3].x; v12[2].y = p[3].y;  v12[2].z = 1500;  v12[2].u = 30; v12[2].v = 30;
 
-  ResetZBuffer();
   Draw3dTriangle(v1, true);
   Draw3dTriangle(v2, true);
   Draw3dTriangle(v3, true);
@@ -498,6 +397,30 @@ void Draw3dCube() {
   Draw3dTriangle(v10, true);
   Draw3dTriangle(v11, true);
   Draw3dTriangle(v12, true);
+}
+
+void DrawCubes() {
+  static double angle = 0.0f;
+  // angle += 0.01f;
+
+  
+  Point p[4];
+
+  ResetZBuffer();
+  Point origin; origin.x = 100; origin.y = 100;
+  for (int i = 0; i < 1; i++) {
+    for (int j = 0; j < 1; j++) {
+      origin.x = 100 + i * 150;
+      origin.y = 100 + j * 150;
+
+      p[0] = transform(rotateZ(create_point(origin.x - 20, origin.y - 20), origin.x, origin.y, angle));
+      p[1] = transform(rotateZ(create_point(origin.x - 20, origin.y + 20000), origin.x, origin.y, angle));
+      p[2] = transform(rotateZ(create_point(origin.x + 20000, origin.y - 20), origin.x, origin.y, angle));
+      p[3] = transform(rotateZ(create_point(origin.x + 20000, origin.y + 20000), origin.x, origin.y, angle));
+      Draw3dCube(p);
+
+    }
+  }
 }
 
 void DrawIfVisible(Wall* wall) {
@@ -563,15 +486,16 @@ void Render() {
   ClearProjectionScreen();
 
   // Screen divisions.
-  DrawLine(0, 300, 1000, 300, 10);
+  // DrawLine(0, 300, 1000, 300, 10);
 
-  DrawSectors();
-  DrawTransformedWalls();
-  RenderBsp(root);
+  // DrawSectors();
+  // DrawTransformedWalls();
+  // RenderBsp(root);
 
-  RenderFloors(root);
-  Draw3dCube();
+  // RenderFloors(root);
+  // DrawCubes();
   // DrawTexture();
+  DrawTriangle();
 }
 
 #endif
