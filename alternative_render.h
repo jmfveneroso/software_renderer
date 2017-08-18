@@ -29,12 +29,14 @@ Vector4f CreateVector4f(float x, float y, float z, float w) {
 struct Vertex {
   Vector4f pos;
   Vector4f color;
+  Vector4f tex_coords;
 };
 
-Vertex CreateVertex(Vector4f pos, Vector4f color) {
+Vertex CreateVertex(Vector4f pos, Vector4f color, Vector4f tex_coords) {
   Vertex v;
   v.pos = pos;
   v.color = color;
+  v.tex_coords = tex_coords;
   return v;
 }
 
@@ -241,12 +243,12 @@ Vertex VectorTransform(Matrix4f mat, Vertex v) {
   float y = mat.m[1][0] * r.x + mat.m[1][1] * r.y + mat.m[1][2] * r.z + mat.m[1][3] * r.w;
   float z = mat.m[2][0] * r.x + mat.m[2][1] * r.y + mat.m[2][2] * r.z + mat.m[2][3] * r.w;
   float w = mat.m[3][0] * r.x + mat.m[3][1] * r.y + mat.m[3][2] * r.z + mat.m[3][3] * r.w;
-  return CreateVertex(CreateVector4f(x, y, z, w), v.color);
+  return CreateVertex(CreateVector4f(x, y, z, w), v.color, v.tex_coords);
 }
 
 Vertex VectorPerspectiveDivide(Vertex r) {
   Vector4f v = r.pos;
-  return CreateVertex(CreateVector4f(v.x / v.w, v.y / v.w, v.z / v.w, v.w), r.color);
+  return CreateVertex(CreateVector4f(v.x / v.w, v.y / v.w, v.z / v.w, v.w), r.color, r.tex_coords);
 }
 
 //====================
@@ -257,6 +259,14 @@ struct Gradients {
   Vector4f colors[3];
   Vector4f color_x_step;
   Vector4f color_y_step;
+
+  float tex_x[3];
+  float tex_y[3];
+
+  float tex_xx_step;
+  float tex_xy_step;
+  float tex_yx_step;
+  float tex_yy_step;
 };
 
 Gradients CreateGradients(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert) {
@@ -283,6 +293,34 @@ Gradients CreateGradients(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_ver
 
   g.color_x_step = VectorScalarMul(d_color_x, one_over_dx); 
   g.color_y_step = VectorScalarMul(d_color_y, one_over_dy); 
+
+  // Texture.
+
+  g.tex_x[0] = min_y_vert.tex_coords.x;
+  g.tex_x[1] = mid_y_vert.tex_coords.x;
+  g.tex_x[2] = max_y_vert.tex_coords.x;
+
+  g.tex_y[0] = min_y_vert.tex_coords.y;
+  g.tex_y[1] = mid_y_vert.tex_coords.y;
+  g.tex_y[2] = max_y_vert.tex_coords.y;
+
+  float d_tex_xx = ((g.tex_x[1] - g.tex_x[2]) * (min_y_vert.pos.y - max_y_vert.pos.y)) -
+                   ((g.tex_x[0] - g.tex_x[2]) * (mid_y_vert.pos.y - max_y_vert.pos.y));
+
+  float d_tex_xy = ((g.tex_x[1] - g.tex_x[2]) * (min_y_vert.pos.x - max_y_vert.pos.x)) -
+                   ((g.tex_x[0] - g.tex_x[2]) * (mid_y_vert.pos.x - max_y_vert.pos.x));
+
+  float d_tex_yx = ((g.tex_y[1] - g.tex_y[2]) * (min_y_vert.pos.y - max_y_vert.pos.y)) -
+                   ((g.tex_y[0] - g.tex_y[2]) * (mid_y_vert.pos.y - max_y_vert.pos.y));
+
+  float d_tex_yy = ((g.tex_y[1] - g.tex_y[2]) * (min_y_vert.pos.x - max_y_vert.pos.x)) -
+                   ((g.tex_y[0] - g.tex_y[2]) * (mid_y_vert.pos.x - max_y_vert.pos.x));
+
+  g.tex_xx_step = d_tex_xx * one_over_dx; 
+  g.tex_xy_step = d_tex_xy * one_over_dy; 
+  g.tex_yx_step = d_tex_yx * one_over_dx; 
+  g.tex_yy_step = d_tex_yy * one_over_dy; 
+
   return g;
 }
 
@@ -297,6 +335,10 @@ struct Edge {
   int y_end;
   Vector4f color;
   Vector4f color_step;
+  float tex_x;
+  float tex_y;
+  float tex_x_step;
+  float tex_y_step;
 };
 
 Edge CreateEdge(Gradients gradients, Vertex min_y_vert, Vertex max_y_vert, int min_y_vert_index) {
@@ -320,32 +362,56 @@ Edge CreateEdge(Gradients gradients, Vertex min_y_vert, Vertex max_y_vert, int m
   );
 
   e.color_step = VectorAdd(gradients.color_y_step, VectorScalarMul(gradients.color_x_step, e.x_step));
+
+  // Texture.
+  e.tex_x = gradients.tex_x[min_y_vert_index] + gradients.tex_xx_step * x_prestep + gradients.tex_xy_step * y_prestep;
+  e.tex_x_step = gradients.tex_xy_step + gradients.tex_xx_step  * e.x_step;
+  e.tex_y = gradients.tex_y[min_y_vert_index] + gradients.tex_yx_step * x_prestep + gradients.tex_yy_step * y_prestep;
+  e.tex_y_step = gradients.tex_yy_step + gradients.tex_yx_step  * e.x_step;
+
   return e;
 }
 
 void EdgeStep(Edge* e) {
   e->x += e->x_step;
   e->color = VectorAdd(e->color, e->color_step);
+  e->tex_x += e->tex_x_step;
+  e->tex_y += e->tex_y_step;
 }
 
-void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j) {
+void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j, Texture texture) {
   int x_min = ceil(left->x);
   int x_max = ceil(right->x);
   float x_prestep = x_min - left->x;
 
   Vector4f color = VectorAdd(left->color, VectorScalarMul(gradients.color_x_step, x_prestep));
 
-  for (int i = x_min; i < x_max; i++) {
-    unsigned char r = (unsigned char) (color.x * 255 + 0.5f);
-    unsigned char g = (unsigned char) (color.y * 255 + 0.5f);
-    unsigned char b = (unsigned char) (color.z * 255 + 0.5f);
+  float tex_x = left->tex_x + gradients.tex_xx_step * x_prestep;
+  float tex_y = left->tex_y + gradients.tex_yx_step * x_prestep;
 
+  for (int i = x_min; i < x_max; i++) {
+    // unsigned char r = (unsigned char) (color.x * 255 + 0.5f);
+    // unsigned char g = (unsigned char) (color.y * 255 + 0.5f);
+    // unsigned char b = (unsigned char) (color.z * 255 + 0.5f);
+
+    // Texture.
+    int src_x = (int) (tex_x * (texture.width  - 1) + 0.5f);
+    int src_y = (int) (tex_y * (texture.height - 1) + 0.5f);
+   
+    int base = (src_y * texture.width + src_x) * 3;
+    unsigned char r = texture.rgb[base];
+    unsigned char g = texture.rgb[base + 1];
+    unsigned char b = texture.rgb[base + 2];
+ 
     DrawPixel(i, j, r, g, b);
+
     color = VectorAdd(color, gradients.color_x_step);
+    tex_x += gradients.tex_xx_step;
+    tex_y += gradients.tex_yx_step;
   }
 }
 
-void ScanEdges(Gradients gradients, Edge* a, Edge* b, bool handedness) {
+void ScanEdges(Gradients gradients, Edge* a, Edge* b, bool handedness, Texture texture) {
   Edge* left = a;
   Edge* right = b;
   if (handedness) {
@@ -357,20 +423,20 @@ void ScanEdges(Gradients gradients, Edge* a, Edge* b, bool handedness) {
   int y_start = b->y_start;
   int y_end   = b->y_end;
   for (int j = y_start; j < y_end; j++) {
-    DrawScanLine(gradients, left, right, j);
+    DrawScanLine(gradients, left, right, j, texture);
     EdgeStep(left);
     EdgeStep(right);
   }
 }
 
-void ScanTriangle(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert, bool handedness) {
+void ScanTriangle(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert, bool handedness, Texture texture) {
   Gradients gradients = CreateGradients(min_y_vert, mid_y_vert, max_y_vert);
   Edge top_to_bottom    = CreateEdge(gradients, min_y_vert, max_y_vert, 0);
   Edge top_to_middle    = CreateEdge(gradients, min_y_vert, mid_y_vert, 0);
   Edge middle_to_bottom = CreateEdge(gradients, mid_y_vert, max_y_vert, 1);
 
-  ScanEdges(gradients, &top_to_bottom, &top_to_middle,    handedness);
-  ScanEdges(gradients, &top_to_bottom, &middle_to_bottom, handedness);
+  ScanEdges(gradients, &top_to_bottom, &top_to_middle,    handedness, texture);
+  ScanEdges(gradients, &top_to_bottom, &middle_to_bottom, handedness, texture);
 }
 
 float TriangleAreaTimesTwo(Vertex a, Vertex b, Vertex c) {
@@ -381,7 +447,7 @@ float TriangleAreaTimesTwo(Vertex a, Vertex b, Vertex c) {
   return (x1 * y2) - (x2 * y1);
 }
 
-void FillTriangle(Vertex v1, Vertex v2, Vertex v3) {
+void FillTriangle(Vertex v1, Vertex v2, Vertex v3, Texture texture) {
   Matrix4f screen_space_transform = InitScreenSpaceTransform(500, 300);
   v1 = VectorTransform(screen_space_transform, v1);
   v2 = VectorTransform(screen_space_transform, v2);
@@ -409,23 +475,23 @@ void FillTriangle(Vertex v1, Vertex v2, Vertex v3) {
   }
 
   float area = TriangleAreaTimesTwo(min_y_vert, max_y_vert, mid_y_vert);
-  ScanTriangle(min_y_vert, mid_y_vert, max_y_vert, area >= 0);
+  ScanTriangle(min_y_vert, mid_y_vert, max_y_vert, area >= 0, texture);
 }
 
 void DrawTriangle() {
   Matrix4f projection = InitPerspective(1.22173, 1000.0f / 600.0f, 0.1f, 1000.0f);
   static float rot_counter = 0.0f;
-  rot_counter += 0.01;
+  rot_counter += 0.03;
 
   Matrix4f translation = InitTranslation(0.0f, 0.0f, 5.0f);
   Matrix4f rotation    = InitAxisRotation(0.0f, rot_counter, 0.0f);
   Matrix4f transform   = MatrixMul(projection, MatrixMul(translation, rotation));
 
-  Vertex min_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(-1, -1, 0, 1), CreateVector4f(1, 0, 0, 0)));
-  Vertex mid_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(0, 1, 0, 1), CreateVector4f(0, 1, 0, 0)));
-  Vertex max_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(1, -1, 0, 1), CreateVector4f(0, 0, 1, 0)));
+  Vertex min_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(-1, -1, 0, 1), CreateVector4f(1, 0, 0, 0), CreateVector4f(0, 0, 0, 0)));
+  Vertex mid_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(0, 1, 0, 1), CreateVector4f(0, 1, 0, 0), CreateVector4f(0.5f, 1.0f, 0, 0)));
+  Vertex max_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(1, -1, 0, 1), CreateVector4f(0, 0, 1, 0), CreateVector4f(1.0f, 0, 0, 0)));
 
-  FillTriangle(max_y_vert, mid_y_vert, min_y_vert);
+  FillTriangle(max_y_vert, mid_y_vert, min_y_vert, textures[1]);
 }
 
 #endif
