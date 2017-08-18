@@ -99,6 +99,10 @@ Vector4f VectorAbs(Vector4f v) {
   return CreateVector4f(fabs(v.x), fabs(v.y), fabs(v.z), fabs(v.w));
 }
 
+Vector4f LerpVector(Vector4f origin, Vector4f dest, float lerp_factor) {
+  return VectorAdd(VectorScalarMul(VectorSub(dest, origin), lerp_factor), origin);
+}
+
 bool VectorEquals(Vector4f l, Vector4f r) {
   bool x_ = fabs(l.x - r.x) < 0.00001f;
   bool y_ = fabs(l.y - r.y) < 0.00001f;
@@ -246,7 +250,44 @@ Vertex VectorPerspectiveDivide(Vertex r) {
 }
 
 //====================
-// Render
+// Gradients
+//====================
+
+struct Gradients {
+  Vector4f colors[3];
+  Vector4f color_x_step;
+  Vector4f color_y_step;
+};
+
+Gradients CreateGradients(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert) {
+  Gradients g;
+  g.colors[0] = min_y_vert.color;
+  g.colors[1] = mid_y_vert.color;
+  g.colors[2] = max_y_vert.color;
+
+  float one_over_dx = 1.0f / (float) 
+    ((mid_y_vert.pos.x - max_y_vert.pos.x) * (min_y_vert.pos.y - max_y_vert.pos.y) -
+    (min_y_vert.pos.x - max_y_vert.pos.x) * (mid_y_vert.pos.y - max_y_vert.pos.y));
+                      
+  float one_over_dy = -one_over_dx;
+
+  Vector4f d_color_x = VectorSub(
+    VectorScalarMul(VectorSub(g.colors[1], g.colors[2]), min_y_vert.pos.y - max_y_vert.pos.y),
+    VectorScalarMul(VectorSub(g.colors[0], g.colors[2]), mid_y_vert.pos.y - max_y_vert.pos.y)
+  );
+
+  Vector4f d_color_y = VectorSub(
+    VectorScalarMul(VectorSub(g.colors[1], g.colors[2]), min_y_vert.pos.x - max_y_vert.pos.x),
+    VectorScalarMul(VectorSub(g.colors[0], g.colors[2]), mid_y_vert.pos.x - max_y_vert.pos.x)
+  );
+
+  g.color_x_step = VectorScalarMul(d_color_x, one_over_dx); 
+  g.color_y_step = VectorScalarMul(d_color_y, one_over_dy); 
+  return g;
+}
+
+//====================
+// Edge
 //====================
 
 struct Edge {
@@ -254,35 +295,57 @@ struct Edge {
   float x_step;
   int y_start;  
   int y_end;
+  Vector4f color;
+  Vector4f color_step;
 };
 
-Edge CreateEdge(Vector4f min_y_vert, Vector4f max_y_vert) {
+Edge CreateEdge(Gradients gradients, Vertex min_y_vert, Vertex max_y_vert, int min_y_vert_index) {
   Edge e;
-  e.y_start = (int) ceil(min_y_vert.y);
-  e.y_end   = (int) ceil(max_y_vert.y);
+  e.y_start = (int) ceil(min_y_vert.pos.y);
+  e.y_end   = (int) ceil(max_y_vert.pos.y);
 
-  float y_dist = max_y_vert.y - min_y_vert.y; 
-  float x_dist = max_y_vert.x - min_y_vert.x; 
+  float y_dist = max_y_vert.pos.y - min_y_vert.pos.y; 
+  float x_dist = max_y_vert.pos.x - min_y_vert.pos.x; 
 
-  float y_prestep = e.y_start - min_y_vert.y;
+  float y_prestep = e.y_start - min_y_vert.pos.y;
   e.x_step = (float) x_dist / (float) y_dist;
-  e.x = (float) min_y_vert.x + y_prestep * e.x_step;
+  e.x = (float) min_y_vert.pos.x + y_prestep * e.x_step;
+
+  float x_prestep = e.x - min_y_vert.pos.x;
+  e.color = VectorAdd(
+    VectorAdd(
+      gradients.colors[min_y_vert_index], VectorScalarMul(gradients.color_y_step, y_prestep)
+    ),
+    VectorScalarMul(gradients.color_x_step, x_prestep)
+  );
+
+  e.color_step = VectorAdd(gradients.color_y_step, VectorScalarMul(gradients.color_x_step, e.x_step));
   return e;
 }
 
 void EdgeStep(Edge* e) {
   e->x += e->x_step;
+  e->color = VectorAdd(e->color, e->color_step);
 }
 
-void DrawScanLine(Edge* left, Edge* right, int j) {
+void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j) {
   int x_min = ceil(left->x);
   int x_max = ceil(right->x);
+  float x_prestep = x_min - left->x;
+
+  Vector4f color = VectorAdd(left->color, VectorScalarMul(gradients.color_x_step, x_prestep));
+
   for (int i = x_min; i < x_max; i++) {
-    DrawPixel(i, j, 0xFF, 0xFF, 0xFF);
+    unsigned char r = (unsigned char) (color.x * 255 + 0.5f);
+    unsigned char g = (unsigned char) (color.y * 255 + 0.5f);
+    unsigned char b = (unsigned char) (color.z * 255 + 0.5f);
+
+    DrawPixel(i, j, r, g, b);
+    color = VectorAdd(color, gradients.color_x_step);
   }
 }
 
-void ScanEdges(Edge* a, Edge* b, bool handedness) {
+void ScanEdges(Gradients gradients, Edge* a, Edge* b, bool handedness) {
   Edge* left = a;
   Edge* right = b;
   if (handedness) {
@@ -294,28 +357,27 @@ void ScanEdges(Edge* a, Edge* b, bool handedness) {
   int y_start = b->y_start;
   int y_end   = b->y_end;
   for (int j = y_start; j < y_end; j++) {
-    DrawScanLine(left, right, j);
+    DrawScanLine(gradients, left, right, j);
     EdgeStep(left);
     EdgeStep(right);
   }
 }
 
-void ScanTriangle(Vector4f min_y_vert, Vector4f mid_y_vert, Vector4f max_y_vert, bool handedness) {
-  Edge top_to_bottom    = CreateEdge(min_y_vert, max_y_vert);
-  Edge top_to_middle    = CreateEdge(min_y_vert, mid_y_vert);
-  Edge middle_to_bottom = CreateEdge(mid_y_vert, max_y_vert);
+void ScanTriangle(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert, bool handedness) {
+  Gradients gradients = CreateGradients(min_y_vert, mid_y_vert, max_y_vert);
+  Edge top_to_bottom    = CreateEdge(gradients, min_y_vert, max_y_vert, 0);
+  Edge top_to_middle    = CreateEdge(gradients, min_y_vert, mid_y_vert, 0);
+  Edge middle_to_bottom = CreateEdge(gradients, mid_y_vert, max_y_vert, 1);
 
-  ScanEdges(&top_to_bottom, &top_to_middle,    handedness);
-  ScanEdges(&top_to_bottom, &middle_to_bottom, handedness);
+  ScanEdges(gradients, &top_to_bottom, &top_to_middle,    handedness);
+  ScanEdges(gradients, &top_to_bottom, &middle_to_bottom, handedness);
 }
 
-float TriangleAreaTimesTwo(Vector4f a, Vector4f b, Vector4f c) {
-  float x1 = b.x - a.x;
-  float y1 = b.y - a.y;
-
-  float x2 = c.x - a.x;
-  float y2 = c.y - a.y;
-
+float TriangleAreaTimesTwo(Vertex a, Vertex b, Vertex c) {
+  float x1 = b.pos.x - a.pos.x;
+  float y1 = b.pos.y - a.pos.y;
+  float x2 = c.pos.x - a.pos.x;
+  float y2 = c.pos.y - a.pos.y;
   return (x1 * y2) - (x2 * y1);
 }
 
@@ -324,24 +386,24 @@ void FillTriangle(Vertex v1, Vertex v2, Vertex v3) {
   v1 = VectorTransform(screen_space_transform, v1);
   v2 = VectorTransform(screen_space_transform, v2);
   v3 = VectorTransform(screen_space_transform, v3);
-  Vector4f min_y_vert = VectorPerspectiveDivide(v1).pos;
-  Vector4f mid_y_vert = VectorPerspectiveDivide(v2).pos;
-  Vector4f max_y_vert = VectorPerspectiveDivide(v3).pos;
+  Vertex min_y_vert = VectorPerspectiveDivide(v1);
+  Vertex mid_y_vert = VectorPerspectiveDivide(v2);
+  Vertex max_y_vert = VectorPerspectiveDivide(v3);
 
-  if (max_y_vert.y < mid_y_vert.y) {
-    Vector4f tmp = max_y_vert;
+  if (max_y_vert.pos.y < mid_y_vert.pos.y) {
+    Vertex tmp = max_y_vert;
     max_y_vert = mid_y_vert;
     mid_y_vert = tmp;
   }
 
-  if (mid_y_vert.y < min_y_vert.y) {
-    Vector4f tmp = mid_y_vert;
+  if (mid_y_vert.pos.y < min_y_vert.pos.y) {
+    Vertex tmp = mid_y_vert;
     mid_y_vert = min_y_vert;
     min_y_vert = tmp;
   }
 
-  if (max_y_vert.y < mid_y_vert.y) {
-    Vector4f tmp = max_y_vert;
+  if (max_y_vert.pos.y < mid_y_vert.pos.y) {
+    Vertex tmp = max_y_vert;
     max_y_vert = mid_y_vert;
     mid_y_vert = tmp;
   }
@@ -359,13 +421,9 @@ void DrawTriangle() {
   Matrix4f rotation    = InitAxisRotation(0.0f, rot_counter, 0.0f);
   Matrix4f transform   = MatrixMul(projection, MatrixMul(translation, rotation));
 
-  // Vector4f min_y_vert = VectorTransform(transform, CreateVector4f(-1, -1, 0, 1));
-  // Vector4f mid_y_vert = VectorTransform(transform, CreateVector4f(0, 1, 0, 1));
-  // Vector4f max_y_vert = VectorTransform(transform, CreateVector4f(1, -1, 0, 1));
-
-  Vertex min_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(-1, -1, 0, 1), CreateVector4f(-1, -1, 0, 1)));
-  Vertex mid_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(0, 1, 0, 1), CreateVector4f(-1, -1, 0, 1)));
-  Vertex max_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(1, -1, 0, 1), CreateVector4f(-1, -1, 0, 1)));
+  Vertex min_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(-1, -1, 0, 1), CreateVector4f(1, 0, 0, 0)));
+  Vertex mid_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(0, 1, 0, 1), CreateVector4f(0, 1, 0, 0)));
+  Vertex max_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(1, -1, 0, 1), CreateVector4f(0, 0, 1, 0)));
 
   FillTriangle(max_y_vert, mid_y_vert, min_y_vert);
 }
