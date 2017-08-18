@@ -262,12 +262,28 @@ struct Gradients {
 
   float tex_x[3];
   float tex_y[3];
+  float one_over_z[3];
 
   float tex_xx_step;
   float tex_xy_step;
   float tex_yx_step;
   float tex_yy_step;
+
+  float one_over_zx_step;
+  float one_over_zy_step;
 };
+
+float CalculateXStep(float values[3], Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert, float one_over_dx) {
+  float d_cx = ((values[1] - values[2]) * (min_y_vert.pos.y - max_y_vert.pos.y)) -
+              ((values[0] - values[2]) * (mid_y_vert.pos.y - max_y_vert.pos.y));
+  return d_cx * one_over_dx;
+}
+
+float CalculateYStep(float values[3], Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert, float one_over_dy) {
+  float d_cy = ((values[1] - values[2]) * (min_y_vert.pos.x - max_y_vert.pos.x)) -
+               ((values[0] - values[2]) * (mid_y_vert.pos.x - max_y_vert.pos.x));
+  return d_cy * one_over_dy;
+}
 
 Gradients CreateGradients(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert) {
   Gradients g;
@@ -296,30 +312,24 @@ Gradients CreateGradients(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_ver
 
   // Texture.
 
-  g.tex_x[0] = min_y_vert.tex_coords.x;
-  g.tex_x[1] = mid_y_vert.tex_coords.x;
-  g.tex_x[2] = max_y_vert.tex_coords.x;
+  g.one_over_z[0] = 1.0f / min_y_vert.pos.w;
+  g.one_over_z[1] = 1.0f / mid_y_vert.pos.w;
+  g.one_over_z[2] = 1.0f / max_y_vert.pos.w;
 
-  g.tex_y[0] = min_y_vert.tex_coords.y;
-  g.tex_y[1] = mid_y_vert.tex_coords.y;
-  g.tex_y[2] = max_y_vert.tex_coords.y;
+  g.tex_x[0] = min_y_vert.tex_coords.x * g.one_over_z[0];
+  g.tex_x[1] = mid_y_vert.tex_coords.x * g.one_over_z[1];
+  g.tex_x[2] = max_y_vert.tex_coords.x * g.one_over_z[2];
 
-  float d_tex_xx = ((g.tex_x[1] - g.tex_x[2]) * (min_y_vert.pos.y - max_y_vert.pos.y)) -
-                   ((g.tex_x[0] - g.tex_x[2]) * (mid_y_vert.pos.y - max_y_vert.pos.y));
+  g.tex_y[0] = min_y_vert.tex_coords.y * g.one_over_z[0];
+  g.tex_y[1] = mid_y_vert.tex_coords.y * g.one_over_z[1];
+  g.tex_y[2] = max_y_vert.tex_coords.y * g.one_over_z[2];
 
-  float d_tex_xy = ((g.tex_x[1] - g.tex_x[2]) * (min_y_vert.pos.x - max_y_vert.pos.x)) -
-                   ((g.tex_x[0] - g.tex_x[2]) * (mid_y_vert.pos.x - max_y_vert.pos.x));
-
-  float d_tex_yx = ((g.tex_y[1] - g.tex_y[2]) * (min_y_vert.pos.y - max_y_vert.pos.y)) -
-                   ((g.tex_y[0] - g.tex_y[2]) * (mid_y_vert.pos.y - max_y_vert.pos.y));
-
-  float d_tex_yy = ((g.tex_y[1] - g.tex_y[2]) * (min_y_vert.pos.x - max_y_vert.pos.x)) -
-                   ((g.tex_y[0] - g.tex_y[2]) * (mid_y_vert.pos.x - max_y_vert.pos.x));
-
-  g.tex_xx_step = d_tex_xx * one_over_dx; 
-  g.tex_xy_step = d_tex_xy * one_over_dy; 
-  g.tex_yx_step = d_tex_yx * one_over_dx; 
-  g.tex_yy_step = d_tex_yy * one_over_dy; 
+  g.tex_xx_step = CalculateXStep(g.tex_x, min_y_vert, mid_y_vert, max_y_vert, one_over_dx); 
+  g.tex_xy_step = CalculateYStep(g.tex_x, min_y_vert, mid_y_vert, max_y_vert, one_over_dy);
+  g.tex_yx_step = CalculateXStep(g.tex_y, min_y_vert, mid_y_vert, max_y_vert, one_over_dx); 
+  g.tex_yy_step = CalculateYStep(g.tex_y, min_y_vert, mid_y_vert, max_y_vert, one_over_dy); 
+  g.one_over_zx_step = CalculateXStep(g.one_over_z, min_y_vert, mid_y_vert, max_y_vert, one_over_dx); 
+  g.one_over_zy_step = CalculateYStep(g.one_over_z, min_y_vert, mid_y_vert, max_y_vert, one_over_dy); 
 
   return g;
 }
@@ -339,6 +349,8 @@ struct Edge {
   float tex_y;
   float tex_x_step;
   float tex_y_step;
+  float one_over_z;
+  float one_over_z_step;
 };
 
 Edge CreateEdge(Gradients gradients, Vertex min_y_vert, Vertex max_y_vert, int min_y_vert_index) {
@@ -369,6 +381,10 @@ Edge CreateEdge(Gradients gradients, Vertex min_y_vert, Vertex max_y_vert, int m
   e.tex_y = gradients.tex_y[min_y_vert_index] + gradients.tex_yx_step * x_prestep + gradients.tex_yy_step * y_prestep;
   e.tex_y_step = gradients.tex_yy_step + gradients.tex_yx_step  * e.x_step;
 
+  // Perspective correct interpolation.
+  e.one_over_z = gradients.one_over_z[min_y_vert_index] + gradients.one_over_zx_step * x_prestep + gradients.one_over_zy_step  * y_prestep;
+  e.one_over_z_step = gradients.one_over_zy_step + gradients.one_over_zx_step * e.x_step;
+
   return e;
 }
 
@@ -377,6 +393,7 @@ void EdgeStep(Edge* e) {
   e->color = VectorAdd(e->color, e->color_step);
   e->tex_x += e->tex_x_step;
   e->tex_y += e->tex_y_step;
+  e->one_over_z += e->one_over_z_step;
 }
 
 void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j, Texture texture) {
@@ -384,10 +401,16 @@ void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j, Texture t
   int x_max = ceil(right->x);
   float x_prestep = x_min - left->x;
 
+  float x_dist = right->x - left->x;
+  float tex_xx_step = (right->tex_x - left->tex_x) / x_dist;
+  float tex_yx_step = (right->tex_y - left->tex_y) / x_dist;
+  float one_over_zx_step = (right->one_over_z - left->one_over_z) / x_dist;
+
   Vector4f color = VectorAdd(left->color, VectorScalarMul(gradients.color_x_step, x_prestep));
 
-  float tex_x = left->tex_x + gradients.tex_xx_step * x_prestep;
-  float tex_y = left->tex_y + gradients.tex_yx_step * x_prestep;
+  float tex_x = left->tex_x + tex_xx_step * x_prestep;
+  float tex_y = left->tex_y + tex_yx_step * x_prestep;
+  float one_over_z = left->one_over_z + one_over_zx_step * x_prestep;
 
   for (int i = x_min; i < x_max; i++) {
     // unsigned char r = (unsigned char) (color.x * 255 + 0.5f);
@@ -395,8 +418,9 @@ void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j, Texture t
     // unsigned char b = (unsigned char) (color.z * 255 + 0.5f);
 
     // Texture.
-    int src_x = (int) (tex_x * (texture.width  - 1) + 0.5f);
-    int src_y = (int) (tex_y * (texture.height - 1) + 0.5f);
+    float z = 1.0f / one_over_z;
+    int src_x = (int) ((tex_x * z) * (texture.width  - 1) + 0.5f);
+    int src_y = (int) ((tex_y * z) * (texture.height - 1) + 0.5f);
    
     int base = (src_y * texture.width + src_x) * 3;
     unsigned char r = texture.rgb[base];
@@ -406,8 +430,9 @@ void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j, Texture t
     DrawPixel(i, j, r, g, b);
 
     color = VectorAdd(color, gradients.color_x_step);
-    tex_x += gradients.tex_xx_step;
-    tex_y += gradients.tex_yx_step;
+    tex_x += tex_xx_step;
+    tex_y += tex_yx_step;
+    one_over_z += one_over_zx_step;
   }
 }
 
@@ -484,7 +509,7 @@ void DrawTriangle() {
   rot_counter += 0.03;
 
   Matrix4f translation = InitTranslation(0.0f, 0.0f, 5.0f);
-  Matrix4f rotation    = InitAxisRotation(0.0f, rot_counter, 0.0f);
+  Matrix4f rotation    = InitAxisRotation(rot_counter, rot_counter, rot_counter);
   Matrix4f transform   = MatrixMul(projection, MatrixMul(translation, rotation));
 
   Vertex min_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(-1, -1, 0, 1), CreateVector4f(1, 0, 0, 0), CreateVector4f(0, 0, 0, 0)));

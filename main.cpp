@@ -175,6 +175,7 @@ int main() {
   glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
   glfwMakeContextCurrent(window);
 
+  glewExperimental = GL_TRUE; 
   if (glewInit() != GLEW_OK) {
     fprintf(stderr, "Failed to initialize GLEW\n");
     getchar();
@@ -224,8 +225,8 @@ int main() {
   pfrustum.size = 60;
   
   InitVisualEngine();
-  CreateWalls();
-  InitRenderer();
+  // CreateWalls();
+  // InitRenderer();
 
   do {
     // Measure speed
