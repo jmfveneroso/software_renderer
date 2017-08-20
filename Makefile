@@ -1,15 +1,3 @@
-# CC=gcc
-# 
-# INC=-I/usr/X11/include/ -I/usr/local/include
-# LIBS=-L/usr/X11/lib -L/usr/local/lib -lX11 -lXext -lpng
-# 
-# _DEPS = bsp_tree.h vector.h level.h render.h player.h visual_engine.h sector.h textures.h
-# # DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
-# 
-# main: main.c $(_DEPS)
-# 	$(CC) -o $@ $< $(LIBS) $(C_FLAGS) $(INC) -g
-
-
 CC=g++
 
 OS := $(shell uname)
@@ -23,7 +11,7 @@ endif
 
 
 
-_DEPS = bsp_tree.h vector.h level.h render.h alternative_render.h player.h visual_engine.h sector.h textures.h
+_DEPS = src/alternative_render.h src/visual_engine.h src/vector.h src/vertex.h src/bitmap.h src/objloader.h
 
-main: main.cpp $(_DEPS)
+build/main: src/main.cpp $(_DEPS)
 	$(CC) -o $@ $< $(LIBS) $(C_FLAGS) $(INC) -g -O3
