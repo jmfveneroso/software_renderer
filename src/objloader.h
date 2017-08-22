@@ -140,6 +140,10 @@ Token* SplitTokens(char* buffer, size_t* num_tokens) {
   return first_token;
 }
 
+void CalculateNormals(ObjModel* model) {
+
+}
+
 ObjModel* CreateObjModel(const char filename[]) {
   ObjModel* obj = (ObjModel*) malloc(sizeof(ObjModel));
   obj->positions = (Vector4f*) calloc(0, sizeof(Vector4f));
@@ -237,6 +241,8 @@ ObjModel* CreateObjModel(const char filename[]) {
     printf("%d/%d/%d ", obj->indices[base + 1].vertex_index, obj->indices[base + 1].tex_coord_index, obj->indices[base + 1].normal_index);
     printf("%d/%d/%d\n", obj->indices[base + 2].vertex_index, obj->indices[base + 2].tex_coord_index, obj->indices[base + 2].normal_index);
   }
+
+  CalculateNormals(obj);
 
   return obj;
 }

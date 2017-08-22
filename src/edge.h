@@ -18,6 +18,8 @@ struct Edge {
   float one_over_z_step;
   float depth;
   float depth_step;
+  float light_amt;
+  float light_amt_step;
 };
 
 Edge CreateEdge(Gradients gradients, Vertex min_y_vert, Vertex max_y_vert, int min_y_vert_index) {
@@ -54,6 +56,9 @@ Edge CreateEdge(Gradients gradients, Vertex min_y_vert, Vertex max_y_vert, int m
 
   e.depth = gradients.depth[min_y_vert_index] + gradients.depth_x_step * x_prestep + gradients.depth_y_step  * y_prestep;
   e.depth_step = gradients.depth_y_step + gradients.depth_x_step * e.x_step;
+
+  e.light_amt = gradients.light_amt[min_y_vert_index] + gradients.light_x_step * x_prestep + gradients.light_y_step  * y_prestep;
+  e.light_amt_step = gradients.light_y_step + gradients.light_x_step * e.x_step;
   return e;
 }
 
@@ -64,6 +69,7 @@ void EdgeStep(Edge* e) {
   e->tex_y += e->tex_y_step;
   e->one_over_z += e->one_over_z_step;
   e->depth += e->depth_step;
+  e->light_amt += e->light_amt_step;
 }
 
 #endif

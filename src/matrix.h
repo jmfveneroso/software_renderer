@@ -121,18 +121,25 @@ Matrix4f InitCrossRotation(Vector4f forward, Vector4f up) {
   return InitVectorRotation(f, u, r);
 }
 
-Vertex VectorTransform(Matrix4f mat, Vertex v) {
+Vertex VectorTransform(Matrix4f mat, Matrix4f mat_, Vertex v) {
   Vector4f r = v.pos;
+  Vector4f n = v.normal;
   float x = mat.m[0][0] * r.x + mat.m[0][1] * r.y + mat.m[0][2] * r.z + mat.m[0][3] * r.w;
   float y = mat.m[1][0] * r.x + mat.m[1][1] * r.y + mat.m[1][2] * r.z + mat.m[1][3] * r.w;
   float z = mat.m[2][0] * r.x + mat.m[2][1] * r.y + mat.m[2][2] * r.z + mat.m[2][3] * r.w;
   float w = mat.m[3][0] * r.x + mat.m[3][1] * r.y + mat.m[3][2] * r.z + mat.m[3][3] * r.w;
-  return CreateVertex(CreateVector4f(x, y, z, w), v.color, v.tex_coords);
+
+  float x_ = mat_.m[0][0] * n.x + mat_.m[0][1] * n.y + mat_.m[0][2] * n.z + mat_.m[0][3] * n.w;
+  float y_ = mat_.m[1][0] * n.x + mat_.m[1][1] * n.y + mat_.m[1][2] * n.z + mat_.m[1][3] * n.w;
+  float z_ = mat_.m[2][0] * n.x + mat_.m[2][1] * n.y + mat_.m[2][2] * n.z + mat_.m[2][3] * n.w;
+  float w_ = mat_.m[3][0] * n.x + mat_.m[3][1] * n.y + mat_.m[3][2] * n.z + mat_.m[3][3] * n.w;
+  return CreateVertex(CreateVector4f(x, y, z, w), CreateVector4f(x_, y_, z_, w_), v.tex_coords);
+  // return CreateVertex(CreateVector4f(x, y, z, w), v.normal, v.tex_coords);
 }
 
 Vertex VectorPerspectiveDivide(Vertex r) {
   Vector4f v = r.pos;
-  return CreateVertex(CreateVector4f(v.x / v.w, v.y / v.w, v.z / v.w, v.w), r.color, r.tex_coords);
+  return CreateVertex(CreateVector4f(v.x / v.w, v.y / v.w, v.z / v.w, v.w), r.normal, r.tex_coords);
 }
 
 #endif

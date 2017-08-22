@@ -22,6 +22,7 @@ void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j, Bitmap* t
   float tex_yx_step = (right->tex_y - left->tex_y) / x_dist;
   float one_over_zx_step = (right->one_over_z - left->one_over_z) / x_dist;
   float depth_x_step = (right->depth - left->depth) / x_dist;
+  float light_amt_x_step = (right->light_amt - left->light_amt) / x_dist;
 
   Vector4f color = VectorAdd(left->color, VectorScalarMul(gradients.color_x_step, x_prestep));
 
@@ -29,6 +30,7 @@ void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j, Bitmap* t
   float tex_y = left->tex_y + tex_yx_step * x_prestep;
   float one_over_z = left->one_over_z + one_over_zx_step * x_prestep;
   float depth = left->depth + depth_x_step * x_prestep;
+  float light_amt = left->light_amt + light_amt_x_step * x_prestep;
 
   for (int i = x_min; i < x_max; i++) {
     int index = i + j * 1000;
@@ -41,8 +43,8 @@ void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j, Bitmap* t
       unsigned char r = GetComponent(texture, src_x, src_y, 2);
       unsigned char g = GetComponent(texture, src_x, src_y, 1);
       unsigned char b = GetComponent(texture, src_x, src_y, 0);
- 
-      DrawPixel(i, j, r, g, b);
+
+      DrawPixel(i, j, light_amt * r, light_amt * g, light_amt * b);
     }
 
     // color = VectorAdd(color, gradients.color_x_step);
@@ -50,6 +52,7 @@ void DrawScanLine(Gradients gradients, Edge* left, Edge* right, int j, Bitmap* t
     tex_y += tex_yx_step;
     one_over_z += one_over_zx_step;
     depth += depth_x_step;
+    light_amt += light_amt_x_step;
   }
 }
 
@@ -91,9 +94,11 @@ float TriangleAreaTimesTwo(Vertex a, Vertex b, Vertex c) {
 
 void FillTriangle(Vertex v1, Vertex v2, Vertex v3, Bitmap* texture) {
   Matrix4f screen_space_transform = InitScreenSpaceTransform(500, 300);
-  v1 = VectorTransform(screen_space_transform, v1);
-  v2 = VectorTransform(screen_space_transform, v2);
-  v3 = VectorTransform(screen_space_transform, v3);
+  Matrix4f identity = InitIdentity();
+
+  v1 = VectorTransform(screen_space_transform, identity, v1);
+  v2 = VectorTransform(screen_space_transform, identity, v2);
+  v3 = VectorTransform(screen_space_transform, identity, v3);
   Vertex min_y_vert = VectorPerspectiveDivide(v1);
   Vertex mid_y_vert = VectorPerspectiveDivide(v2);
   Vertex max_y_vert = VectorPerspectiveDivide(v3);
@@ -195,17 +200,21 @@ void DrawMyTriangle() {
 
   Matrix4f translation = InitTranslation(0.0f, 0.0f, 5.0f);
   Matrix4f rotation    = InitAxisRotation(rot_counter, rot_counter, rot_counter);
-  Matrix4f transform   = MatrixMul(projection, MatrixMul(translation, rotation));
+  // Matrix4f transform   = MatrixMul(projection, MatrixMul(translation, rotation));
+  Matrix4f transform   = MatrixMul(translation, rotation);
+  Matrix4f mvp = MatrixMul(projection, transform);
 
-  Vertex min_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(-1, -1, 0, 1), CreateVector4f(1, 0, 0, 0), CreateVector4f(0, 0, 0, 0)));
-  Vertex mid_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(0, 1, 0, 1), CreateVector4f(0, 1, 0, 0), CreateVector4f(0.5f, 1.0f, 0, 0)));
-  Vertex max_y_vert = VectorTransform(transform, CreateVertex(CreateVector4f(1, -1, 0, 1), CreateVector4f(0, 0, 1, 0), CreateVector4f(1.0f, 0, 0, 0)));
+  Vertex min_y_vert = VectorTransform(mvp, transform, CreateVertex(CreateVector4f(1, -1, 0, 1), CreateVector4f(0, 0, 1, 0), CreateVector4f(1.0f, 0, 0, 0)));
+  Vertex mid_y_vert = VectorTransform(mvp, transform, CreateVertex(CreateVector4f(0, 1, 0, 1), CreateVector4f(0, 1, 0, 0), CreateVector4f(0.5f, 1.0f, 0, 0)));
+  Vertex max_y_vert = VectorTransform(mvp, transform, CreateVertex(CreateVector4f(-1, -1, 0, 1), CreateVector4f(1, 0, 0, 0), CreateVector4f(0, 0, 0, 0)));
 
   FillTriangle(max_y_vert, mid_y_vert, min_y_vert, texture_bmps[0]);
 }
 
 ObjModel* mesh;
-void DrawMesh(ObjModel* model, Matrix4f transform, Bitmap* texture) {
+void DrawMesh(ObjModel* model, Matrix4f view_projection, Matrix4f transform, Bitmap* texture) {
+  Matrix4f mvp = MatrixMul(view_projection, transform);
+
   for (int i = 0; i < model->num_indices; i += 3) {
     Vector4f v1_ = model->positions[model->indices[i    ].vertex_index];
     Vector4f v2_ = model->positions[model->indices[i + 1].vertex_index];
@@ -213,10 +222,13 @@ void DrawMesh(ObjModel* model, Matrix4f transform, Bitmap* texture) {
     Vector4f tex1 = model->tex_coords[model->indices[i    ].tex_coord_index];
     Vector4f tex2 = model->tex_coords[model->indices[i + 1].tex_coord_index];
     Vector4f tex3 = model->tex_coords[model->indices[i + 2].tex_coord_index];
+    Vector4f normal1 = model->normals[model->indices[i    ].normal_index];
+    Vector4f normal2 = model->normals[model->indices[i + 1].normal_index];
+    Vector4f normal3 = model->normals[model->indices[i + 2].normal_index];
 
-    Vertex v1 = VectorTransform(transform, CreateVertex(v1_, CreateVector4f(1, 0, 0, 0), tex1));
-    Vertex v2 = VectorTransform(transform, CreateVertex(v2_, CreateVector4f(0, 1, 0, 0), tex2));
-    Vertex v3 = VectorTransform(transform, CreateVertex(v3_, CreateVector4f(0, 0, 1, 0), tex3));
+    Vertex v1 = VectorTransform(mvp, transform, CreateVertex(v1_, normal1, tex1));
+    Vertex v2 = VectorTransform(mvp, transform, CreateVertex(v2_, normal2, tex2));
+    Vertex v3 = VectorTransform(mvp, transform, CreateVertex(v3_, normal3, tex3));
 
     // FillTriangle(v1, v2, v3, texture);
     DrawTriangle(v1, v2, v3, texture);
@@ -229,11 +241,35 @@ void ClearZBuffer() {
   }
 }
 
+void DrawFloorDoMal() {
+  Matrix4f projection = InitPerspective(1.22173, 1000.0f / 600.0f, 0.1f, 1000.0f);
+  Matrix4f translation = InitTranslation(0.0f, 0.0f, 5.0f);
+  Matrix4f transform   = translation;
+  Matrix4f mvp         = MatrixMul(projection, translation);
+  int half_size = 20;
+  for (int i = -half_size; i <= half_size; i++) {
+    for (int j = -half_size; j <= half_size; j++) {
+      
+      float y1 = 3 * sin((float) (i + 1) * 0.5f) + 3 * sin((float) (j + 0) * 0.5f) - 5.0f;
+      Vertex v1 = VectorTransform(mvp, transform, CreateVertex(CreateVector4f(i + 1, y1, j + 0, 1), CreateVector4f(1, 0, 0, 0), CreateVector4f(1, 0, 0, 0)));
+      float y2 = 3 * sin((float) (i + 0) * 0.5f) + 3 * sin((float) (j + 0) * 0.5f) - 5.0f;
+      Vertex v2 = VectorTransform(mvp, transform, CreateVertex(CreateVector4f(i + 0, y2, j + 0, 1), CreateVector4f(0, 1, 0, 0), CreateVector4f(0, 0, 0, 0)));
+      float y3 = 3 * sin((float) (i + 0) * 0.5f) + 3 * sin((float) (j + 1) * 0.5f) - 5.0f;
+      Vertex v3 = VectorTransform(mvp, transform, CreateVertex(CreateVector4f(i + 0, y3, j + 1, 1), CreateVector4f(0, 0, 1, 0), CreateVector4f(0, 1, 0, 0)));
+      float y4 = 3 * sin((float) (i + 1) * 0.5f) + 3 * sin((float) (j + 1) * 0.5f) - 5.0f;
+      Vertex v4 = VectorTransform(mvp, transform, CreateVertex(CreateVector4f(i + 1, y4, j + 1, 1), CreateVector4f(0, 0, 1, 0), CreateVector4f(1.0f, 1.0f, 0, 0)));
+      DrawTriangle(v1, v2, v3, texture_bmps[0]);
+      DrawTriangle(v1, v3, v4, texture_bmps[0]);
+    }
+  }
+}
+
 void InitRender() {
   z_buffer = (float*) malloc(1000 * 600 * sizeof(float));
   // texture_bmps[0] = CreateBitmap("textures/dirt.bmp");
   texture_bmps[0] = CreateBitmap("textures/bricks.bmp");
-  mesh = CreateObjModel("res/monkey0.obj");
+  // mesh = CreateObjModel("res/monkey0.obj");
+  mesh = CreateObjModel("res/pole.obj");
   // mesh = CreateObjModel("res/square.obj");
   // mesh = CreateObjModel("res/icosphere.obj");
 
@@ -248,10 +284,13 @@ void Render() {
   rot_counter += 0.03f;
 
   Matrix4f projection  = InitPerspective(1.22173, 1000.0f / 600.0f, 0.1f, 1000.0f);
-  Matrix4f translation = InitTranslation(0.0f, 0.0f, 3.0f);
+  Matrix4f translation = InitTranslation(0.0f, 0.0f, 10.0f);
   Matrix4f rotation    = InitAxisRotation(0, rot_counter, 0);
-  Matrix4f transform   = MatrixMul(projection, MatrixMul(translation, rotation));
-  DrawMesh(mesh, transform, texture_bmps[0]);
+  // Matrix4f transform   = MatrixMul(projection, MatrixMul(translation, rotation));
+  Matrix4f transform   = MatrixMul(translation, rotation);
+  DrawMesh(mesh, projection, transform, texture_bmps[0]);
+  // DrawFloorDoMal();
+  // DrawMyTriangle();
 }
 
 #endif

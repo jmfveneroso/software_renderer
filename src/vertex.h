@@ -5,13 +5,15 @@ struct Vertex {
   Vector4f pos;
   Vector4f color;
   Vector4f tex_coords;
+  Vector4f normal;
 };
 
-Vertex CreateVertex(Vector4f pos, Vector4f color, Vector4f tex_coords) {
+Vertex CreateVertex(Vector4f pos, Vector4f normal, Vector4f tex_coords) {
   Vertex v;
   v.pos = pos;
-  v.color = color;
+  // v.color = color;
   v.tex_coords = tex_coords;
+  v.normal = normal;
   return v;
 }
 
@@ -28,7 +30,7 @@ float GetComponent(Vertex v, int index) {
 Vertex LerpVertex(Vertex a, Vertex b, float lerp_amt) {
   return CreateVertex(
     LerpVector(a.pos, b.pos, lerp_amt),
-    CreateVector4f(0, 0, 0, 0),
+    LerpVector(a.normal, b.normal, lerp_amt),
     LerpVector(a.tex_coords, b.tex_coords, lerp_amt)
   );
 }

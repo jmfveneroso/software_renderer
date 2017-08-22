@@ -12,6 +12,7 @@ struct Gradients {
   float tex_y[3];
   float one_over_z[3];
   float depth[3];
+  float light_amt[3];
 
   float tex_xx_step;
   float tex_xy_step;
@@ -23,6 +24,9 @@ struct Gradients {
 
   float depth_x_step;
   float depth_y_step;
+
+  float light_x_step;
+  float light_y_step;
 };
 
 float CalculateXStep(float values[3], Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert, float one_over_dx) {
@@ -35,6 +39,12 @@ float CalculateYStep(float values[3], Vertex min_y_vert, Vertex mid_y_vert, Vert
   float d_cy = ((values[1] - values[2]) * (min_y_vert.pos.x - max_y_vert.pos.x)) -
                ((values[0] - values[2]) * (mid_y_vert.pos.x - max_y_vert.pos.x));
   return d_cy * one_over_dy;
+}
+
+float Saturate(float val) {
+  if (val < 0.0f) return 0.0f;
+  if (val > 1.0f) return 0.0f;
+  return val;
 }
 
 Gradients CreateGradients(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_vert) {
@@ -80,6 +90,11 @@ Gradients CreateGradients(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_ver
   g.tex_y[1] = mid_y_vert.tex_coords.y * g.one_over_z[1];
   g.tex_y[2] = max_y_vert.tex_coords.y * g.one_over_z[2];
 
+  Vector4f light_dir = CreateVector4f(0, 0, 1, 0);
+  g.light_amt[0] = Saturate(VectorDot(min_y_vert.normal, light_dir)) * 0.9f + 0.1f;
+  g.light_amt[1] = Saturate(VectorDot(mid_y_vert.normal, light_dir)) * 0.9f + 0.1f;
+  g.light_amt[2] = Saturate(VectorDot(max_y_vert.normal, light_dir)) * 0.9f + 0.1f;
+
   g.tex_xx_step = CalculateXStep(g.tex_x, min_y_vert, mid_y_vert, max_y_vert, one_over_dx); 
   g.tex_xy_step = CalculateYStep(g.tex_x, min_y_vert, mid_y_vert, max_y_vert, one_over_dy);
   g.tex_yx_step = CalculateXStep(g.tex_y, min_y_vert, mid_y_vert, max_y_vert, one_over_dx); 
@@ -88,6 +103,8 @@ Gradients CreateGradients(Vertex min_y_vert, Vertex mid_y_vert, Vertex max_y_ver
   g.one_over_zy_step = CalculateYStep(g.one_over_z, min_y_vert, mid_y_vert, max_y_vert, one_over_dy); 
   g.depth_x_step = CalculateXStep(g.depth, min_y_vert, mid_y_vert, max_y_vert, one_over_dx); 
   g.depth_y_step = CalculateYStep(g.depth, min_y_vert, mid_y_vert, max_y_vert, one_over_dy); 
+  g.light_x_step = CalculateXStep(g.light_amt, min_y_vert, mid_y_vert, max_y_vert, one_over_dx); 
+  g.light_y_step = CalculateYStep(g.light_amt, min_y_vert, mid_y_vert, max_y_vert, one_over_dy); 
 
   return g;
 }
