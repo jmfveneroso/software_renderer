@@ -108,7 +108,8 @@ int main() {
   std::vector<glm::vec3> vertices;
   std::vector<glm::vec2> uvs;
   std::vector<glm::vec3> normals; // Won't be used at the moment.
-  bool res = loadOBJ("res/suzanne.obj", vertices, uvs, normals);
+  // bool res = loadOBJ("res/suzanne.obj", vertices, uvs, normals);
+  bool res = loadOBJ("res/basic_terrain.obj", vertices, uvs, normals);
 
   std::vector<unsigned short> indices;
   std::vector<glm::vec3> indexed_vertices;
@@ -172,7 +173,7 @@ int main() {
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
     
-    glm::vec3 lightPos = glm::vec3(4,4,4);
+    glm::vec3 lightPos = glm::vec3(0,100,0);
     glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
     // Bind our texture in Texture Unit 0
@@ -232,10 +233,10 @@ int main() {
     
 
     ////// Start of the rendering of the second object //////
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
       for (int j = 0; j < 10; j++) {
         glm::mat4 ModelMatrix2 = glm::mat4(1.0);
-        ModelMatrix2 = glm::translate(ModelMatrix2, glm::vec3(2.0f + i * 2.0f, 0.0f, 2.0f + j * 2.0f));
+        ModelMatrix2 = glm::translate(ModelMatrix2, glm::vec3(30.0f + i * 30.0f, 0.0f, 40.0f + j * 40.0f));
         glm::mat4 MVP2 = ProjectionMatrix * ViewMatrix * ModelMatrix2;
         
         // Send our transformation to the currently bound shader, 

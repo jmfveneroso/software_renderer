@@ -1,7 +1,7 @@
 extern GLFWwindow* window; // The "extern" keyword here is to access the variable "window" declared in tutorialXXX.cpp. This is a hack to keep the tutorials simple. Please avoid this.
 
 // Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 0, 5 ); 
+glm::vec3 position = glm::vec3( 0, 4, 5 ); 
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
@@ -50,28 +50,35 @@ void computeMatricesFromInputs(){
   
   // Right vector
   glm::vec3 right = glm::vec3(
-  	sin(horizontalAngle - 3.14f/2.0f), 
+  	sin(horizontalAngle - 3.14f/2.0f) * 2, 
   	0,
-  	cos(horizontalAngle - 3.14f/2.0f)
+  	cos(horizontalAngle - 3.14f/2.0f) * 2
+  );
+
+  // Front vector
+  glm::vec3 front = glm::vec3(
+  	cos(verticalAngle) * sin(horizontalAngle) * 2, 
+  	0,
+  	cos(verticalAngle) * cos(horizontalAngle) * 2
   );
   
   // Up vector
   glm::vec3 up = glm::cross( right, direction );
   
   // Move forward
-  if (glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
-  	position += direction * deltaTime * speed;
+  if (glfwGetKey( window, GLFW_KEY_W) == GLFW_PRESS){
+  	position += front * deltaTime * speed;
   }
   // Move backward
-  if (glfwGetKey( window, GLFW_KEY_DOWN ) == GLFW_PRESS){
-  	position -= direction * deltaTime * speed;
+  if (glfwGetKey( window, GLFW_KEY_S) == GLFW_PRESS){
+  	position -= front * deltaTime * speed;
   }
   // Strafe right
-  if (glfwGetKey( window, GLFW_KEY_RIGHT ) == GLFW_PRESS){
+  if (glfwGetKey( window, GLFW_KEY_D) == GLFW_PRESS){
   	position += right * deltaTime * speed;
   }
   // Strafe left
-  if (glfwGetKey( window, GLFW_KEY_LEFT ) == GLFW_PRESS){
+  if (glfwGetKey( window, GLFW_KEY_A) == GLFW_PRESS){
   	position -= right * deltaTime * speed;
   }
   
