@@ -1,25 +1,36 @@
+#include <glm/gtx/norm.hpp>
+
 extern GLFWwindow* window; // The "extern" keyword here is to access the variable "window" declared in tutorialXXX.cpp. This is a hack to keep the tutorials simple. Please avoid this.
 
 // Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 4, 5 ); 
+glm::vec3 position = glm::vec3( 0, 100, 5 ); 
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
-float verticalAngle = 0.0f;
+// float verticalAngle = 0.0f;
+float verticalAngle = 1.57f;
 // Initial Field of View
 float initialFoV = 45.0f;
 
 float speed = 3.0f; // 3 units / second
+glm::vec3 fall_speed = glm::vec3(0.0f, 0.0f, 0.0f); // 3 units / second
 float mouseSpeed = 0.005f;
 glm::mat4 ViewMatrix;
 glm::mat4 ProjectionMatrix;
 
 glm::mat4 getViewMatrix(){
-	return ViewMatrix;
+  return ViewMatrix;
 }
 
 glm::mat4 getProjectionMatrix(){
-	return ProjectionMatrix;
+  return ProjectionMatrix;
+}
+
+void UpdateGravity() {
+  fall_speed += glm::vec3(0, -0.01, 0);
+  if (length2(fall_speed) > 1) fall_speed = glm::vec3(0, -1.0f, 0);
+  position += fall_speed;
+  if (position.y <= 4.0f) position.y = 4.0f;
 }
 
 void computeMatricesFromInputs(){
@@ -80,6 +91,10 @@ void computeMatricesFromInputs(){
   // Strafe left
   if (glfwGetKey( window, GLFW_KEY_A) == GLFW_PRESS){
   	position -= right * deltaTime * speed;
+  }
+  if (glfwGetKey( window, GLFW_KEY_SPACE) == GLFW_PRESS){
+    // position += front * deltaTime * speed;
+    fall_speed = glm::vec3(0, 0.3f, 0);
   }
   
   float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.

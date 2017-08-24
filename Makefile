@@ -9,7 +9,7 @@ else
   LIBS=-L/usr/local/lib -lglfw -lglew -framework OpenGL -framework GLUT
 endif
 
-_DEPS = src/shaders.h src/bitmap.h src/objloader.h
+_DEPS = src/shaders.h src/bitmap.h src/objloader.h src/controls.h src/sphere.h
 
 build/main: src/main.cpp $(_DEPS)
 	$(CC) -o $@ $< $(LIBS) $(C_FLAGS) $(INC) -g -O3

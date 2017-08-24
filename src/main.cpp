@@ -22,6 +22,7 @@ using namespace glm;
 #include "controls.h"
 #include "objloader.h"
 #include "vbo_indexer.h"
+#include "sphere.h"
 
 GLuint CreateMvpMatrix(GLuint programID, glm::mat4* MVP) {
   GLuint MatrixID = glGetUniformLocation(programID, "MVP");
@@ -133,19 +134,16 @@ int main() {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
 
-
-
-
-
-
-
-
-
   glUseProgram(programID);
   GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
   double lastTime = glfwGetTime();
   int nbFrames = 0;
+
+  Sphere::SetModel("res/icosphere.obj");
+  Sphere spheres[2];
+  spheres[0] = Sphere(-50.0f, 2.0f, -17.0f, 0.1f, 0.0f, 0.0f);
+  spheres[1] = Sphere(50.0f, 2.0f, -17.0f, -0.1f, 0.0f,  0.0f);
 
   do {
     // Measure speed
@@ -233,45 +231,50 @@ int main() {
     
 
     ////// Start of the rendering of the second object //////
-    for (int i = 0; i < 10; i++) {
-      for (int j = 0; j < 10; j++) {
-        glm::mat4 ModelMatrix2 = glm::mat4(1.0);
-        ModelMatrix2 = glm::translate(ModelMatrix2, glm::vec3(30.0f + i * 30.0f, 0.0f, 40.0f + j * 40.0f));
-        glm::mat4 MVP2 = ProjectionMatrix * ViewMatrix * ModelMatrix2;
-        
-        // Send our transformation to the currently bound shader, 
-        // in the "MVP" uniform
-        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP2[0][0]);
-        glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix2[0][0]);
-        
-        
-        // The rest is exactly the same as the first object
-        
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        
-        // 2nd attribute buffer : UVs
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        
-        // 3rd attribute buffer : normals
-        glEnableVertexAttribArray(2);
-        glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        
-        // Index buffer
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-        
-        // Draw the triangles !
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
-      }
-    }
+    // for (int i = 0; i < 10; i++) {
+    //   for (int j = 0; j < 10; j++) {
+    //     glm::mat4 ModelMatrix2 = glm::mat4(1.0);
+    //     ModelMatrix2 = glm::translate(ModelMatrix2, glm::vec3(30.0f + i * 30.0f, 0.0f, 40.0f + j * 40.0f));
+    //     glm::mat4 MVP2 = ProjectionMatrix * ViewMatrix * ModelMatrix2;
+    //     
+    //     // Send our transformation to the currently bound shader, 
+    //     // in the "MVP" uniform
+    //     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP2[0][0]);
+    //     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix2[0][0]);
+    //     
+    //     
+    //     // The rest is exactly the same as the first object
+    //     
+    //     // 1rst attribute buffer : vertices
+    //     glEnableVertexAttribArray(0);
+    //     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    //     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    //     
+    //     // 2nd attribute buffer : UVs
+    //     glEnableVertexAttribArray(1);
+    //     glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+    //     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    //     
+    //     // 3rd attribute buffer : normals
+    //     glEnableVertexAttribArray(2);
+    //     glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+    //     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    //     
+    //     // Index buffer
+    //     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+    //     
+    //     // Draw the triangles !
+    //     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+    //   }
+    // }
     ////// End of rendering of the second object //////
 
-
+    UpdateGravity();
+    spheres[0].Draw(ProjectionMatrix, ViewMatrix, MatrixID, ModelMatrixID);
+    spheres[1].Draw(ProjectionMatrix, ViewMatrix, MatrixID, ModelMatrixID);
+    spheres[0].UpdateMovement();
+    spheres[1].UpdateMovement();
+    spheres[0].DetectCollision(spheres[1]);
 
 
 
