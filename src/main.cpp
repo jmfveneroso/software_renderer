@@ -23,6 +23,153 @@ using namespace glm;
 #include "objloader.h"
 #include "vbo_indexer.h"
 #include "sphere.h"
+#include "cube.h"
+
+GLuint concurrentProgramID;
+std::vector<glm::vec3> vertices;
+std::vector<glm::vec2> uvs;
+std::vector<glm::vec3> normals;
+std::vector<unsigned short> indices;
+std::vector<glm::vec3> indexed_vertices;
+std::vector<glm::vec2> indexed_uvs;
+std::vector<glm::vec3> indexed_normals;
+
+void DrawTriangle(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, GLuint MatrixID, glm::vec3 vectors[]) {
+  GLfloat buffer[] = {
+    vectors[0].x, vectors[0].y, vectors[0].z,
+    vectors[1].x, vectors[1].y, vectors[1].z,
+    vectors[2].x, vectors[2].y, vectors[2].z
+  };
+
+  GLuint vertexbuffer;
+  glGenBuffers(1, &vertexbuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(buffer), buffer, GL_STATIC_DRAW);
+
+  glUseProgram(concurrentProgramID);
+  glm::mat4 ModelMatrix = glm::mat4(1.0);
+  glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
+  // Send our transformation to the currently bound shader, 
+  // in the "MVP" uniform
+  glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  // glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+  
+  // 1rst attribute buffer : vertices
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+  
+  // Draw the triangles !
+  glDrawArrays(GL_LINE_LOOP, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+  glDisableVertexAttribArray(0);
+}
+
+struct AABB {
+  glm::vec3 min, max;
+};
+
+bool TestCollisionAABB(glm::vec3* player_pos, glm::vec3 last_pos, AABB aabb, glm::vec3 triangle_points[]) {
+  int min_x = player_pos->x - 0.5f;
+  int max_x = player_pos->x + 0.5f;
+  int min_y = player_pos->y - 4.0f;
+  int max_y = player_pos->y + 4.0f;
+  int min_z = player_pos->z - 0.5f;
+  int max_z = player_pos->z + 0.5f;
+
+  int cube_min_x = aabb.min.x;
+  int cube_max_x = aabb.max.x;
+  int cube_min_y = aabb.min.y;
+  int cube_max_y = aabb.max.y;
+  int cube_min_z = aabb.min.z;
+  int cube_max_z = aabb.max.z;
+
+  if (max_x < cube_min_x) return false;
+  if (min_x > cube_max_x) return false;
+  if (max_y < cube_min_y) return false;
+  if (min_y > cube_max_y) return false;
+  if (max_z < cube_min_z) return false;
+  if (min_z > cube_max_z) return false;
+
+  AABB player_aabb;
+  player_aabb.min= glm::vec3(player_pos->x - 0.5f, player_pos->y - 4.0f, player_pos->z - 0.5f);
+  player_aabb.max = glm::vec3(player_pos->x + 0.5f, player_pos->y + 4.0f, player_pos->z + 0.5f);
+
+  glm::vec3 player_aabb_center = (player_aabb.min + player_aabb.max) * 0.5f;
+  glm::vec3 e = player_aabb.max - player_aabb_center;
+  glm::vec3 triangle_normal = glm::normalize(glm::cross(triangle_points[1] - triangle_points[0], triangle_points[2] - triangle_points[1]));
+  float d = triangle_normal.x * triangle_points[0].x + triangle_normal.y * triangle_points[0].y + triangle_normal.z * triangle_points[0].z;
+
+  float r = e.x * fabs(triangle_normal.x) + e.y * fabs(triangle_normal.y) + e.z * fabs(triangle_normal.z);
+  float s = glm::dot(triangle_normal, player_aabb_center) - d;
+
+  if (fabs(s) <= r) {
+    glm::vec3 new_pos = *player_pos + triangle_normal * (r - s);
+    if (glm::distance(new_pos, last_pos) > glm::distance(*player_pos, last_pos)) return false;
+
+    // if (triangle_normal.y > 0.0) over_ground = true;
+    if (triangle_normal.y > 0.65f) over_ground = true;
+    fall_speed.y += triangle_normal.y * 0.015f;
+    if (fall_speed.y > 0.0f) fall_speed.y = 0.0f;
+    
+    *player_pos = new_pos;
+    return true;
+    // intersection;
+  }
+  return false;
+  
+
+  // glm::vec3 aabb_center = (aabb.min + aabb.max) * 0.5f;
+  // glm::vec3 normal = last_pos - aabb_center;
+  // if (fabs(normal.x) >= fabs(normal.y) && fabs(normal.x) >= fabs(normal.z)) {
+  //   if (normal.x < 0.0f) player_pos->x = cube_min_x - 1.5f;
+  //   else player_pos->x = cube_max_x + 1.5f;
+  // }
+  // else if (fabs(normal.y) >= fabs(normal.x) && fabs(normal.y) >= fabs(normal.z)) {
+  //   if (fall_speed.y > 0.0f) {
+  //   } else {
+  //     if (normal.y < 0.0f) player_pos->y = cube_min_y - 5.0f;
+  //     else {
+  //       player_pos->y = cube_max_y + 5.0f;
+  //       fall_speed = glm::vec3(0, 0.0, 0);
+  //     }
+  //   }
+  // }
+  // else {
+  //   if (normal.z < 0.0f) player_pos->z = cube_min_z - 1.5f;
+  //   else player_pos->z = cube_max_z + 1.00001f;
+  // }
+
+  // return true;
+}
+
+void TestCollision(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, GLuint MatrixID, glm::vec3* player_pos, glm::vec3 last_pos) {
+  for (int i = 0; i < vertices.size(); i += 3) {
+    glm::vec3 points[3];
+    points[0] = vertices[i];
+    points[1] = vertices[i + 1];
+    points[2] = vertices[i + 2];
+    // DrawTriangle(ProjectionMatrix, ViewMatrix, MatrixID, points);
+
+    AABB aabb;
+    aabb.min = glm::vec3(999999.0f, 999999.0f, 999999.0f);
+    aabb.max = glm::vec3(-999999.0f, -999999.0f, -999999.0f);
+    for (int j = 0; j < 3; j++) {
+      if (points[j].x < aabb.min.x) aabb.min.x = points[j].x;
+      if (points[j].x > aabb.max.x) aabb.max.x = points[j].x;
+      if (points[j].y < aabb.min.y) aabb.min.y = points[j].y;
+      if (points[j].y > aabb.max.y) aabb.max.y = points[j].y;
+      if (points[j].z < aabb.min.z) aabb.min.z = points[j].z;
+      if (points[j].z > aabb.max.z) aabb.max.z = points[j].z;
+    }
+
+    // printf("aabb %f %f %f %f %f %f\n", aabb.min.x, aabb.min.y, aabb.min.z, aabb.max.x, aabb.max.y, aabb.max.z);
+    if (TestCollisionAABB(player_pos, last_pos, aabb, points)) {
+      // glm::vec3 x = glm::normalize(glm::cross(points[1] - points[0], points[2] - points[1]));
+      // *player_pos += x * 10.0f;
+    }
+  }
+}
 
 GLuint CreateMvpMatrix(GLuint programID, glm::mat4* MVP) {
   GLuint MatrixID = glGetUniformLocation(programID, "MVP");
@@ -95,9 +242,11 @@ int main() {
 
   // Create and compile our GLSL program from the shaders
   GLuint programID = LoadShaders("shaders/vshade", "shaders/fshade");
+  concurrentProgramID = LoadShaders("shaders/vshade2", "shaders/fshade2");
   
   glm::mat4 MVP;
   GLuint MatrixID = CreateMvpMatrix(programID, &MVP); 
+  GLuint ConcurrentMatrixID = CreateMvpMatrix(concurrentProgramID, &MVP); 
   GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
   GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
 
@@ -106,16 +255,8 @@ int main() {
 
   GLuint vertexbuffer, uvbuffer, normalbuffer, elementbuffer;
 
-  std::vector<glm::vec3> vertices;
-  std::vector<glm::vec2> uvs;
-  std::vector<glm::vec3> normals; // Won't be used at the moment.
   // bool res = loadOBJ("res/suzanne.obj", vertices, uvs, normals);
-  bool res = loadOBJ("res/basic_terrain.obj", vertices, uvs, normals);
-
-  std::vector<unsigned short> indices;
-  std::vector<glm::vec3> indexed_vertices;
-  std::vector<glm::vec2> indexed_uvs;
-  std::vector<glm::vec3> indexed_normals;
+  bool res = loadOBJ("res/basic_level2.obj", vertices, uvs, normals);
   indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
   
   glGenBuffers(1, &vertexbuffer);
@@ -145,6 +286,9 @@ int main() {
   spheres[0] = Sphere(-50.0f, 2.0f, -17.0f, 0.1f, 0.0f, 0.0f);
   spheres[1] = Sphere(50.0f, 2.0f, -17.0f, -0.1f, 0.0f,  0.0f);
 
+  Cube::SetModel("res/cube.obj");
+  Cube cube(0.0f, 2.0f, -20.0f);
+
   do {
     // Measure speed
     double currentTime = glfwGetTime();
@@ -159,7 +303,7 @@ int main() {
     // Render to the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(programID);
-    computeMatricesFromInputs();
+
     glm::mat4 ProjectionMatrix = getProjectionMatrix();
     glm::mat4 ViewMatrix = getViewMatrix();
     glm::mat4 ModelMatrix = glm::mat4(1.0);
@@ -228,7 +372,10 @@ int main() {
     	GL_UNSIGNED_SHORT,   // type
     	(void*)0           // element array buffer offset
     );
-    
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
 
     ////// Start of the rendering of the second object //////
     // for (int i = 0; i < 10; i++) {
@@ -269,33 +416,33 @@ int main() {
     // }
     ////// End of rendering of the second object //////
 
+    // spheres[0].Draw(ProjectionMatrix, ViewMatrix, MatrixID, ModelMatrixID);
+    // spheres[1].Draw(ProjectionMatrix, ViewMatrix, MatrixID, ModelMatrixID);
+    // spheres[0].UpdateMovement();
+    // spheres[1].UpdateMovement();
+    // spheres[0].DetectCollision(spheres[1]);
+
+    cube.Draw(ProjectionMatrix, ViewMatrix, MatrixID, ModelMatrixID);
+
+    glm::vec3 last_pos = position;
+    UpdatePlayerPos();
     UpdateGravity();
-    spheres[0].Draw(ProjectionMatrix, ViewMatrix, MatrixID, ModelMatrixID);
-    spheres[1].Draw(ProjectionMatrix, ViewMatrix, MatrixID, ModelMatrixID);
-    spheres[0].UpdateMovement();
-    spheres[1].UpdateMovement();
-    spheres[0].DetectCollision(spheres[1]);
 
-
-
-
-
-
-
-
-
-
-
-
-
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
+    // AABB aabb;
+    // aabb.min.x = cube.position.x - 1.0f;
+    // aabb.max.x = cube.position.x + 1.0f;
+    // aabb.min.y = cube.position.y - 1.0f;
+    // aabb.max.y = cube.position.y + 1.0f;
+    // aabb.min.z = cube.position.z - 1.0f;
+    // aabb.max.z = cube.position.z + 1.0f;
+    
+    // TestCollisionAABB(&position, last_pos, aabb);
+    TestCollision(ProjectionMatrix, ViewMatrix, ConcurrentMatrixID, &position, last_pos);
+    computeMatricesFromInputs();
 
     // Swap buffers
     glfwSwapBuffers(window);
     glfwPollEvents();
-  
   } // Check if the ESC key was pressed or the window was closed
   while (
     glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&

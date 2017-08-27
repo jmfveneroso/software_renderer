@@ -1,12 +1,11 @@
-#ifndef SPHERE_H
-#define SPHERE_H
+#ifndef CUBE_H
+#define CUBE_H
 
 #include <glm/gtx/norm.hpp>
 
-class Sphere {
+class Cube {
  public:
    glm::vec3 position;
-   glm::vec3 velocity;
 
    static std::vector<glm::vec3> indexed_vertices;
    static std::vector<glm::vec2> indexed_uvs;
@@ -14,10 +13,10 @@ class Sphere {
    static std::vector<unsigned short> indices; 
    static GLuint vertexbuffer, uvbuffer, normalbuffer, elementbuffer;
 
-   Sphere() : position(0.0f, 0.0f, 0.0f) {}
+   Cube() : position(0.0f, 0.0f, 0.0f) {}
 
-   Sphere(float x, float y, float z, float vx, float vy, float vz) : 
-     position(x, y, z), velocity(vx, vy, vz) {
+   Cube(float x, float y, float z) : 
+     position(x, y, z) {
    }
 
    static void SetModel(const char filename[]) {
@@ -76,29 +75,60 @@ class Sphere {
      glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, (void*)0);
    }
 
-   void DetectCollision(Sphere& sphere) {
-     float radius_distance_squared = 4.0f;
-     float center_distance = glm::length2(position - sphere.position);
+   bool TestCollision(glm::vec3* player_pos, glm::vec3 last_pos) {
+     int min_x = player_pos->x - 1.0f;
+     int max_x = player_pos->x + 1.0f;
+     int min_y = player_pos->y - 4.0f;
+     int max_y = player_pos->y + 4.0f;
+     int min_z = player_pos->z - 1.0f;
+     int max_z = player_pos->z + 1.0f;
 
-     if (center_distance < radius_distance_squared) {
-       sphere.velocity = -sphere.velocity;
-       velocity = -velocity;
-     } else {
+     int cube_min_x = this->position.x - 1.0f;
+     int cube_max_x = this->position.x + 1.0f;
+     int cube_min_y = this->position.y - 1.0f;
+     int cube_max_y = this->position.y + 1.0f;
+     int cube_min_z = this->position.z - 1.0f;
+     int cube_max_z = this->position.z + 1.0f;
+
+     if (max_x < cube_min_x) return false;
+     if (min_x > cube_max_x) return false;
+     if (max_y < cube_min_y) return false;
+     if (min_y > cube_max_y) return false;
+     if (max_z < cube_min_z) return false;
+     if (min_z > cube_max_z) return false;
+
+
+     glm::vec3 normal = last_pos - this->position;
+     if (fabs(normal.x) >= fabs(normal.y) && fabs(normal.x) >= fabs(normal.z)) {
+       if (normal.x < 0.0f) player_pos->x = cube_min_x - 2.0f;
+       else player_pos->x = cube_max_x + 2.0f;
      }
-   }
+     else if (fabs(normal.y) >= fabs(normal.x) && fabs(normal.y) >= fabs(normal.z)) {
+       if (fall_speed.y > 0.0f) {
+       } else {
+         if (normal.y < 0.0f) player_pos->y = cube_min_y - 5.0f;
+         else {
+           player_pos->y = cube_max_y + 5.0f;
+           fall_speed = glm::vec3(0, 0.0, 0);
+         }
+       }
+     }
+     else {
+       if (normal.z < 0.0f) player_pos->z = cube_min_z - 2.0f;
+       else player_pos->z = cube_max_z + 1.00001f;
+     }
 
-   void UpdateMovement() {
-     position += velocity;
+     return true;
    }
 };
 
-std::vector<glm::vec3> Sphere::indexed_vertices = std::vector<glm::vec3>();
-std::vector<glm::vec2> Sphere::indexed_uvs = std::vector<glm::vec2>();
-std::vector<glm::vec3> Sphere::indexed_normals = std::vector<glm::vec3>(); 
-std::vector<unsigned short> Sphere::indices = std::vector<unsigned short>(); 
-GLuint Sphere::vertexbuffer = 0;
-GLuint Sphere::uvbuffer = 0;
-GLuint Sphere::normalbuffer = 0;
-GLuint Sphere::elementbuffer = 0;
+std::vector<glm::vec3> Cube::indexed_vertices = std::vector<glm::vec3>();
+std::vector<glm::vec2> Cube::indexed_uvs = std::vector<glm::vec2>();
+std::vector<glm::vec3> Cube::indexed_normals = std::vector<glm::vec3>(); 
+std::vector<unsigned short> Cube::indices = std::vector<unsigned short>(); 
+GLuint Cube::vertexbuffer = 0;
+GLuint Cube::uvbuffer = 0;
+GLuint Cube::normalbuffer = 0;
+GLuint Cube::elementbuffer = 0;
 
 #endif
