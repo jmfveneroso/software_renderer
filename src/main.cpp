@@ -24,6 +24,7 @@ using namespace glm;
 #include "vbo_indexer.h"
 #include "sphere.h"
 #include "cube.h"
+#include "render_object.h"
 
 GLuint concurrentProgramID;
 std::vector<glm::vec3> vertices;
@@ -117,30 +118,6 @@ bool TestCollisionAABB(glm::vec3* player_pos, glm::vec3 last_pos, AABB aabb, glm
     // intersection;
   }
   return false;
-  
-
-  // glm::vec3 aabb_center = (aabb.min + aabb.max) * 0.5f;
-  // glm::vec3 normal = last_pos - aabb_center;
-  // if (fabs(normal.x) >= fabs(normal.y) && fabs(normal.x) >= fabs(normal.z)) {
-  //   if (normal.x < 0.0f) player_pos->x = cube_min_x - 1.5f;
-  //   else player_pos->x = cube_max_x + 1.5f;
-  // }
-  // else if (fabs(normal.y) >= fabs(normal.x) && fabs(normal.y) >= fabs(normal.z)) {
-  //   if (fall_speed.y > 0.0f) {
-  //   } else {
-  //     if (normal.y < 0.0f) player_pos->y = cube_min_y - 5.0f;
-  //     else {
-  //       player_pos->y = cube_max_y + 5.0f;
-  //       fall_speed = glm::vec3(0, 0.0, 0);
-  //     }
-  //   }
-  // }
-  // else {
-  //   if (normal.z < 0.0f) player_pos->z = cube_min_z - 1.5f;
-  //   else player_pos->z = cube_max_z + 1.00001f;
-  // }
-
-  // return true;
 }
 
 void TestCollision(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, GLuint MatrixID, glm::vec3* player_pos, glm::vec3 last_pos) {
@@ -175,7 +152,7 @@ GLuint CreateMvpMatrix(GLuint programID, glm::mat4* MVP) {
   GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
   // Projection matrix.
-  glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+  glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 2000.0f);
 
   glm::mat4 View = glm::lookAt(
     glm::vec3(4, 3, 3), // Camera position in World Space.
@@ -242,6 +219,7 @@ int main() {
 
   // Create and compile our GLSL program from the shaders
   GLuint programID = LoadShaders("shaders/vshade", "shaders/fshade");
+  GLuint skyProgramID = LoadShaders("shaders/vshade", "shaders/fshade_sky");
   concurrentProgramID = LoadShaders("shaders/vshade2", "shaders/fshade2");
   
   glm::mat4 MVP;
@@ -250,13 +228,14 @@ int main() {
   GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
   GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
 
-  GLuint Texture = loadBMP_custom("textures/dirt.bmp");
+  GLuint Texture = loadBMP_custom("textures/medium_terrain.bmp");
   GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
   GLuint vertexbuffer, uvbuffer, normalbuffer, elementbuffer;
 
   // bool res = loadOBJ("res/suzanne.obj", vertices, uvs, normals);
-  bool res = loadOBJ("res/basic_level2.obj", vertices, uvs, normals);
+  // bool res = loadOBJ("res/basic_level.obj", vertices, uvs, normals);
+  bool res = loadOBJ("res/medium_terrain.obj", vertices, uvs, normals);
   indexVBO(vertices, uvs, normals, indices, indexed_vertices, indexed_uvs, indexed_normals);
   
   glGenBuffers(1, &vertexbuffer);
@@ -286,6 +265,8 @@ int main() {
   spheres[0] = Sphere(-50.0f, 2.0f, -17.0f, 0.1f, 0.0f, 0.0f);
   spheres[1] = Sphere(50.0f, 2.0f, -17.0f, -0.1f, 0.0f,  0.0f);
 
+  RenderObject sky_dome("res/skydome.obj", "textures/skydome.bmp", skyProgramID);
+
   Cube::SetModel("res/cube.obj");
   Cube cube(0.0f, 2.0f, -20.0f);
 
@@ -302,27 +283,30 @@ int main() {
 
     // Render to the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(programID);
 
     glm::mat4 ProjectionMatrix = getProjectionMatrix();
     glm::mat4 ViewMatrix = getViewMatrix();
     glm::mat4 ModelMatrix = glm::mat4(1.0);
     glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
+    glm::vec3 lightPos = glm::vec3(0,200,0);
+    glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+
+    sky_dome.position = position;
+    sky_dome.Draw(ProjectionMatrix, ViewMatrix, MatrixID, ModelMatrixID);
+
+    glUseProgram(programID);
     // Send our transformation to the currently bound shader, 
     // in the "MVP" uniform
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
     
-    glm::vec3 lightPos = glm::vec3(0,100,0);
-    glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
-
     // Bind our texture in Texture Unit 0
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, Texture);
     // Set our "myTextureSampler" sampler to use Texture Unit 0
-    glUniform1i(TextureID, 0);
+    // glUniform1i(TextureID, 0);
 
     // 1rst attribute buffer : vertices
     glEnableVertexAttribArray(0);
