@@ -272,7 +272,7 @@ int main() {
   spheres[1] = Sphere(50.0f, 2.0f, -17.0f, -0.1f, 0.0f,  0.0f);
 
   // RenderObject sky_dome("res/skydome.obj", "textures/skydome.bmp", "textures/normal.bmp", "textures/specular.bmp", skyProgramID);
-  RenderObject sky_dome("res/skydome.obj", "textures/skydome.bmp", "textures/specular_orange.bmp", "textures/specular_orange.bmp", normalProgramID);
+  RenderObject sky_dome("res/skydome.obj", "textures/skydome.bmp", "textures/normal.bmp", "textures/specular_orange.bmp", normalProgramID);
 
   Cube::SetModel("res/cube.obj");
   Cube cube(0.0f, 2.0f, -20.0f);
@@ -302,7 +302,7 @@ int main() {
     glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
     sky_dome.position = position;
-    sky_dome.Draw(ProjectionMatrix, ViewMatrix, ModelView3x3Matrix, MatrixID, ViewMatrixID, ModelMatrixID, ModelView3x3MatrixID);
+    sky_dome.Draw(ProjectionMatrix, ViewMatrix);
 
     glUseProgram(programID);
     // Send our transformation to the currently bound shader, 
