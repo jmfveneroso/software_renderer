@@ -20,6 +20,7 @@ using namespace glm;
 #include "shaders.h"
 #include "bitmap.h"
 #include "controls.h"
+#include "tangentspace.h"
 #include "objloader.h"
 #include "vbo_indexer.h"
 #include "sphere.h"
@@ -220,16 +221,21 @@ int main() {
   // Create and compile our GLSL program from the shaders
   GLuint programID = LoadShaders("shaders/vshade", "shaders/fshade");
   GLuint skyProgramID = LoadShaders("shaders/vshade", "shaders/fshade_sky");
+  GLuint normalProgramID = LoadShaders("shaders/vshade_normals", "shaders/fshade_normals");
   concurrentProgramID = LoadShaders("shaders/vshade2", "shaders/fshade2");
   
   glm::mat4 MVP;
-  GLuint MatrixID = CreateMvpMatrix(programID, &MVP); 
+  // GLuint MatrixID = CreateMvpMatrix(programID, &MVP); 
+  GLuint MatrixID = glGetUniformLocation(programID, "MVP");
   GLuint ConcurrentMatrixID = CreateMvpMatrix(concurrentProgramID, &MVP); 
   GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
   GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
+  GLuint ModelView3x3MatrixID = glGetUniformLocation(programID, "MV3x3");
 
   GLuint Texture = loadBMP_custom("textures/medium_terrain.bmp");
-  GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
+  GLuint TextureID  = glGetUniformLocation(programID, "DiffuseTextureSampler");
+  GLuint NormalTextureID  = glGetUniformLocation(programID, "NormalTextureSampler");
+  GLuint SpecularTextureID  = glGetUniformLocation(programID, "SpecularTextureSampler");
 
   GLuint vertexbuffer, uvbuffer, normalbuffer, elementbuffer;
 
@@ -265,7 +271,8 @@ int main() {
   spheres[0] = Sphere(-50.0f, 2.0f, -17.0f, 0.1f, 0.0f, 0.0f);
   spheres[1] = Sphere(50.0f, 2.0f, -17.0f, -0.1f, 0.0f,  0.0f);
 
-  RenderObject sky_dome("res/skydome.obj", "textures/skydome.bmp", skyProgramID);
+  // RenderObject sky_dome("res/skydome.obj", "textures/skydome.bmp", "textures/normal.bmp", "textures/specular.bmp", skyProgramID);
+  RenderObject sky_dome("res/skydome.obj", "textures/skydome.bmp", "textures/specular_orange.bmp", "textures/specular_orange.bmp", normalProgramID);
 
   Cube::SetModel("res/cube.obj");
   Cube cube(0.0f, 2.0f, -20.0f);
@@ -287,13 +294,15 @@ int main() {
     glm::mat4 ProjectionMatrix = getProjectionMatrix();
     glm::mat4 ViewMatrix = getViewMatrix();
     glm::mat4 ModelMatrix = glm::mat4(1.0);
+    glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
+    glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
     glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
     glm::vec3 lightPos = glm::vec3(0,200,0);
     glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
     sky_dome.position = position;
-    sky_dome.Draw(ProjectionMatrix, ViewMatrix, MatrixID, ModelMatrixID);
+    sky_dome.Draw(ProjectionMatrix, ViewMatrix, ModelView3x3Matrix, MatrixID, ViewMatrixID, ModelMatrixID, ModelView3x3MatrixID);
 
     glUseProgram(programID);
     // Send our transformation to the currently bound shader, 
@@ -301,6 +310,7 @@ int main() {
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+    glUniformMatrix3fv(ModelView3x3MatrixID, 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
     
     // Bind our texture in Texture Unit 0
     glActiveTexture(GL_TEXTURE0);
