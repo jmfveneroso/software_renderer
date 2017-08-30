@@ -222,6 +222,7 @@ int main() {
   GLuint programID = LoadShaders("shaders/vshade", "shaders/fshade");
   GLuint skyProgramID = LoadShaders("shaders/vshade", "shaders/fshade_sky");
   GLuint normalProgramID = LoadShaders("shaders/vshade_normals", "shaders/fshade_normals");
+  GLuint waterProgramID = LoadShaders("shaders/vshade_water", "shaders/fshade_water");
   concurrentProgramID = LoadShaders("shaders/vshade2", "shaders/fshade2");
   
   glm::mat4 MVP;
@@ -273,6 +274,7 @@ int main() {
 
   // RenderObject sky_dome("res/skydome.obj", "textures/skydome.bmp", "textures/normal.bmp", "textures/specular.bmp", skyProgramID);
   RenderObject sky_dome("res/skydome.obj", "textures/skydome.bmp", "textures/normal.bmp", "textures/specular_orange.bmp", normalProgramID);
+  RenderObject water("res/water.obj", "textures/skydome.bmp", "textures/normal.bmp", "textures/specular_orange.bmp", waterProgramID);
 
   Cube::SetModel("res/cube.obj");
   Cube cube(0.0f, 2.0f, -20.0f);
@@ -303,6 +305,7 @@ int main() {
 
     sky_dome.position = position;
     sky_dome.Draw(ProjectionMatrix, ViewMatrix);
+    water.Draw(ProjectionMatrix, ViewMatrix);
 
     glUseProgram(programID);
     // Send our transformation to the currently bound shader, 
