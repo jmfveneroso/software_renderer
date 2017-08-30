@@ -12,6 +12,7 @@ out vec2 UV;
 out vec3 Position_worldspace;
 out vec3 EyeDirection_cameraspace;
 out vec3 LightDirection_cameraspace;
+out vec3 Normal_cameraspace;
 
 out vec3 LightDirection_tangentspace;
 out vec3 EyeDirection_tangentspace;
@@ -23,13 +24,17 @@ uniform mat4 M;
 uniform mat3 MV3x3;
 uniform vec3 LightPosition_worldspace;
 
+uniform vec4 plane;
+
 void main(){
 
-	// Output position of the vertex, in clip space : MVP * position
-	gl_Position =  MVP * vec4(vertexPosition_modelspace,1);
-	
 	// Position of the vertex, in worldspace : M * position
 	Position_worldspace = (M * vec4(vertexPosition_modelspace,1)).xyz;
+
+        gl_ClipDistance[0] = dot(vec4(Position_worldspace, 1.0), plane);
+	
+	// Output position of the vertex, in clip space : MVP * position
+	gl_Position = MVP * vec4(vertexPosition_modelspace,1);
 	
 	// Vector that goes from the vertex to the camera, in camera space.
 	// In camera space, the camera is at the origin (0,0,0).
@@ -40,8 +45,10 @@ void main(){
 	vec3 LightPosition_cameraspace = ( V * vec4(LightPosition_worldspace,1)).xyz;
 	LightDirection_cameraspace = LightPosition_cameraspace + EyeDirection_cameraspace;
 	
+	Normal_cameraspace = ( V * M * vec4(vertexNormal_modelspace,0)).xyz; 
+
 	// UV of the vertex. No special space for this one.
-	UV = vertexUV;
+	UV = vertexUV; 
 	
 	// model to camera = ModelView
 	vec3 vertexTangent_cameraspace = MV3x3 * vertexTangent_modelspace;

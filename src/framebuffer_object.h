@@ -1,13 +1,9 @@
-#ifndef RENDER_OBJECT_H
-#define RENDER_OBJECT_H
+#ifndef FRAMEBUFFER_OBJECT_H
+#define FRAMEBUFFER_OBJECT_H
 
 #include <glm/gtx/norm.hpp>
 
-struct AABB {
-  glm::vec3 min, max;
-};
-
-class RenderObject {
+class GuiRenderObject {
   std::vector<glm::vec3> vertices_;
   std::vector<glm::vec3> indexed_vertices;
   std::vector<glm::vec2> indexed_uvs;
@@ -24,22 +20,18 @@ class RenderObject {
   GLuint SpecularTexture_;
   GLuint SpecularTextureID_;
   GLuint programID_;
-  GLuint plane_id_;
 
   GLuint LightID_;
   GLuint MatrixID_;
   GLuint ViewMatrixID_;
   GLuint ModelMatrixID_;
   GLuint ModelView3x3MatrixID_;
-  GLuint use_normals_id_;
-  bool use_normals_;
-  vec4 plane_;
 
  public:
   glm::vec3 position;
 
   RenderObject() {}
-  RenderObject(const std::string& model, const std::string& texture, const std::string& normal_texture, const std::string& specular_texture, GLuint programID, bool use_normals) {
+  RenderObject(const std::string& model, const std::string& texture, const std::string& normal_texture, const std::string& specular_texture, GLuint programID) {
     programID_ = programID;
     LoadModel(model.c_str());
     Texture_ = loadBMP_custom(texture.c_str());
@@ -54,14 +46,7 @@ class RenderObject {
     ViewMatrixID_ = glGetUniformLocation(programID, "V");
     ModelMatrixID_ = glGetUniformLocation(programID, "M");
     ModelView3x3MatrixID_ = glGetUniformLocation(programID, "MV3x3");
-    use_normals_id_ = glGetUniformLocation(programID, "use_normals");
-    plane_id_ = glGetUniformLocation(programID, "plane");
-    use_normals_ = use_normals;
-
-    plane_ = vec4(0, -1, 0, 10000);
   }
-
-  void SetClipPlane(vec4 clip_plane) { plane_ = clip_plane; }
 
   void LoadModel(const char filename[]) {
     std::vector<glm::vec2> uvs;
@@ -122,13 +107,9 @@ class RenderObject {
     glUniformMatrix4fv(ViewMatrixID_, 1, GL_FALSE, &ViewMatrix[0][0]);
     glUniformMatrix3fv(ModelView3x3MatrixID_, 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
 
-    glUniform4fv(plane_id_, 1, (float*) &plane_);
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, Texture_);
     glUniform1i(TextureID_, 0);
-
-    glUniform1i(use_normals_id_, use_normals_);
 
     // Bind our normal texture in Texture Unit 1
     glActiveTexture(GL_TEXTURE1);
