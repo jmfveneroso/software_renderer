@@ -1,0 +1,3 @@
+/Users/joaomateusdefreitasveneroso/Code/software_renderer/build/CMakeFiles/rebuild_cache.dir
+/Users/joaomateusdefreitasveneroso/Code/software_renderer/build/CMakeFiles/edit_cache.dir
+/Users/joaomateusdefreitasveneroso/Code/software_renderer/build/CMakeFiles/main.dir

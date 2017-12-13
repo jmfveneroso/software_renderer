@@ -12,6 +12,7 @@ class Water {
   GLuint quad_programID;
   GLuint quad_vertexbuffer;
   GLuint topleftID;
+  GLuint DepthMapID_;
   glm::vec2 topleft;
 
  public:
@@ -23,6 +24,12 @@ class Water {
     // The texture we're going to render to
     glGenTextures(1, &renderedTexture);
     glBindTexture(GL_TEXTURE_2D, renderedTexture);
+
+    // LINUX.
+    // glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, windowWidth, windowHeight, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+    // MAC.
+    
     glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, windowWidth, windowHeight, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
     
     // Poor filtering
@@ -40,7 +47,7 @@ class Water {
     // Alternative : Depth texture. Slower, but you can sample it later in your shader
     glGenTextures(1, &depthTexture);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT24, 1024, 768, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, 1024, 768, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -62,11 +69,17 @@ class Water {
 
     // The fullscreen quad's FBO
     static const GLfloat g_quad_vertex_buffer_data[] = { 
-      0.0f, 0.0f, 0.0f,
-      1.0f, 0.0f, 0.0f,
-      0.0f, 1.0f, 0.0f,
-      0.0f, 1.0f, 0.0f,
-      1.0f, 0.0f, 0.0f,
+      // 0.0f, 0.0f, 0.0f,
+      // 1.0f, 0.0f, 0.0f,
+      // 0.0f, 1.0f, 0.0f,
+      // 0.0f, 1.0f, 0.0f,
+      // 1.0f, 0.0f, 0.0f,
+      // 1.0f, 1.0f, 0.0f,
+      -1.0f, -1.0f, 0.0f,
+      1.0f, -1.0f, 0.0f,
+      -1.0f, 1.0f, 0.0f,
+      -1.0f, 1.0f, 0.0f,
+      1.0f, -1.0f, 0.0f,
       1.0f, 1.0f, 0.0f,
     };
 
@@ -78,9 +91,11 @@ class Water {
     quad_programID = LoadShaders("shaders/vshade_static_screen", "shaders/fshade_static_screen");
     texID = glGetUniformLocation(quad_programID, "renderedTexture");
     topleftID = glGetUniformLocation(quad_programID, "topleft");
+    DepthMapID_  = glGetUniformLocation(quad_programID, "depthMap");
   }
 
   GLuint GetTexture() { return renderedTexture; }
+  GLuint GetDepthTexture() { return depthTexture; }
 
   GLuint GetFramebuffer() {
     return FramebufferName;
@@ -91,6 +106,10 @@ class Water {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, renderedTexture);
     glUniform1i(texID, 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glUniform1i(DepthMapID_, 1);
+
 
     glUniform2fv(topleftID, 1, (float*) &topleft);
     glEnableVertexAttribArray(0);

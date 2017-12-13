@@ -16,6 +16,7 @@ uniform mat4 MV;
 uniform vec3 LightPosition_worldspace;
 
 void main(){
+        color = vec3(1.0, 0, 0);
 
 	// Light emission properties
 	// You probably want to put them as uniforms
@@ -53,10 +54,10 @@ void main(){
 	
 	color = 
 		// Ambient : simulates indirect lighting
-		MaterialAmbientColor +
+		MaterialAmbientColor;
 		// Diffuse : "color" of the object
 		// MaterialDiffuseColor * LightColor * LightPower * cosTheta / (distance*distance) +
-		MaterialDiffuseColor * LightColor * LightPower * cosTheta / (distance*distance);
+		// MaterialDiffuseColor * LightColor * LightPower * cosTheta / (distance*distance);
 		// Specular : reflective highlight, like a mirror
 		// MaterialSpecularColor * LightColor * LightPower * pow(cosAlpha,5) / (distance*distance);
 

@@ -2,10 +2,14 @@
 #define RENDER_OBJECT_H
 
 #include <glm/gtx/norm.hpp>
+#include "controls.h"
 
 struct AABB {
   glm::vec3 min, max;
 };
+
+extern bool over_ground;
+extern glm::vec3 fall_speed;
 
 class RenderObject {
   std::vector<glm::vec3> vertices_;
@@ -25,6 +29,7 @@ class RenderObject {
   GLuint SpecularTextureID_;
   GLuint programID_;
   GLuint plane_id_;
+  GLuint CameraPositionID_;
 
   GLuint LightID_;
   GLuint MatrixID_;
@@ -32,7 +37,9 @@ class RenderObject {
   GLuint ModelMatrixID_;
   GLuint ModelView3x3MatrixID_;
   GLuint use_normals_id_;
+  GLuint water_fog_id_;
   bool use_normals_;
+  bool water_fog_;
   vec4 plane_;
 
  public:
@@ -48,6 +55,8 @@ class RenderObject {
     NormalTextureID_  = glGetUniformLocation(programID, "NormalTextureSampler");
     SpecularTexture_ = loadBMP_custom(specular_texture.c_str());
     SpecularTextureID_  = glGetUniformLocation(programID, "SpecularTextureSampler");
+    CameraPositionID_ = glGetUniformLocation(programID, "cameraPosition");
+    water_fog_id_ = glGetUniformLocation(programID, "water_fog");
 
     LightID_ = glGetUniformLocation(programID, "LightPosition_worldspace");
     MatrixID_ = glGetUniformLocation(programID, "MVP");
@@ -57,11 +66,13 @@ class RenderObject {
     use_normals_id_ = glGetUniformLocation(programID, "use_normals");
     plane_id_ = glGetUniformLocation(programID, "plane");
     use_normals_ = use_normals;
+    water_fog_ = false;
 
     plane_ = vec4(0, -1, 0, 10000);
   }
 
   void SetClipPlane(vec4 clip_plane) { plane_ = clip_plane; }
+  void SetWaterFog(bool water_fog) { water_fog_ = water_fog; }
 
   void LoadModel(const char filename[]) {
     std::vector<glm::vec2> uvs;
@@ -106,7 +117,7 @@ class RenderObject {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
   }
 
-  void Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix) {
+  void Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
     glUseProgram(programID_);
 
     glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position);
@@ -114,7 +125,7 @@ class RenderObject {
     glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
     glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
-    glm::vec3 lightPos = glm::vec3(0,200,0);
+    glm::vec3 lightPos = glm::vec3(0,2000,0);
     glUniform3f(LightID_, lightPos.x, lightPos.y, lightPos.z);
 
     glUniformMatrix4fv(MatrixID_, 1, GL_FALSE, &MVP[0][0]);
@@ -129,6 +140,7 @@ class RenderObject {
     glUniform1i(TextureID_, 0);
 
     glUniform1i(use_normals_id_, use_normals_);
+    glUniform1i(water_fog_id_, water_fog_);
 
     // Bind our normal texture in Texture Unit 1
     glActiveTexture(GL_TEXTURE1);
@@ -183,8 +195,8 @@ class RenderObject {
   bool TestCollisionAABB(glm::vec3* player_pos, glm::vec3 last_pos, AABB aabb, glm::vec3 triangle_points[]) {
     int min_x = player_pos->x - 0.5f;
     int max_x = player_pos->x + 0.5f;
-    int min_y = player_pos->y - 4.0f;
-    int max_y = player_pos->y + 4.0f;
+    int min_y = player_pos->y - 20.0f;
+    int max_y = player_pos->y + 1.0f;
     int min_z = player_pos->z - 0.5f;
     int max_z = player_pos->z + 0.5f;
   
@@ -203,8 +215,8 @@ class RenderObject {
     if (min_z > cube_max_z) return false;
   
     AABB player_aabb;
-    player_aabb.min= glm::vec3(player_pos->x - 0.5f, player_pos->y - 4.0f, player_pos->z - 0.5f);
-    player_aabb.max = glm::vec3(player_pos->x + 0.5f, player_pos->y + 4.0f, player_pos->z + 0.5f);
+    player_aabb.min= glm::vec3(player_pos->x - 0.5f, player_pos->y - 20.0f, player_pos->z - 0.5f);
+    player_aabb.max = glm::vec3(player_pos->x + 0.5f, player_pos->y + 1.0f, player_pos->z + 0.5f);
   
     glm::vec3 player_aabb_center = (player_aabb.min + player_aabb.max) * 0.5f;
     glm::vec3 e = player_aabb.max - player_aabb_center;

@@ -9,6 +9,7 @@ in vec3 Normal_cameraspace;
 
 in vec3 LightDirection_tangentspace;
 in vec3 EyeDirection_tangentspace;
+in float visibility;
 
 // Ouput data
 layout(location = 0) out vec3 color;
@@ -22,13 +23,15 @@ uniform mat4 M;
 uniform mat3 MV3x3;
 uniform vec3 LightPosition_worldspace;
 uniform bool use_normals;
+uniform bool water_fog;
+uniform vec3 cameraPosition;
 
 void main(){
 
 	// Light emission properties
 	// You probably want to put them as uniforms
 	vec3 LightColor = vec3(1,1,1);
-	float LightPower = 40000.0;
+	float LightPower = 5000000.0;
 	
 	// Material properties
 	vec3 MaterialDiffuseColor = texture( DiffuseTextureSampler, UV ).rgb;
@@ -78,7 +81,7 @@ void main(){
 	//  - Looking into the reflection -> 1
 	//  - Looking elsewhere -> < 1
 	float cosAlpha = clamp( dot( E,R ), 0,1 );
-  
+
         if (use_normals) {	
           color = 
           	// Ambient : simulates indirect lighting
@@ -91,5 +94,10 @@ void main(){
 	  color = 
 		MaterialAmbientColor +
 		MaterialDiffuseColor * LightColor * LightPower * cosTheta / (distance*distance);
+        }
+
+        if (water_fog) {
+        // if (cameraPosition.y < 11.21303 && !is_reflection) {
+          color = mix(vec3(0.0, 0.2, 0.3), color, visibility);
         }
 }

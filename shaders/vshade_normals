@@ -13,6 +13,7 @@ out vec3 Position_worldspace;
 out vec3 EyeDirection_cameraspace;
 out vec3 LightDirection_cameraspace;
 out vec3 Normal_cameraspace;
+out float visibility;
 
 out vec3 LightDirection_tangentspace;
 out vec3 EyeDirection_tangentspace;
@@ -25,6 +26,9 @@ uniform mat3 MV3x3;
 uniform vec3 LightPosition_worldspace;
 
 uniform vec4 plane;
+
+const float density = 0.03;
+const float gradient = 1.5;
 
 void main(){
 
@@ -63,7 +67,9 @@ void main(){
 
 	LightDirection_tangentspace = TBN * LightDirection_cameraspace;
 	EyeDirection_tangentspace =  TBN * EyeDirection_cameraspace;
-	
-	
+
+	float v_distance = length(vertexPosition_cameraspace.xyz);
+        visibility = exp(-pow((v_distance * density), gradient));
+        visibility = clamp(visibility, 0.0, 1.0);
 }
 
