@@ -1,3 +1,4 @@
+#include <cstring>
 #include "objloader.h"
 
 bool loadOBJ(

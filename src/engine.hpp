@@ -4,15 +4,14 @@
 #include <vector>
 #include <fstream>
 #include <string>
-using namespace std;
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
-using namespace glm;
 
+using namespace glm;
 #include "shaders.h"
 #include "bitmap.h"
 #include "tangentspace.h"
