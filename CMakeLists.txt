@@ -30,7 +30,12 @@ endif()
 set(
   SRC
   src/main.cpp 
+  src/window.cpp 
+  src/input.cpp 
+  src/player.cpp 
   src/engine.cpp 
+  src/entity_manager.cpp 
+  src/renderer.cpp
   src/controls.cpp 
   src/vbo_indexer.cpp 
   src/bitmap.cpp 

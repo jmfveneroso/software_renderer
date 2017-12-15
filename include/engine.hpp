@@ -11,8 +11,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <exception>
+#include <memory>
 
 using namespace glm;
+#include "window.h"
+#include "renderer.h"
+#include "input.hpp"
+
 #include "shaders.h"
 #include "bitmap.h"
 #include "tangentspace.h"
@@ -20,21 +25,17 @@ using namespace glm;
 #include "vbo_indexer.h"
 #include "render_object.h"
 #include "water.h"
-#include "renderer.h"
+#include "config.h"
 
 namespace Sibyl {
 
 class Engine {
-  Renderer renderer_;
-  GLFWwindow* window_;
-  const char* window_name_;
-  int window_width_, window_height_;
-
-  void Clean();
-  void CreateWindow();
+  std::shared_ptr<Input> input_;
+  std::shared_ptr<Window> window_;
+  std::shared_ptr<Renderer> renderer_;
 
  public:
-  Engine();
+  Engine(std::shared_ptr<Window>, std::shared_ptr<Renderer>, std::shared_ptr<Input>);
 
   int Run();
 };

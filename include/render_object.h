@@ -1,8 +1,24 @@
-#ifndef RENDER_OBJECT_H
-#define RENDER_OBJECT_H
+#ifndef _RENDER_OBJECT_H_
+#define _RENDER_OBJECT_H_
 
+#include <vector>
+#include <fstream>
+#include <string>
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 #include <glm/gtx/norm.hpp>
+
+using namespace glm;
 #include "controls.h"
+#include "shaders.h"
+#include "bitmap.h"
+#include "tangentspace.h"
+#include "objloader.h"
+#include "vbo_indexer.h"
 
 struct AABB {
   glm::vec3 min, max;
@@ -10,6 +26,12 @@ struct AABB {
 
 extern bool over_ground;
 extern glm::vec3 fall_speed;
+
+class IEntity {
+ public:
+  
+};
+
 
 class RenderObject {
   std::vector<glm::vec3> vertices_;
@@ -19,6 +41,7 @@ class RenderObject {
   std::vector<glm::vec3> indexed_tangents;
   std::vector<glm::vec3> indexed_bitangents;
   std::vector<unsigned short> indices; 
+
   GLuint vertexbuffer, uvbuffer, normalbuffer, elementbuffer;
   GLuint tangentbuffer, bitangentbuffer;
   GLuint Texture_;
@@ -46,7 +69,14 @@ class RenderObject {
   glm::vec3 position;
 
   RenderObject() {}
-  RenderObject(const std::string& model, const std::string& texture, const std::string& normal_texture, const std::string& specular_texture, GLuint programID, bool use_normals) {
+  RenderObject(
+    const std::string& model, 
+    const std::string& texture, 
+    const std::string& normal_texture, 
+    const std::string& specular_texture, 
+    GLuint programID, 
+    bool use_normals
+  ) {
     programID_ = programID;
     LoadModel(model.c_str());
     Texture_ = loadBMP_custom(texture.c_str());
@@ -246,7 +276,6 @@ class RenderObject {
       points[0] = vertices_[i];
       points[1] = vertices_[i + 1];
       points[2] = vertices_[i + 2];
-      // DrawTriangle(ProjectionMatrix, ViewMatrix, MatrixID, points);
   
       AABB aabb;
       aabb.min = glm::vec3(999999.0f, 999999.0f, 999999.0f);
@@ -271,7 +300,6 @@ class RenderObject {
     glDeleteBuffers(1, &elementbuffer);
     glDeleteBuffers(1, &tangentbuffer);
     glDeleteBuffers(1, &bitangentbuffer);
-    glDeleteProgram(programID_);
     glDeleteTextures(1, &Texture_);
     glDeleteTextures(1, &NormalTexture_);
     glDeleteTextures(1, &SpecularTexture_);

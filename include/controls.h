@@ -1,5 +1,5 @@
-#ifndef CONTROLS_H
-#define CONTROLS_H
+#ifndef _CONTROLS_H_
+#define _CONTROLS_H_
 
 #include <GLFW/glfw3.h>
 #include <glm/gtx/norm.hpp>

@@ -51,7 +51,8 @@ class Container {
 
   template<class T, class I, class ...Args>
   void RegisterInstance() {
-    items_.erase(std::type_index(typeid(I)));
+    std::type_index type = std::type_index(typeid(I));
+    items_.erase(type);
     auto factory = [=]() {
       static DiItem singleton;
       static bool is_created = false;
@@ -59,7 +60,7 @@ class Container {
       is_created = true;
       return singleton = CreateFactory<T, I, Args...>()();
     };
-    items_.insert(make_pair(std::type_index(typeid(I)), factory));
+    items_.insert(make_pair(type, factory));
   }
 
   static Container& Get() {

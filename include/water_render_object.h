@@ -216,7 +216,6 @@ class WaterRenderObject {
     glDeleteBuffers(1, &elementbuffer);
     glDeleteBuffers(1, &tangentbuffer);
     glDeleteBuffers(1, &bitangentbuffer);
-    glDeleteProgram(programID_);
   }
 };
 
