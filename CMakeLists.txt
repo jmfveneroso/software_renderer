@@ -1,9 +1,10 @@
 cmake_minimum_required (VERSION 3.0)
 project (Renderer)
+set (CMAKE_CXX_STANDARD 11)
 
 find_package(OpenGL REQUIRED)
 
-include_directories(src)
+include_directories(include)
 
 if (APPLE) 
   set(ALL_LIBS

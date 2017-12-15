@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
+#include <exception>
 
 using namespace glm;
 #include "shaders.h"
@@ -21,16 +22,23 @@ using namespace glm;
 #include "water.h"
 #include "renderer.h"
 
+namespace Sibyl {
+
 class Engine {
+  Renderer renderer_;
   GLFWwindow* window_;
   const char* window_name_;
   int window_width_, window_height_;
 
- public:
-  Engine() : window_name_("Test"), window_width_(600), window_height_(400) {}
+  void Clean();
+  void CreateWindow();
 
-  int CreateWindow();
+ public:
+  Engine();
+
   int Run();
 };
+
+} // End of namespace.
 
 #endif

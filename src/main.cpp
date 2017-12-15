@@ -1,6 +1,8 @@
-#include "engine.hpp"
+#include "bootstrapper.hpp"
 
 int main() {
-  Engine engine;
-  return engine.Run();
+  Bootstrapper::Bootstrap();
+  static IoC::Container& container = IoC::Container::Get();
+  container.Resolve<Engine>()->Run();
+  return 0;
 }

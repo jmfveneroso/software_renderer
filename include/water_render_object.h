@@ -12,6 +12,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
+#define WAVE_SPEED 0.005f
+
 using namespace glm;
 
 class WaterRenderObject {
@@ -48,7 +50,6 @@ class WaterRenderObject {
 
  public:
   static float move_factor;
-  static const float WAVE_SPEED = 0.005f;
 
   glm::vec3 position;
 
