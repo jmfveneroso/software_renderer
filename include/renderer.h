@@ -28,8 +28,8 @@ class Renderer {
   std::shared_ptr<EntityManager> entity_manager_;
   Camera camera;
   int windowWidth, windowHeight;
-  RenderObject terrain;
-  RenderObject sky_dome;
+  std::shared_ptr<IEntity> terrain;
+  std::shared_ptr<IEntity> sky_dome;
   WaterRenderObject water;
   FrameBuffer reflection_water;
   FrameBuffer refraction_water;

@@ -5,11 +5,13 @@ namespace Sibyl {
 Engine::Engine(
   std::shared_ptr<Window> window,
   std::shared_ptr<Renderer> renderer,
-  std::shared_ptr<Input> input
-) : window_(window), renderer_(renderer), input_(input) {
+  std::shared_ptr<Input> input,
+  std::shared_ptr<Physics> physics
+) : window_(window), renderer_(renderer), 
+    input_(input), physics_(physics) {
 }
 
-int Engine::Run() {
+void Engine::Run() {
   renderer_->CreateScene(window_->width(), window_->height());
 
   double last_time = glfwGetTime();
@@ -27,6 +29,12 @@ int Engine::Run() {
     }
 
     renderer_->DrawScene(window_->window());
+
+    glm::vec3 last_pos = position;
+    UpdatePlayerPos(window_->window());
+    UpdateGravity(window_->window());
+    physics_->Collide(&position, last_pos);
+
     window_->SwapBuffers();
 
   // Check if the ESC key was pressed or the window was closed

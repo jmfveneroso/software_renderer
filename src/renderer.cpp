@@ -82,16 +82,16 @@ void Renderer::Render(int windowWidth, int windowHeight, GLuint framebuffer, vec
     glDisable(GL_BLEND);
   }
 
-  sky_dome.position = camera.position;
-  sky_dome.position.y = 1.0;
-  if (position.y > WATER_HEIGHT) 
-    sky_dome.position.y = -50.0;
+  glm::vec3 sky_position = camera.position;
+  sky_position.y = 1.0;
+  sky_dome->set_position(sky_position);
 
   ProjectionMatrix = glm::perspective(glm::radians(initialFoV), 4.0f / 3.0f, 0.1f, 10000.0f);
-  sky_dome.SetClipPlane(plane);
-  sky_dome.Draw(ProjectionMatrix, ViewMatrix, camera.position);
-  terrain.SetClipPlane(plane);
-  terrain.Draw(ProjectionMatrix, ViewMatrix, camera.position);
+  // sky_dome.SetClipPlane(plane);
+  sky_dome->Draw(ProjectionMatrix, ViewMatrix, camera.position);
+
+  // terrain.SetClipPlane(plane);
+  terrain->Draw(ProjectionMatrix, ViewMatrix, camera.position);
 }
 
 void Renderer::SetReflectionCamera(float water_height) {
@@ -140,10 +140,10 @@ void Renderer::DrawScene(GLFWwindow* window) {
 
   plane = vec4(0, -1, 0, 10000);
 
-  if (camera.position.y < water_height)
-    terrain.SetWaterFog(true);
-  else
-    terrain.SetWaterFog(false);
+  // if (camera.position.y < water_height)
+  //   terrain.SetWaterFog(true);
+  // else
+  //   terrain.SetWaterFog(false);
 
   Render(windowWidth, windowHeight, screen_fbo.GetFramebuffer(), plane, true);
 
@@ -154,14 +154,12 @@ void Renderer::DrawScene(GLFWwindow* window) {
 
   computeMatricesFromInputs();
   glm::vec3 last_pos = position;
-  UpdatePlayerPos(window);
-  UpdateGravity(window);
-  terrain.TestCollision(&position, last_pos);
+  // terrain.TestCollision(&position, last_pos);
 }
 
 void Renderer::Clean() {
-  terrain.Clean();
-  sky_dome.Clean();
+  // terrain->Clean();
+  // sky_dome->Clean();
   water.Clean();
 }
 

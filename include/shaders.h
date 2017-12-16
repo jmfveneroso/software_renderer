@@ -4,11 +4,40 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <map>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
+
+namespace Sibyl {
+
+enum UniformType { 
+  red, 
+  green, 
+  blue 
+};
+
+class Shader {
+  GLuint program_id_;
+  std::map<std::string, GLuint> glsl_variables_;
+  std::vector<int> buffer_slots_;
+  int available_texture_slot_;
+
+ public:
+  Shader(const std::string&, const std::string&, const std::string&);
+  void Load(const std::string&, const std::string&, const std::string&);
+  void CreateUniform(const std::string&);
+  GLuint GetUniformId(const std::string&);
+  void BindTexture(const std::string&, const GLuint&);
+  void BindBuffer(const GLuint&, int, int dimension = 3);
+  void Clear();
+
+  GLuint program_id() { return program_id_; }
+};
+
+} // End of namespace.
 
 GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_path);
 

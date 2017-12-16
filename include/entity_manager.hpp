@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include "shaders.h"
 #include "render_object.h"
 #include "water.h"
 
@@ -23,10 +24,11 @@ struct DynamicTexture {
   glm::vec2 top_left;
 };
 
-typedef std::map<std::string, RenderObject> EntityMap;
+// typedef std::map<std::string, RenderObject> EntityMap;
+typedef std::map< std::string, std::shared_ptr<IEntity> > EntityMap;
 typedef std::map<std::string, FrameBuffer> FrameBufferMap;
 typedef std::map<std::string, GLuint> TextureMap;
-typedef std::map<std::string, GLuint> ShaderMap;
+typedef std::map<std::string, Shader> ShaderMap;
 
 class EntityManager {
   TextureMap textures_;
@@ -35,8 +37,8 @@ class EntityManager {
   EntityMap entities_;
 
   void LoadShader(const std::string&, const std::string&, const std::string&);
-  void LoadTexture(const std::string&, const std::string&);
-  void LoadEntity(
+  GLuint LoadTexture(const std::string&, const std::string&);
+  void LoadSolid(
     const std::string&, const std::string&, const std::string&,
     const std::string&, const std::string&, const std::string&
   );
@@ -47,7 +49,7 @@ class EntityManager {
 
   EntityMap entities() { return entities_; };
   void Initialize();
-  RenderObject GetEntity(const std::string&);
+  std::shared_ptr<IEntity> GetEntity(const std::string&);
   void Clean();
 };
 

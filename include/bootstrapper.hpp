@@ -2,6 +2,7 @@
 #define _BOOTSTRAPPER_HPP_
 
 #include "ioc_container.hpp"
+#include "physics.hpp"
 #include "engine.hpp"
 #include "player.hpp"
 #include "entity_manager.hpp"
@@ -19,8 +20,9 @@ class Bootstrapper {
     container.RegisterInstance<Input, Input, Window>();
     container.RegisterInstance<Player, Player>();
     container.RegisterInstance<EntityManager, EntityManager>();
+    container.RegisterInstance<Physics, Physics, EntityManager>();
     container.RegisterInstance<Renderer, Renderer, EntityManager>();
-    container.RegisterInstance<Engine, Engine, Window, Renderer, Input>();
+    container.RegisterInstance<Engine, Engine, Window, Renderer, Input, Physics>();
   }
 };
 

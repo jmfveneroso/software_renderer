@@ -34,6 +34,8 @@ set(
   src/input.cpp 
   src/player.cpp 
   src/engine.cpp 
+  src/physics.cpp 
+  src/shaders.cpp 
   src/entity_manager.cpp 
   src/renderer.cpp
   src/controls.cpp 
