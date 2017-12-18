@@ -2,6 +2,7 @@
 #define __PHYSICS_HPP__
 
 #include "entity_manager.hpp"
+#include "player.hpp"
 
 namespace Sibyl {
 
@@ -11,13 +12,18 @@ struct AABB {
 
 class Physics {
   std::shared_ptr<EntityManager> entity_manager_;
+  std::shared_ptr<Player> player_;
+
+  bool TestCollisionAABB(glm::vec3 last_pos, AABB aabb, glm::vec3 triangle_points[]);
+  void TestCollision(glm::vec3 last_pos, std::shared_ptr<IEntity> entity);
 
  public:
-  Physics(std::shared_ptr<EntityManager>);
+  Physics(
+    std::shared_ptr<EntityManager>,
+    std::shared_ptr<Player>
+  );
 
-  bool TestCollisionAABB(glm::vec3* player_pos, glm::vec3 last_pos, AABB aabb, glm::vec3 triangle_points[]);
-  void TestCollision(glm::vec3* player_pos, glm::vec3 last_pos, std::shared_ptr<IEntity> entity);
-  void Collide(glm::vec3*, glm::vec3);
+  void UpdateForces();
 };
 
 } // End of namespace.

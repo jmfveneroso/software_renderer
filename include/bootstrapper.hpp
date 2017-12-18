@@ -17,11 +17,11 @@ class Bootstrapper {
   static void Bootstrap() {
     static IoC::Container& container = IoC::Container::Get();
     container.RegisterInstance<Window, Window>();
-    container.RegisterInstance<Input, Input, Window>();
     container.RegisterInstance<Player, Player>();
+    container.RegisterInstance<Input, Input, Window, Player>();
     container.RegisterInstance<EntityManager, EntityManager>();
-    container.RegisterInstance<Physics, Physics, EntityManager>();
-    container.RegisterInstance<Renderer, Renderer, Window, EntityManager>();
+    container.RegisterInstance<Physics, Physics, EntityManager, Player>();
+    container.RegisterInstance<Renderer, Renderer, Window, EntityManager, Player>();
     container.RegisterInstance<Engine, Engine, Window, Renderer, Input, Physics>();
   }
 };

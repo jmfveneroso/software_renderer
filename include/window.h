@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <exception>
 #include <memory>
+#include <iostream>
 
 #include "config.h"
 

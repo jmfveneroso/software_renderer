@@ -7,7 +7,7 @@
 #include "entity.hpp"
 #include "frame_buffer.hpp"
 #include "shaders.h"
-#include "controls.h"
+#include "player.hpp"
 
 #define WATER_HEIGHT 0.0 
 
@@ -27,6 +27,8 @@ struct Camera {
 class Renderer {
   std::shared_ptr<Window> window_;
   std::shared_ptr<EntityManager> entity_manager_;
+  std::shared_ptr<Player> player_;
+
   Camera camera;
   std::vector< std::shared_ptr<IEntity> > render_entities_;
 
@@ -37,7 +39,11 @@ class Renderer {
   void PopRenderEntity();
 
  public:
-  Renderer(std::shared_ptr<Window>, std::shared_ptr<EntityManager>);
+  Renderer(
+    std::shared_ptr<Window>, 
+    std::shared_ptr<EntityManager>,
+    std::shared_ptr<Player>
+  );
 
   void ComputeMatrices();
   void DrawScene(int, int, const std::string&);

@@ -21,7 +21,9 @@ struct DiItem {
 class Container {
   using FactoryFn = std::function<DiItem()>;
   typedef std::unordered_map<std::type_index, FactoryFn> ObjectMap;
+  typedef std::unordered_map<std::type_index, DiItem> SingletonMap;
   ObjectMap items_;
+  SingletonMap singletons_;
 
  public:
   template<class T>
@@ -53,12 +55,15 @@ class Container {
   void RegisterInstance() {
     std::type_index type = std::type_index(typeid(I));
     items_.erase(type);
+
+    singletons_.insert(make_pair(type, CreateFactory<T, I, Args...>()()));
     auto factory = [=]() {
-      static DiItem singleton;
-      static bool is_created = false;
-      if (is_created) return singleton;
-      is_created = true;
-      return singleton = CreateFactory<T, I, Args...>()();
+      auto it = singletons_.find(typeid(T));
+      if (it == singletons_.end()) throw;
+
+      DiItem item = it->second;
+      if (typeid(T) != *item.type) throw;
+      return item;
     };
     items_.insert(make_pair(type, factory));
   }

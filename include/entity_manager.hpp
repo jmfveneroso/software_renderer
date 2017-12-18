@@ -4,8 +4,10 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <memory>
 #include "shaders.h"
 #include "entity.hpp"
+#include "texture.hpp"
 #include "frame_buffer.hpp"
 
 namespace Sibyl {

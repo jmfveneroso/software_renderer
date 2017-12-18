@@ -4,38 +4,43 @@ namespace Sibyl {
 
 Renderer::Renderer(
   std::shared_ptr<Window> window, 
-  std::shared_ptr<EntityManager> entity_manager
+  std::shared_ptr<EntityManager> entity_manager,
+  std::shared_ptr<Player> player
 ) : window_(window),
-    entity_manager_(entity_manager) {
+    entity_manager_(entity_manager),
+    player_(player) {
 }
 
 void Renderer::ComputeMatrices() {
+  float v_angle = player_->vertical_angle();
+  float h_angle = player_->horizontal_angle();
+
   glm::vec3 direction(
-    cos(verticalAngle) * sin(horizontalAngle), 
-    sin(verticalAngle),
-    cos(verticalAngle) * cos(horizontalAngle)
+    cos(v_angle) * sin(h_angle), 
+    sin(v_angle),
+    cos(v_angle) * cos(h_angle)
   );
   
   glm::vec3 right = glm::vec3(
-    sin(horizontalAngle - 3.14f/2.0f) * 2, 
+    sin(h_angle - 3.14f/2.0f) * 2, 
     0,
-    cos(horizontalAngle - 3.14f/2.0f) * 2
+    cos(h_angle - 3.14f/2.0f) * 2
   );
 
   glm::vec3 front = glm::vec3(
-    cos(verticalAngle) * sin(horizontalAngle) * 2, 
+    cos(v_angle) * sin(h_angle) * 2, 
     0,
-    cos(verticalAngle) * cos(horizontalAngle) * 2
+    cos(v_angle) * cos(h_angle) * 2
   );
   
   glm::vec3 up = glm::cross(right, direction);
 
-  camera.position = position;
+  camera.position = player_->position();
   camera.direction = direction;
   camera.up = up;
 
   // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 2000 units
-  ProjectionMatrix = glm::perspective(glm::radians(initialFoV), 4.0f / 3.0f, 0.1f, 10000.0f);
+  ProjectionMatrix = glm::perspective(glm::radians(player_->fov()), 4.0f / 3.0f, 0.1f, 10000.0f);
 
   // Camera matrix
   ViewMatrix = glm::lookAt(
@@ -59,7 +64,7 @@ void Renderer::DrawScene(int width, int height, const std::string& frame_buffer_
 void Renderer::SetReflectionCamera(float water_height) {
   float distance = 2 * (camera.position.y - water_height);
   camera.position.y -= distance;
-  camera.direction = glm::reflect(camera.direction, vec3(0, 1, 0));
+  camera.direction = glm::reflect(camera.direction, glm::vec3(0, 1, 0));
   camera.up = -camera.up;
 
   // Camera matrix

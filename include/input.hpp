@@ -7,25 +7,21 @@
 
 using namespace glm;
 #include "window.h"
+#include "player.hpp"
 #include "config.h"
 
 namespace Sibyl {
 
 class Input {
   std::shared_ptr<Window> window_;
-  bool over_ground_;
-  glm::vec3 position_;
-  float horizontal_angle_;
-  float vertical_angle_;
-  float initial_fov_;
-  float speed_;
-  glm::vec3 fall_speed_;
-  float mouse_speed_;
+  std::shared_ptr<Player> player_;
 
  public:
-  Input(std::shared_ptr<Window>);
+  Input(
+    std::shared_ptr<Window>,
+    std::shared_ptr<Player>
+  );
 
-  void UpdateGravity();
   void ProcessInput();
 };
 

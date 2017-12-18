@@ -37,13 +37,10 @@ set(
   src/entity.cpp 
   src/physics.cpp 
   src/shaders.cpp 
+  src/frame_buffer.cpp 
   src/entity_manager.cpp 
   src/renderer.cpp
-  src/controls.cpp 
-  src/vbo_indexer.cpp 
-  src/bitmap.cpp 
-  src/objloader.cpp 
-  src/tangentspace.cpp 
+  src/texture.cpp 
   src/shaders.cpp
 )
 

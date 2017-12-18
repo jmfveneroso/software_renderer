@@ -10,9 +10,9 @@ GLuint EntityManager::LoadTexture(
   const std::string& name, 
   const std::string& texture_file_path
 ) {
-  GLuint texture_id = loadBMP_custom(texture_file_path.c_str());
-  textures_.insert(std::make_pair(name, texture_id));
-  return texture_id;
+  Texture texture = Texture(texture_file_path);
+  textures_.insert(std::make_pair(name, texture.texture_id()));
+  return texture.texture_id();
 }
 
 void EntityManager::CreateFrameBuffer(
@@ -60,9 +60,9 @@ void EntityManager::LoadSolid(
 }
 
 void EntityManager::Initialize() {
-  CreateFrameBuffer("reflection", 1000, 750, vec2( 0.0f,  0.0f));
-  CreateFrameBuffer("refraction", 1000, 750, vec2(-1.0f,  0.0f));
-  CreateFrameBuffer("screen",     1000, 750, vec2(-1.0f, -1.0f));
+  CreateFrameBuffer("reflection", 1000, 750, glm::vec2( 0.0f,  0.0f));
+  CreateFrameBuffer("refraction", 1000, 750, glm::vec2(-1.0f,  0.0f));
+  CreateFrameBuffer("screen",     1000, 750, glm::vec2(-1.0f, -1.0f));
 
   // Create and compile our GLSL program from the shaders.
   Shader shader = Shader("default", "shaders/vshade_normals", "shaders/fshade_normals");
@@ -109,12 +109,12 @@ void EntityManager::Initialize() {
   shaders_.insert(std::make_pair("water", shader));
 
   LoadSolid(
-    "terrain", "res/large_terrain.obj", "textures/large_terrain.bmp", 
+    "terrain", "res/terrain.obj", "textures/large_terrain.bmp", 
     "textures/normal.bmp", "textures/specular_orange.bmp", "default"
   );
 
    LoadSolid(
-    "sky", "res/skydome2.obj", "textures/skydome.bmp", 
+    "sky", "res/skydome.obj", "textures/skydome.bmp", 
     "textures/normal.bmp", "textures/specular_orange.bmp", "sky"
   );
 
@@ -126,7 +126,7 @@ void EntityManager::Initialize() {
     throw "Shader does not exist";
 
   std::shared_ptr<Water> water = std::make_shared<Water>(
-    "res/water2.obj", 
+    "res/water.obj", 
     it->second,
     diffuse_texture_id, 
     normal_texture_id, 
@@ -135,6 +135,21 @@ void EntityManager::Initialize() {
     frame_buffers_["refraction"]->GetDepthTexture()
   );
   entities_.insert(std::make_pair("water", water));
+
+  it = shaders_.find("default");
+  if (it == shaders_.end()) 
+    throw "Shader does not exist";
+
+  diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/dirt.bmp");
+  normal_texture_id = LoadTexture("normal_terrain", "textures/dirt.bmp");
+  GLuint specular_texture_id = LoadTexture("specular_terrain", "textures/specular.bmp");
+  std::shared_ptr<Terrain> terrain = std::make_shared<Terrain>(
+    it->second,
+    diffuse_texture_id, 
+    normal_texture_id,
+    specular_texture_id
+  );
+  entities_.insert(std::make_pair("pro_terrain", terrain));
 }
 
 std::shared_ptr<IEntity> EntityManager::GetEntity(const std::string& name) {
