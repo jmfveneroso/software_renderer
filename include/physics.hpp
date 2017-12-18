@@ -5,6 +5,10 @@
 
 namespace Sibyl {
 
+struct AABB {
+  glm::vec3 min, max;
+};
+
 class Physics {
   std::shared_ptr<EntityManager> entity_manager_;
 

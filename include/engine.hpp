@@ -24,8 +24,7 @@ using namespace glm;
 #include "tangentspace.h"
 #include "objloader.h"
 #include "vbo_indexer.h"
-#include "render_object.h"
-#include "water.h"
+#include "entity.hpp"
 #include "config.h"
 
 extern glm::vec3 position;

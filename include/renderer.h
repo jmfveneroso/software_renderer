@@ -2,10 +2,10 @@
 #define _RENDERER_H_
 
 #include <memory>
+#include "window.h"
 #include "entity_manager.hpp"
-#include "water_render_object.h"
-#include "render_object.h"
-#include "water.h"
+#include "entity.hpp"
+#include "frame_buffer.hpp"
 #include "shaders.h"
 #include "controls.h"
 
@@ -25,26 +25,24 @@ struct Camera {
 };
 
 class Renderer {
+  std::shared_ptr<Window> window_;
   std::shared_ptr<EntityManager> entity_manager_;
   Camera camera;
-  int windowWidth, windowHeight;
-  std::shared_ptr<IEntity> terrain;
-  std::shared_ptr<IEntity> sky_dome;
-  WaterRenderObject water;
-  FrameBuffer reflection_water;
-  FrameBuffer refraction_water;
-  FrameBuffer screen_fbo;
+  std::vector< std::shared_ptr<IEntity> > render_entities_;
+
   glm::mat4 ProjectionMatrix;
   glm::mat4 ViewMatrix;
 
- public:
-  Renderer(std::shared_ptr<EntityManager>);
+  void PushRenderEntity(const std::string&);
+  void PopRenderEntity();
 
-  void CreateScene(int windowWidth_, int windowHeight_);
-  void computeMatricesFromInputs();
-  void Render(int windowWidth, int windowHeight, GLuint framebuffer, vec4 plane, bool complete = false);
+ public:
+  Renderer(std::shared_ptr<Window>, std::shared_ptr<EntityManager>);
+
+  void ComputeMatrices();
+  void DrawScene(int, int, const std::string&);
   void SetReflectionCamera(float water_height);
-  void DrawScene(GLFWwindow* window);
+  void Render();
   void Clean();
 };
 

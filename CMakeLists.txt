@@ -34,6 +34,7 @@ set(
   src/input.cpp 
   src/player.cpp 
   src/engine.cpp 
+  src/entity.cpp 
   src/physics.cpp 
   src/shaders.cpp 
   src/entity_manager.cpp 
@@ -41,7 +42,6 @@ set(
   src/controls.cpp 
   src/vbo_indexer.cpp 
   src/bitmap.cpp 
-  src/water_render_object.cpp 
   src/objloader.cpp 
   src/tangentspace.cpp 
   src/shaders.cpp

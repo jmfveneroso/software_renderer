@@ -12,8 +12,6 @@ Engine::Engine(
 }
 
 void Engine::Run() {
-  renderer_->CreateScene(window_->width(), window_->height());
-
   double last_time = glfwGetTime();
   int nb_frames = 0;
   do {
@@ -28,7 +26,8 @@ void Engine::Run() {
       last_time += 1.0;
     }
 
-    renderer_->DrawScene(window_->window());
+    Water::UpdateMoveFactor(1.0f / 60.0f);
+    renderer_->Render();
 
     glm::vec3 last_pos = position;
     UpdatePlayerPos(window_->window());

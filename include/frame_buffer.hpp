@@ -1,5 +1,5 @@
-#ifndef _FRAMEBUFFER_H_
-#define _FRAMEBUFFER_H_
+#ifndef _FRAME_BUFFER_HPP_
+#define _FRAME_BUFFER_HPP_
 
 #include <iostream>
 #include <glm/gtx/norm.hpp>

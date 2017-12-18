@@ -5,28 +5,13 @@
 #include <string>
 #include <map>
 #include "shaders.h"
-#include "render_object.h"
-#include "water.h"
+#include "entity.hpp"
+#include "frame_buffer.hpp"
 
 namespace Sibyl {
 
-struct DynamicTexture {
-  int width, height;
-  GLuint framebuffer_name;
-  GLuint depth_render_buffer;
-  GLuint rendered_texture;
-  GLuint depth_texture;
-  GLuint texture_id;
-  GLuint quad_program_id;
-  GLuint quad_vertex_buffer;
-  GLuint top_left_id;
-  GLuint depth_map_id;
-  glm::vec2 top_left;
-};
-
-// typedef std::map<std::string, RenderObject> EntityMap;
 typedef std::map< std::string, std::shared_ptr<IEntity> > EntityMap;
-typedef std::map<std::string, FrameBuffer> FrameBufferMap;
+typedef std::map<std::string, std::shared_ptr<FrameBuffer> > FrameBufferMap;
 typedef std::map<std::string, GLuint> TextureMap;
 typedef std::map<std::string, Shader> ShaderMap;
 
@@ -50,6 +35,7 @@ class EntityManager {
   EntityMap entities() { return entities_; };
   void Initialize();
   std::shared_ptr<IEntity> GetEntity(const std::string&);
+  std::shared_ptr<FrameBuffer> GetFrameBuffer(const std::string&);
   void Clean();
 };
 

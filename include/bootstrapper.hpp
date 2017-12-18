@@ -21,7 +21,7 @@ class Bootstrapper {
     container.RegisterInstance<Player, Player>();
     container.RegisterInstance<EntityManager, EntityManager>();
     container.RegisterInstance<Physics, Physics, EntityManager>();
-    container.RegisterInstance<Renderer, Renderer, EntityManager>();
+    container.RegisterInstance<Renderer, Renderer, Window, EntityManager>();
     container.RegisterInstance<Engine, Engine, Window, Renderer, Input, Physics>();
   }
 };

@@ -2,26 +2,14 @@
 
 namespace Sibyl {
 
-Renderer::Renderer(std::shared_ptr<EntityManager> entity_manager)
-  : entity_manager_(entity_manager) {
+Renderer::Renderer(
+  std::shared_ptr<Window> window, 
+  std::shared_ptr<EntityManager> entity_manager
+) : window_(window),
+    entity_manager_(entity_manager) {
 }
 
-void Renderer::CreateScene(int windowWidth_, int windowHeight_) {
-  windowWidth = windowWidth_;
-  windowHeight= windowHeight_;
-
-  reflection_water = FrameBuffer(1000, 750, vec2(0.0f, 0.0f));
-  refraction_water = FrameBuffer(1000, 750, vec2(-1.0f, 0.0f));
-  screen_fbo       = FrameBuffer(1000, 750, vec2(-1.0f, -1.0f));
-
-  terrain = entity_manager_->GetEntity("terrain");
-  sky_dome = entity_manager_->GetEntity("sky");
-
-  GLuint waterProgramID = LoadShaders("shaders/vshade_water", "shaders/fshade_water");
-  water = WaterRenderObject("res/water2.obj", reflection_water.GetTexture(), refraction_water.GetTexture(), "textures/water_dudv.bmp", "textures/water_normal.bmp", waterProgramID, refraction_water.GetDepthTexture());
-}
-
-void Renderer::computeMatricesFromInputs () {
+void Renderer::ComputeMatrices() {
   glm::vec3 direction(
     cos(verticalAngle) * sin(horizontalAngle), 
     sin(verticalAngle),
@@ -46,10 +34,8 @@ void Renderer::computeMatricesFromInputs () {
   camera.direction = direction;
   camera.up = up;
 
-  float FoV = initialFoV; 
-  
   // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 2000 units
-  ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 3000.0f);
+  ProjectionMatrix = glm::perspective(glm::radians(initialFoV), 4.0f / 3.0f, 0.1f, 10000.0f);
 
   // Camera matrix
   ViewMatrix = glm::lookAt(
@@ -59,39 +45,15 @@ void Renderer::computeMatricesFromInputs () {
   );
 }
 
-void Renderer::Render(int windowWidth, int windowHeight, GLuint framebuffer, vec4 plane, bool complete) {
-  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-  glViewport(0, 0, windowWidth, windowHeight);
-
-  WaterRenderObject::UpdateMoveFactor(1.0f/60.0f);
-
-  // Render to the screen
-  if (camera.position.y < WATER_HEIGHT) {
-    glClearColor(0.0f, 0.2f, 0.3f, 0.0f);
-  } else {
-    glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
-  }
+void Renderer::DrawScene(int width, int height, const std::string& frame_buffer_name) {
+  GLuint frame_buffer = entity_manager_->GetFrameBuffer(frame_buffer_name)->GetFramebuffer();
+  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+  glViewport(0, 0, width, height);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (complete) {
-    water.SetClipPlane(plane);
-
-    glDisable(GL_CULL_FACE);
-    water.Draw(ProjectionMatrix, ViewMatrix, camera.position);
-    glEnable(GL_CULL_FACE);
-    glDisable(GL_BLEND);
+  for (auto entity : render_entities_) {
+    entity->Draw(ProjectionMatrix, ViewMatrix, camera.position);
   }
-
-  glm::vec3 sky_position = camera.position;
-  sky_position.y = 1.0;
-  sky_dome->set_position(sky_position);
-
-  ProjectionMatrix = glm::perspective(glm::radians(initialFoV), 4.0f / 3.0f, 0.1f, 10000.0f);
-  // sky_dome.SetClipPlane(plane);
-  sky_dome->Draw(ProjectionMatrix, ViewMatrix, camera.position);
-
-  // terrain.SetClipPlane(plane);
-  terrain->Draw(ProjectionMatrix, ViewMatrix, camera.position);
 }
 
 void Renderer::SetReflectionCamera(float water_height) {
@@ -108,59 +70,45 @@ void Renderer::SetReflectionCamera(float water_height) {
   );
 }
 
-void Renderer::DrawScene(GLFWwindow* window) {
-  float water_height = WATER_HEIGHT;
+void Renderer::PushRenderEntity(const std::string& name) {
+  render_entities_.push_back(entity_manager_->GetEntity(name));
+}
 
-  // Reflection surface.
-  vec4 plane;
-  if (camera.position.y < water_height)
-    plane = vec4(0, -1, 0, water_height + 2.0f);
-  else
-    plane = vec4(0, 1, 0, -water_height + 1.0f);
+void Renderer::PopRenderEntity() {
+  render_entities_.pop_back();
+}
+
+void Renderer::Render() {
+  PushRenderEntity("terrain");
+  PushRenderEntity("sky");
+
+  glm::vec3 sky_position = camera.position;
+  sky_position.y = 0.0;
+  entity_manager_->GetEntity("sky")->set_position(sky_position);
 
   Camera old_camera = camera;
-  glm::mat4 OldProjectionMatrix = ProjectionMatrix;
-  SetReflectionCamera(water_height);
-  Render(1000, 750, reflection_water.GetFramebuffer(), plane);
+  SetReflectionCamera(WATER_HEIGHT);
+  DrawScene(1000, 750, "reflection");
   camera = old_camera;
 
-  ViewMatrix = glm::lookAt(
-    camera.position,                    // Camera is here
-    camera.position + camera.direction, // and looks here : at the same position, plus "direction"
-    camera.up                           // Head is up (set to 0,-1,0 to look upside-down)
-  );
-  ProjectionMatrix = OldProjectionMatrix;
+  ComputeMatrices();
+  DrawScene(1000, 750, "refraction");
 
-  if (camera.position.y < water_height)
-    plane = vec4(0, 1, 0, -water_height + 1.0f);
-  else
-    plane = vec4(0, -1, 0, water_height + 2.0f);
-
-  Render(1000, 750, refraction_water.GetFramebuffer(), plane);
-
-  plane = vec4(0, -1, 0, 10000);
-
-  // if (camera.position.y < water_height)
-  //   terrain.SetWaterFog(true);
-  // else
-  //   terrain.SetWaterFog(false);
-
-  Render(windowWidth, windowHeight, screen_fbo.GetFramebuffer(), plane, true);
+  PushRenderEntity("water");
+  DrawScene(window_->width(), window_->height(), "screen");
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, windowWidth*2, windowHeight*2);
+  glViewport(0, 0, window_->width() * 2, window_->height() * 2);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  screen_fbo.Draw();
+  entity_manager_->GetFrameBuffer("screen")->Draw();
 
-  computeMatricesFromInputs();
-  glm::vec3 last_pos = position;
-  // terrain.TestCollision(&position, last_pos);
+  PopRenderEntity();
+  PopRenderEntity();
+  PopRenderEntity();
 }
 
 void Renderer::Clean() {
-  // terrain->Clean();
-  // sky_dome->Clean();
-  water.Clean();
+  entity_manager_->Clean();
 }
 
 } // End of namespace.

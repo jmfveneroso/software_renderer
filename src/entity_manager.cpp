@@ -19,10 +19,8 @@ void EntityManager::CreateFrameBuffer(
   const std::string& name, int width, 
   int height, glm::vec2 top_left
 ) {
-  FrameBuffer fb = FrameBuffer(width, height, top_left);
+  std::shared_ptr<FrameBuffer> fb = std::make_shared<FrameBuffer>(width, height, top_left);
   frame_buffers_.insert(std::make_pair(name, fb));
-  textures_.insert(std::make_pair(name + ".texture", fb.GetTexture()));
-  textures_.insert(std::make_pair(name + ".depth_texture", fb.GetDepthTexture()));
 }
 
 void EntityManager::LoadShader(
@@ -66,8 +64,6 @@ void EntityManager::Initialize() {
   CreateFrameBuffer("refraction", 1000, 750, vec2(-1.0f,  0.0f));
   CreateFrameBuffer("screen",     1000, 750, vec2(-1.0f, -1.0f));
 
-  // water = WaterRenderObject("res/water2.obj", reflection_water.GetTexture(), refraction_water.GetTexture(), "textures/water_dudv.bmp", "textures/water_normal.bmp", waterProgramID, refraction_water.GetDepthTexture());
-
   // Create and compile our GLSL program from the shaders.
   Shader shader = Shader("default", "shaders/vshade_normals", "shaders/fshade_normals");
   shader.CreateUniform("DiffuseTextureSampler");
@@ -97,8 +93,20 @@ void EntityManager::Initialize() {
   shader.CreateUniform("plane");
   shaders_.insert(std::make_pair("sky", shader));
 
-  // LoadShader("sky", "shaders/vshade_normals", "shaders/fshade_sky");
-  // LoadShader("water", "shaders/vshade_water", "shaders/fshade_water");
+  shader = Shader("water", "shaders/vshade_water", "shaders/fshade_water");
+  shader.CreateUniform("ReflectionTextureSampler");
+  shader.CreateUniform("RefractionTextureSampler");
+  shader.CreateUniform("dudvMap");
+  shader.CreateUniform("normalMap");
+  shader.CreateUniform("depthMap");
+  shader.CreateUniform("LightPosition_worldspace");
+  shader.CreateUniform("MVP");
+  shader.CreateUniform("V");
+  shader.CreateUniform("M");
+  shader.CreateUniform("MV3x3");
+  shader.CreateUniform("moveFactor");
+  shader.CreateUniform("cameraPosition");
+  shaders_.insert(std::make_pair("water", shader));
 
   LoadSolid(
     "terrain", "res/large_terrain.obj", "textures/large_terrain.bmp", 
@@ -110,28 +118,52 @@ void EntityManager::Initialize() {
     "textures/normal.bmp", "textures/specular_orange.bmp", "sky"
   );
 
-  // LoadEntity(
-  //   "sky", "res/skydome2.obj", "textures/skydome.bmp", 
-  //   "textures/normal.bmp", "textures/specular_orange.bmp", "sky"
-  // );
+  GLuint diffuse_texture_id = LoadTexture("textures/water_dudv.bmp", "textures/water_dudv.bmp");
+  GLuint normal_texture_id = LoadTexture("textures/water_normal.bmp", "textures/water_normal.bmp");
 
-  // LoadEntity(
-  //   "water", "res/water2.obj", reflection_water.GetTexture(),
-  //   refraction_water.GetTexture(), "textures/water_dudv.bmp", "water",
-  //   refraction_water.GetDepthTexture()
-  // );
+  auto it = shaders_.find("water");
+  if (it == shaders_.end()) 
+    throw "Shader does not exist";
+
+  std::shared_ptr<Water> water = std::make_shared<Water>(
+    "res/water2.obj", 
+    it->second,
+    diffuse_texture_id, 
+    normal_texture_id, 
+    frame_buffers_["reflection"]->GetTexture(),
+    frame_buffers_["refraction"]->GetTexture(),
+    frame_buffers_["refraction"]->GetDepthTexture()
+  );
+  entities_.insert(std::make_pair("water", water));
 }
 
 std::shared_ptr<IEntity> EntityManager::GetEntity(const std::string& name) {
-  return entities_[name];
+  auto it = entities_.find(name);
+  if (it == entities_.end()) {
+    std::cout << name << std::endl;
+    throw "Entity does not exist";
+  }
+  return it->second;
+}
+
+std::shared_ptr<FrameBuffer> EntityManager::GetFrameBuffer(const std::string& name) {
+  auto it = frame_buffers_.find(name);
+  if (it == frame_buffers_.end()) {
+    std::cout << name << std::endl;
+    throw "Frame buffer does not exist";
+  }
+  return it->second;
 }
 
 void EntityManager::Clean() {
-  // for (auto shader_id : shaders_)
-  //   glDeleteProgram(shaders_[shader_id]);
+  for (auto it : shaders_)
+    glDeleteProgram(it.second.program_id());
 
-  // for (auto entity : entities_)
-  //   entities_[entity].Clean();
+  for (auto it : textures_)
+    glDeleteTextures(1, &it.second);
+
+  for (auto it : entities_)
+    it.second->Clean();
 }
 
 } // End of namespace.

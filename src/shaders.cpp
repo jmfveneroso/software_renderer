@@ -106,7 +106,6 @@ void Shader::CreateUniform(const std::string& name) {
     std::cout << name << std::endl;
     throw "Uniform already exists";
   }
-  std::cout << "Filho da puta " << name << std::endl;
 
   GLuint id = glGetUniformLocation(program_id_, name.c_str());
   glsl_variables_.insert(std::make_pair(name, id));
