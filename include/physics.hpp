@@ -16,6 +16,7 @@ class Physics {
 
   bool TestCollisionAABB(glm::vec3 last_pos, AABB aabb, glm::vec3 triangle_points[]);
   void TestCollision(glm::vec3 last_pos, std::shared_ptr<IEntity> entity);
+  void TestCollisionTerrain();
 
  public:
   Physics(

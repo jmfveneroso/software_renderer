@@ -42,6 +42,7 @@ set(
   src/renderer.cpp
   src/texture.cpp 
   src/shaders.cpp
+  src/mesh.cpp
 )
 
 add_executable(main ${SRC})

@@ -84,22 +84,24 @@ void Renderer::PopRenderEntity() {
 }
 
 void Renderer::Render() {
-  PushRenderEntity("terrain");
+  // PushRenderEntity("terrain");
   PushRenderEntity("sky");
 
   glm::vec3 sky_position = camera.position;
   sky_position.y = 0.0;
   entity_manager_->GetEntity("sky")->set_position(sky_position);
 
-  Camera old_camera = camera;
-  SetReflectionCamera(WATER_HEIGHT);
-  DrawScene(1000, 750, "reflection");
-  camera = old_camera;
+  // Camera old_camera = camera;
+  // SetReflectionCamera(WATER_HEIGHT);
+  // DrawScene(1000, 750, "reflection");
+  // camera = old_camera;
 
   ComputeMatrices();
-  DrawScene(1000, 750, "refraction");
+  // DrawScene(1000, 750, "refraction");
 
-  PushRenderEntity("water");
+  // PushRenderEntity("water");
+
+  PushRenderEntity("pro_terrain");
   DrawScene(window_->width(), window_->height(), "screen");
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -107,7 +109,8 @@ void Renderer::Render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   entity_manager_->GetFrameBuffer("screen")->Draw();
 
-  PopRenderEntity();
+  // PopRenderEntity();
+  // PopRenderEntity();
   PopRenderEntity();
   PopRenderEntity();
 }

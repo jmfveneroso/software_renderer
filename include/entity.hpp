@@ -4,78 +4,20 @@
 #include <vector>
 #include <fstream>
 #include <cstring>
-
+#include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/norm.hpp>
-
 #include "shaders.h"
+#include "mesh.hpp"
 #include "config.h"
-
-extern bool over_ground;
-extern glm::vec3 fall_speed;
 
 namespace Sibyl {
 
 class IEntity {
- protected:
-  bool LoadObj(
-    const char*, 
-    std::vector<glm::vec3>&, 
-    std::vector<glm::vec2>&,
-    std::vector<glm::vec3>&
-  );
-
-  void ComputeTangentBasis(
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec2>&,
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec3>&
-  );
-
-  bool IsNear(float, float);
-
-  bool GetSimilarVertexIndex( 
-    glm::vec3&, 
-    glm::vec2&, 
-    glm::vec3&, 
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec2>&,
-    std::vector<glm::vec3>&,
-    unsigned short&
-  );
-
-  void IndexVBO(
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec2>&,
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec3>&,
-    std::vector<unsigned short>&,
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec2>&,
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec3>&
-  );
-
-  void ComputeIndexedVertices(
-    std::vector<glm::vec3>&,
-    std::vector<glm::vec2>&,
-    std::vector<glm::vec3>&,
-    std::vector<unsigned short>& indices,
-    GLuint *vertex_buffer,
-    GLuint *uv_buffer,
-    GLuint *normal_buffer,
-    GLuint *tangent_buffer,
-    GLuint *bitangent_buffer,
-    GLuint *element_buffer
-  );
-
  public:
   ~IEntity() {}
 
@@ -87,19 +29,15 @@ class IEntity {
 
 class Solid : public IEntity {
  protected:
-  std::vector<glm::vec3> vertices_;
-  std::vector<unsigned short> indices_;
+  Mesh mesh_;
   glm::vec3 position_;
   Shader shader_;
-  GLuint vertex_buffer_;
-  GLuint uv_buffer_;
-  GLuint normal_buffer_;
-  GLuint tangent_buffer_;
-  GLuint bitangent_buffer_;
-  GLuint element_buffer_;
+
   GLuint diffuse_texture_id_;
   GLuint normal_texture_id_;
   GLuint specular_texture_id_;
+
+  void BindBuffers();
 
  public:
   Solid(
@@ -110,11 +48,10 @@ class Solid : public IEntity {
     GLuint specular_texture_id
   );
 
-  void LoadModel(const std::string& filename);
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Clean();
 
-  std::vector<glm::vec3> vertices() { return vertices_; }
+  std::vector<glm::vec3> vertices() { return mesh_.vertices(); }
   void set_position(glm::vec3 position) { position_ = position; }
 };
 
@@ -141,14 +78,29 @@ class Water : public Solid {
 };
 
 class Terrain : public IEntity {
+  Mesh mesh_;
   Shader shader_;
-  std::vector<unsigned short> indices_;
-  std::vector<glm::vec3> vertices_;
-  std::vector<glm::vec2> uvs_;
-  std::vector<glm::vec3> normals_;
+  glm::vec3 position_;
   GLuint diffuse_texture_id_;
   GLuint normal_texture_id_;
   GLuint specular_texture_id_;
+
+  std::vector<unsigned int> indices_;
+  std::vector<glm::vec3> indexed_vertices_;
+  std::vector<glm::vec2> indexed_uvs_;
+  std::vector<glm::vec3> indexed_normals_;
+  std::vector<glm::vec3> indexed_tangents_;
+  std::vector<glm::vec3> indexed_bitangents_;
+
+  GLuint vertex_buffer_;
+  GLuint uv_buffer_;
+  GLuint normal_buffer_;
+  GLuint tangent_buffer_;
+  GLuint bitangent_buffer_;
+  GLuint element_buffer_;
+
+  void CreateTiles();
+  unsigned int AddVertex(float, float, float, float);
 
  public:
   Terrain(
@@ -158,10 +110,10 @@ class Terrain : public IEntity {
     GLuint specular_texture_id
   );
 
-  std::vector<glm::vec3> vertices() { return vertices_; }
+  std::vector<glm::vec3> vertices() { return mesh_.vertices(); }
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void set_position(glm::vec3 v) {}
-  void Clean() {}
+  void Clean();
 };
 
 } // End of namespace.

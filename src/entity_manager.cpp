@@ -136,6 +136,8 @@ void EntityManager::Initialize() {
   );
   entities_.insert(std::make_pair("water", water));
 
+
+  // Procedural terrain.
   it = shaders_.find("default");
   if (it == shaders_.end()) 
     throw "Shader does not exist";
