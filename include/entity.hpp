@@ -13,6 +13,7 @@
 #include <glm/gtx/norm.hpp>
 #include "shaders.h"
 #include "mesh.hpp"
+#include "simplex_noise.hpp"
 #include "config.h"
 
 namespace Sibyl {
@@ -75,45 +76,6 @@ class Water : public Solid {
 
   static void UpdateMoveFactor(float);
   void Draw(glm::mat4, glm::mat4, glm::vec3);
-};
-
-class Terrain : public IEntity {
-  Mesh mesh_;
-  Shader shader_;
-  glm::vec3 position_;
-  GLuint diffuse_texture_id_;
-  GLuint normal_texture_id_;
-  GLuint specular_texture_id_;
-
-  std::vector<unsigned int> indices_;
-  std::vector<glm::vec3> indexed_vertices_;
-  std::vector<glm::vec2> indexed_uvs_;
-  std::vector<glm::vec3> indexed_normals_;
-  std::vector<glm::vec3> indexed_tangents_;
-  std::vector<glm::vec3> indexed_bitangents_;
-
-  GLuint vertex_buffer_;
-  GLuint uv_buffer_;
-  GLuint normal_buffer_;
-  GLuint tangent_buffer_;
-  GLuint bitangent_buffer_;
-  GLuint element_buffer_;
-
-  void CreateTiles();
-  unsigned int AddVertex(float, float, float, float);
-
- public:
-  Terrain(
-    Shader shader, 
-    GLuint diffuse_texture_id, 
-    GLuint normal_texture_id, 
-    GLuint specular_texture_id
-  );
-
-  std::vector<glm::vec3> vertices() { return mesh_.vertices(); }
-  void Draw(glm::mat4, glm::mat4, glm::vec3);
-  void set_position(glm::vec3 v) {}
-  void Clean();
 };
 
 } // End of namespace.

@@ -43,6 +43,8 @@ set(
   src/texture.cpp 
   src/shaders.cpp
   src/mesh.cpp
+  src/terrain.cpp
+  src/simplex_noise.cpp
 )
 
 add_executable(main ${SRC})

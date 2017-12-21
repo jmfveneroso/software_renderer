@@ -40,7 +40,7 @@ void Renderer::ComputeMatrices() {
   camera.up = up;
 
   // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 2000 units
-  ProjectionMatrix = glm::perspective(glm::radians(player_->fov()), 4.0f / 3.0f, 0.1f, 10000.0f);
+  ProjectionMatrix = glm::perspective(glm::radians(player_->fov()), 4.0f / 3.0f, 0.1f, 100000.0f);
 
   // Camera matrix
   ViewMatrix = glm::lookAt(
@@ -84,8 +84,14 @@ void Renderer::PopRenderEntity() {
 }
 
 void Renderer::Render() {
+  static int frames = 0;
+  if (++frames % 60 == 0) {
+    entity_manager_->GetTerrain()->UpdateQuads();
+    // entity_manager_->GetTerrain()->GenerateTerrain();
+  }
+
   // PushRenderEntity("terrain");
-  PushRenderEntity("sky");
+  // PushRenderEntity("sky");
 
   glm::vec3 sky_position = camera.position;
   sky_position.y = 0.0;
@@ -111,7 +117,7 @@ void Renderer::Render() {
 
   // PopRenderEntity();
   // PopRenderEntity();
-  PopRenderEntity();
+  // PopRenderEntity();
   PopRenderEntity();
 }
 

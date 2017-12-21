@@ -31,11 +31,11 @@ void main(){
 	// Light emission properties
 	// You probably want to put them as uniforms
 	vec3 LightColor = vec3(1,1,1);
-	float LightPower = 5000000.0;
+	float LightPower = 1.0;
 	
 	// Material properties
 	vec3 MaterialDiffuseColor = texture( DiffuseTextureSampler, UV ).rgb;
-	vec3 MaterialAmbientColor = vec3(0.1,0.1,0.1) * MaterialDiffuseColor;
+	vec3 MaterialAmbientColor = vec3(0.5,0.5,0.5) * MaterialDiffuseColor;
 	vec3 MaterialSpecularColor = texture( SpecularTextureSampler, UV ).rgb * 0.3;
 
 	// Distance to the light
@@ -58,6 +58,7 @@ void main(){
         } else {
 	  l = normalize( LightDirection_cameraspace );
         }
+	l = normalize(vec3(0, 1, 0));
 
 	// Cosine of the angle between the normal and the light direction, 
 	// clamped above 0
@@ -93,7 +94,8 @@ void main(){
         } else {
 	  color = 
 		MaterialAmbientColor +
-		MaterialDiffuseColor * LightColor * LightPower * cosTheta / (distance*distance);
+		// MaterialDiffuseColor * LightColor * LightPower * cosTheta / (distance*distance);
+		MaterialDiffuseColor * LightColor * LightPower * cosTheta;
         }
 
         if (water_fog) {

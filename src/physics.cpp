@@ -82,13 +82,10 @@ void Physics::TestCollision(glm::vec3 last_pos, std::shared_ptr<IEntity> entity)
 }
 
 void Physics::TestCollisionTerrain() {
-  float factor = 0.005;
-  float factor2 = 50;
-  float height = factor2 * (sin(player_->position().x * factor) + sin(player_->position().z * factor)); 
-
-  if (player_->position().y - 20.0f < height) {
+  float height = entity_manager_->GetTerrain()->GetHeight(player_->position().x, player_->position().z);
+  if (player_->position().y - 45.0f < height) {
     glm::vec3 pos = player_->position();
-    pos.y = height + 20.0f;
+    pos.y = height + 45.0f;
     player_->set_position(pos);
   }
 }
@@ -98,15 +95,13 @@ void Physics::UpdateForces() {
     glm::vec3 speed = player_->speed();
     speed.y = 0.0f;
     player_->set_speed(speed);
-  } else if (player_->position().y > 11.2f) {
-    player_->ApplyForce(glm::vec3(0, -0.05, 0)); 
   } else {
-    player_->ApplyForce(glm::vec3(0, -0.003, 0)); 
+    player_->ApplyForce(glm::vec3(0, -0.1, 0)); 
   }
   player_->Update();
   
   player_->set_over_ground(false);
-  TestCollision(player_->last_position(), entity_manager_->GetEntity("terrain"));
+  // TestCollision(player_->last_position(), entity_manager_->GetEntity("terrain"));
   TestCollisionTerrain();
 }
 

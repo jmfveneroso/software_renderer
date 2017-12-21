@@ -2,7 +2,9 @@
 
 namespace Sibyl {
 
-EntityManager::EntityManager() {
+EntityManager::EntityManager(
+  std::shared_ptr<Player> player
+) : player_(player) {
   Initialize();
 }
 
@@ -145,13 +147,14 @@ void EntityManager::Initialize() {
   diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/dirt.bmp");
   normal_texture_id = LoadTexture("normal_terrain", "textures/dirt.bmp");
   GLuint specular_texture_id = LoadTexture("specular_terrain", "textures/specular.bmp");
-  std::shared_ptr<Terrain> terrain = std::make_shared<Terrain>(
+  terrain_ = std::make_shared<Terrain>(
+    player_,
     it->second,
     diffuse_texture_id, 
     normal_texture_id,
     specular_texture_id
   );
-  entities_.insert(std::make_pair("pro_terrain", terrain));
+  entities_.insert(std::make_pair("pro_terrain", terrain_));
 }
 
 std::shared_ptr<IEntity> EntityManager::GetEntity(const std::string& name) {

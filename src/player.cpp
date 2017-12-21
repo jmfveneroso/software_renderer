@@ -3,7 +3,7 @@
 namespace Sibyl {
 
 Player::Player()
-  : position_(glm::vec3(0, 1000, 5)),
+  : position_(glm::vec3(0, 300, 0)),
     speed_(glm::vec3(0, 0, 0)),
     horizontal_angle_(3.14f),
     vertical_angle_(0.0f),
@@ -51,14 +51,15 @@ void Player::ChangeOrientation(double x_pos, double y_pos) {
 }
 
 void Player::Jump() {
-  if (over_ground_ || position_.y < 11.2f) {
-    if (position_.y < 11.2f) {
-      speed_.y = 0.3f;
-    } else { 
-      speed_.y = 0.5f;
-    }
-    over_ground_ = false;
-  }
+  speed_.y += 0.3f;
+  // if (over_ground_ || position_.y < 11.2f) {
+  //   if (position_.y < 11.2f) {
+  //     speed_.y = 0.3f;
+  //   } else { 
+  //     speed_.y = 0.5f;
+  //   }
+  //   over_ground_ = false;
+  // }
 }
 
 } // End of namespace.
