@@ -27,6 +27,33 @@ float Terrain::GetHeight(float x, float y) {
          // 100 * noise_.noise(x * 0.002, y * 0.002);
 }
 
+// void Terrain::LoadTerrain(int x1, int y1, int center_x, int center_y) {
+//   for (int i = 0; i < NUM_QUADS; i++) {
+//     TerrainQuad& quad = quads_[i];
+//     for (int x2 = 0; x2 < QUAD_SIZE; x2++) {
+//       for (int y2 = 0; y2 < QUAD_SIZE; y2++) {
+//         float x = x1 * QUAD_SIZE * TILE_SIZE + x2 * TILE_SIZE;
+//         float y = y1 * QUAD_SIZE * TILE_SIZE + y2 * TILE_SIZE;
+// 
+//         glm::vec3 v_1 = glm::vec3(x + 0 * TILE_SIZE, GetHeight(x + 0 * TILE_SIZE, y + 0 * TILE_SIZE), y + 0 * TILE_SIZE);
+//         glm::vec3 v_2 = glm::vec3(x + 0 * TILE_SIZE, GetHeight(x + 0 * TILE_SIZE, y + n * TILE_SIZE), y + n * TILE_SIZE);
+//         glm::vec3 v_3 = glm::vec3(x + n * TILE_SIZE, GetHeight(x + n * TILE_SIZE, y + n * TILE_SIZE), y + n * TILE_SIZE);
+//         glm::vec3 v_4 = glm::vec3(x + n * TILE_SIZE, GetHeight(x + n * TILE_SIZE, y + 0 * TILE_SIZE), y + 0 * TILE_SIZE);
+// 
+//         glm::vec3 a = v_2 - v_1;
+//         glm::vec3 b = v_3 - v_1;
+//         glm::vec3 normal = glm::cross(a, b);
+// 
+//         int i = 4 * (x2 * (QUAD_SIZE/n) + y2);
+//         unsigned int v1 = AddVertexToQuad(&quad, i + 0, v_1, x2 * n,     y2 * n,     normal);
+//         unsigned int v2 = AddVertexToQuad(&quad, i + 1, v_2, x2 * n,     y2 * n + n, normal);
+//         unsigned int v3 = AddVertexToQuad(&quad, i + 2, v_3, x2 * n + n, y2 * n + n, normal);
+//         unsigned int v4 = AddVertexToQuad(&quad, i + 3, v_4, x2 * n + n, y2 * n,     normal);
+//       }
+//     }
+//   }
+// }
+
 unsigned int Terrain::AddVertexToQuad(
   TerrainQuad* quad, 
   int i,
@@ -91,7 +118,6 @@ void Terrain::UpdateQuad(int x1, int y1, int center_x, int center_y) {
 
     int n = pow(2, quad.distance);
     n = (quad.distance < 6) ? n : 32;
-
     for (int x2 = 0; x2 < QUAD_SIZE/n; x2++) {
       for (int y2 = 0; y2 < QUAD_SIZE/n; y2++) {
         float x = x1 * QUAD_SIZE * TILE_SIZE + x2 * TILE_SIZE * n;
