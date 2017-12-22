@@ -1,6 +1,7 @@
 #ifndef _TERRAIN_HPP_
 #define _TERRAIN_HPP_
 
+#include <algorithm>
 #include <vector>
 #include <fstream>
 #include <cstring>
@@ -19,9 +20,13 @@
 #include "config.h"
 
 #define TILE_SIZE 100
-#define QUAD_SIZE 30
+#define QUAD_SIZE 128
 #define BIG_QUAD_SIDE 20
 #define NUM_QUADS (BIG_QUAD_SIDE * BIG_QUAD_SIDE)
+
+#define BLA QUAD_SIZE * QUAD_SIZE
+#define BLI BLA * 4
+#define BLE BLA * 6
 
 namespace Sibyl {
 
@@ -31,12 +36,18 @@ struct TerrainQuad {
 
   bool initialized;
   bool empty;
-  std::vector<unsigned int> indices;
-  std::vector<glm::vec3> indexed_vertices;
-  std::vector<glm::vec2> indexed_uvs;
-  std::vector<glm::vec3> indexed_normals;
-  std::vector<glm::vec3> indexed_tangents;
-  std::vector<glm::vec3> indexed_bitangents;
+  int distance;
+
+  unsigned int indices[BLE];
+  glm::vec3 indexed_vertices  [BLI];
+  glm::vec2 indexed_uvs       [BLI];
+  glm::vec3 indexed_normals   [BLI];
+  glm::vec3 indexed_tangents  [BLI];
+  glm::vec3 indexed_bitangents[BLI];
+
+  int buffer_size;
+  int lod_size;
+  unsigned int actual_indices[BLE];
 
   GLuint vertex_buffer;
   GLuint uv_buffer;
@@ -56,6 +67,9 @@ struct TerrainQuad {
 };
 
 class Terrain : public IEntity {
+  int last_center_x_;
+  int last_center_y_;
+
   int quad_indices_[BIG_QUAD_SIDE][BIG_QUAD_SIDE];
   TerrainQuad quads_[NUM_QUADS];
 
@@ -83,11 +97,8 @@ class Terrain : public IEntity {
 
   SimplexNoise noise_;
 
-  unsigned int AddVertex(float, float, float, float);
-
-  unsigned int AddVertexToQuad(TerrainQuad*, float, float, float, float, glm::vec3 normal = glm::vec3(0,0,0));
-  void UpdateQuad(int, int);
-  void DrawQuads(glm::mat4, glm::mat4, glm::vec3);
+  unsigned int AddVertexToQuad(TerrainQuad*, int, glm::vec3, float, float, glm::vec3 normal = glm::vec3(0,0,0));
+  void UpdateQuad(int, int, int, int);
 
  public:
   Terrain(
@@ -100,7 +111,6 @@ class Terrain : public IEntity {
 
   void UpdateQuads();
   float GetHeight(float, float);
-  void GenerateTerrain(bool full=false);
   std::vector<glm::vec3> vertices() { return indexed_vertices_; }
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void set_position(glm::vec3 v) {}

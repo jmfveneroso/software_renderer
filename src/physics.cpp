@@ -87,16 +87,19 @@ void Physics::TestCollisionTerrain() {
     glm::vec3 pos = player_->position();
     pos.y = height + 45.0f;
     player_->set_position(pos);
+    glm::vec3 speed = player_->speed();
+    if (speed.y < 0) speed.y = 0.0f;
+    player_->set_speed(speed);
   }
 }
 
 void Physics::UpdateForces() {
   if (player_->over_ground()) {
     glm::vec3 speed = player_->speed();
-    speed.y = 0.0f;
+
     player_->set_speed(speed);
   } else {
-    player_->ApplyForce(glm::vec3(0, -0.1, 0)); 
+    player_->ApplyForce(glm::vec3(0, -0.2, 0)); 
   }
   player_->Update();
   
