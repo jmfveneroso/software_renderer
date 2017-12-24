@@ -84,12 +84,6 @@ void Renderer::PopRenderEntity() {
 }
 
 void Renderer::Render() {
-  static int frames = 0;
-  if (++frames % 60 == 0) {
-    entity_manager_->GetTerrain()->UpdateQuads();
-    // entity_manager_->GetTerrain()->GenerateTerrain();
-  }
-
   // PushRenderEntity("terrain");
   // PushRenderEntity("sky");
 

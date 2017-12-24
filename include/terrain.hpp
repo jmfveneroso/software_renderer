@@ -19,9 +19,9 @@
 #include "simplex_noise.hpp"
 #include "config.h"
 
-#define TILE_SIZE 100
-#define QUAD_SIZE 128
-#define BIG_QUAD_SIDE 20
+#define TILE_SIZE 64
+#define QUAD_SIZE 64
+#define BIG_QUAD_SIDE 4
 #define NUM_QUADS (BIG_QUAD_SIDE * BIG_QUAD_SIDE)
 
 #define BLA QUAD_SIZE * QUAD_SIZE
@@ -67,11 +67,19 @@ struct TerrainQuad {
 };
 
 class Terrain : public IEntity {
+  float* data;
+
   int last_center_x_;
   int last_center_y_;
 
-  int quad_indices_[BIG_QUAD_SIDE][BIG_QUAD_SIDE];
+  int active_buffer_;
   TerrainQuad quads_[NUM_QUADS];
+
+  GLuint tile_vertex_buffers_[10];
+  GLuint tile_uv_buffers_[10];
+  GLuint tile_normal_buffers_[10];
+  GLuint tile_index_buffers_[10];
+  GLuint height_map_;
 
   glm::vec3 prev_player_position_;
   std::shared_ptr<Player> player_;
@@ -81,20 +89,7 @@ class Terrain : public IEntity {
   GLuint normal_texture_id_;
   GLuint specular_texture_id_;
 
-  std::vector<unsigned int> indices_;
   std::vector<glm::vec3> indexed_vertices_;
-  std::vector<glm::vec2> indexed_uvs_;
-  std::vector<glm::vec3> indexed_normals_;
-  std::vector<glm::vec3> indexed_tangents_;
-  std::vector<glm::vec3> indexed_bitangents_;
-
-  GLuint vertex_buffer_;
-  GLuint uv_buffer_;
-  GLuint normal_buffer_;
-  GLuint tangent_buffer_;
-  GLuint bitangent_buffer_;
-  GLuint element_buffer_;
-
   SimplexNoise noise_;
 
   unsigned int AddVertexToQuad(TerrainQuad*, int, glm::vec3, float, float, glm::vec3 normal = glm::vec3(0,0,0));

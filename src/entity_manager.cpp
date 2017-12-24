@@ -81,6 +81,20 @@ void EntityManager::Initialize() {
   shader.CreateUniform("plane");
   shaders_.insert(std::make_pair("default", shader));
 
+  shader = Shader("terrain", "shaders/vshade_terrain", "shaders/fshade_terrain");
+  shader.CreateUniform("DiffuseTextureSampler");
+  shader.CreateUniform("NormalTextureSampler");
+  shader.CreateUniform("SpecularTextureSampler");
+  shader.CreateUniform("HeightMapSampler");
+  shader.CreateUniform("MVP");
+  shader.CreateUniform("V");
+  shader.CreateUniform("M");
+  shader.CreateUniform("MV3x3");
+  shader.CreateUniform("x");
+  shader.CreateUniform("z");
+  shader.CreateUniform("PlayerPosition");
+  shaders_.insert(std::make_pair("terrain", shader));
+
   shader = Shader("sky", "shaders/vshade_normals", "shaders/fshade_sky");
   shader.CreateUniform("DiffuseTextureSampler");
   shader.CreateUniform("NormalTextureSampler");
@@ -140,7 +154,7 @@ void EntityManager::Initialize() {
 
 
   // Procedural terrain.
-  it = shaders_.find("default");
+  it = shaders_.find("terrain");
   if (it == shaders_.end()) 
     throw "Shader does not exist";
 
