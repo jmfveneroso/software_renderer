@@ -68,6 +68,7 @@ struct TerrainQuad {
 
 class Terrain : public IEntity {
   float* data;
+  float height_[4096][4096];
 
   int last_center_x_;
   int last_center_y_;

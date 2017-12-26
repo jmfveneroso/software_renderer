@@ -22,63 +22,66 @@ Terrain::Terrain(
   glGenBuffers(1, &tile_normal_buffers_[0]);
   glGenBuffers(1, &tile_index_buffers_[0]);
 
-  glm::vec3 vertices[4];
-  vertices[0] = glm::vec3(0, 0, 0);
-  vertices[1] = glm::vec3(0, 0, 32);
-  vertices[2] = glm::vec3(32, 0, 32);
-  vertices[3] = glm::vec3(32, 0, 0);
+  glm::vec3 vertices[4096];
+  glm::vec2 uvs[4096];
+  unsigned int indices[6144];
 
-  glm::vec2 uvs[4];
-  uvs[0] = glm::vec2(0, 0);
-  uvs[1] = glm::vec2(0, 1);
-  uvs[2] = glm::vec2(1, 1);
-  uvs[3] = glm::vec2(1, 0);
+  for (int i = 0; i < 1024; i++) {
+    int x = i / 32;
+    int z = i % 32;
 
-  glm::vec3 normals[4];
-  normals[0] = glm::vec3(0, 1, 0);
-  normals[1] = glm::vec3(0, 1, 0);
-  normals[2] = glm::vec3(0, 1, 0);
-  normals[3] = glm::vec3(0, 1, 0);
+    vertices[i * 4 + 0] = glm::vec3(x*32 + 0 , 0, z*32 + 0 );
+    vertices[i * 4 + 1] = glm::vec3(x*32 + 0 , 0, z*32 + 32);
+    vertices[i * 4 + 2] = glm::vec3(x*32 + 32, 0, z*32 + 32);
+    vertices[i * 4 + 3] = glm::vec3(x*32 + 32, 0, z*32 + 0 );
 
-  unsigned int indices[6];
-  indices[0] = 0;
-  indices[1] = 1;
-  indices[2] = 2;
-  indices[3] = 0;
-  indices[4] = 2;
-  indices[5] = 3;
+    uvs[i * 4 + 0] = glm::vec2(0, 0);
+    uvs[i * 4 + 1] = glm::vec2(0, 1);
+    uvs[i * 4 + 2] = glm::vec2(1, 1);
+    uvs[i * 4 + 3] = glm::vec2(1, 0);
+
+    indices[i * 6 + 0] = i * 4 + 0;
+    indices[i * 6 + 1] = i * 4 + 1;
+    indices[i * 6 + 2] = i * 4 + 2;
+    indices[i * 6 + 3] = i * 4 + 0;
+    indices[i * 6 + 4] = i * 4 + 2;
+    indices[i * 6 + 5] = i * 4 + 3;
+  }
 
   glBindBuffer(GL_ARRAY_BUFFER, tile_vertex_buffers_[0]);
-  glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, 4096 * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
   glBindBuffer(GL_ARRAY_BUFFER, tile_uv_buffers_[0]);
-  glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, 4096 * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
 
-  glBindBuffer(GL_ARRAY_BUFFER, tile_normal_buffers_[0]);
-  glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
-      
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tile_index_buffers_[0]);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6144 * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
-  data = new float[257 * 257];
-  for (int i = 0; i < 257; i++) {
-    for (int j = 0; j < 257; j++) {
-      data[i*257 + j] = (GetHeight(j*32, i*32));
+  data = new float[1025 * 1025];
+  for (int i = 0; i < 1025; i++) {
+    for (int j = 0; j < 1025; j++) {
+      data[i*1025 + j] = (GetHeight(j*32, i*32));
     }
   }
 
   glGenTextures(1, &height_map_);
   glBindTexture(GL_TEXTURE_2D, height_map_);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 257, 257, 0, GL_RED, GL_FLOAT, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1025, 1025, 0, GL_RED, GL_FLOAT, data);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  for (int i = 0; i < 4096; i++) {
+    for (int j = 0; j < 4096; j++) {
+      height_[j][i] = 100 * noise_.noise(1000 + j * 0.01, 1000 + i * 0.01);
+    }
+  }
 }
 
 float Terrain::GetHeight(float x, float y) {
-  return 32 * noise_.noise(1000 + x * 0.01, 1000 + y * 0.01) +
-         200 * noise_.noise(x * 0.001, y * 0.001);
+  return 100 * noise_.noise(1000 + x * 0.01, 1000 + y * 0.01);
+         // 200 * noise_.noise(x * 0.001, y * 0.001);
          // 2000 * noise_.noise(1000 + x * 0.0001, 1000 + y * 0.0001);
          // 100 * noise_.noise(x * 0.002, y * 0.002);
 }
@@ -744,22 +747,23 @@ void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
 
   shader_.BindBuffer(tile_vertex_buffers_[0], 0, 3);
   shader_.BindBuffer(tile_uv_buffers_[0], 1, 2);
-  shader_.BindBuffer(tile_normal_buffers_[0], 2, 3);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tile_index_buffers_[0]);
 
-  int player_pos_x = player_->position().x / 32 - 128;
-  int player_pos_z = player_->position().z / 32 - 128;
+  int player_pos_x = player_->position().x / 1024 - 16;
+  int player_pos_z = player_->position().z / 1024 - 16;
   glUniform2i(shader_.GetUniformId("PlayerPosition"), player_pos_x, player_pos_z);
 
-  for (int i = 0; i < 257; i++) {
-    for (int j = 0; j < 257; j++) {
-      data[i*257 + j] = (GetHeight((player_pos_x + j)*32, (player_pos_z + i)*32));
+  for (int i = 0; i < 1025; i++) {
+    for (int j = 0; j < 1025; j++) {
+      // data[i*1025 + j] = (GetHeight(player_pos_x*1024 + j*32, player_pos_z*1024 + i*32));
+      data[i*1025 + j] = height_[player_pos_x + j][player_pos_z + i];
     }
   }
 
   glBindTexture(GL_TEXTURE_2D, height_map_);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 257, 257, GL_RED, GL_FLOAT, data);
-  glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*) 0, 256 * 256);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1025, 1025, GL_RED, GL_FLOAT, data);
+  // glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*) 0, 256 * 256);
+  glDrawElementsInstanced(GL_TRIANGLES, 6144, GL_UNSIGNED_INT, (void*) 0, 1024);
 
   // for (int i = 0; i < NUM_QUADS; i++) {
   //   TerrainQuad& quad = quads_[i];
