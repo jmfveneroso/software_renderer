@@ -19,7 +19,6 @@
 #include "simplex_noise.hpp"
 #include "config.h"
 
-#define TILE_SIZE 64
 #define QUAD_SIZE 64
 #define BIG_QUAD_SIDE 4
 #define NUM_QUADS (BIG_QUAD_SIDE * BIG_QUAD_SIDE)
@@ -66,7 +65,34 @@ struct TerrainQuad {
   }
 };
 
+#define CLIPMAP_LEVELS 1
+#define CLIPMAP_SIZE 32
+#define TILE_SIZE 32
+
+class Clipmap {
+  unsigned int level;
+  GLuint vertex_buffer;
+  GLuint element_buffer;
+  glm::vec3* vertices;
+  glm::vec3* indices;
+
+
+  glm::vec2i top_left;
+  float height_map[CLIPMAP_SIZE][CLIPMAP_SIZE];
+  
+  void Update() {} 
+  void CalculateActiveRegion() {} 
+  void Render() {} 
+};
+
 class Terrain : public IEntity {
+  Clipmap clipmaps_[CLIPMAP_LEVELS]; 
+   
+
+
+
+
+
   float* data;
   float height_[4096][4096];
 

@@ -35,5 +35,6 @@ void main(){
   // clamped above 0.
   float cosTheta = clamp(dot(n, l), 0, 1);
  
-  color = MaterialAmbientColor + MaterialDiffuseColor * LightColor * LightPower * cosTheta;
+  // color = MaterialAmbientColor + MaterialDiffuseColor * LightColor * LightPower * cosTheta;
+  color = color_magna;
 }
