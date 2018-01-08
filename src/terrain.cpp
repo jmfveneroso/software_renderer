@@ -2,6 +2,288 @@
 
 namespace Sibyl {
 
+float Clipmap::GetHeight(float x, float y) {
+  return noise_.noise(x * 0.001, y * 0.001);
+}
+
+Clipmap::Clipmap() {}
+
+Clipmap::Clipmap(unsigned int level) 
+  : level_(level) {
+  Init();
+}
+
+unsigned int Clipmap::GetTileSize() {
+  return 1 << (level_ - 1);
+}
+
+void Clipmap::Init() {
+  glGenBuffers(1, &vertex_buffer_);
+  glGenBuffers(1, &height_buffer_);
+  glGenBuffers(1, &uv_buffer_);
+  glGenBuffers(1, &element_buffer_);
+  glGenBuffers(1, &barycentric_buffer_);
+
+  std::vector<glm::vec2> uvs;
+  std::vector<glm::vec3> barycentric;
+
+  for (int z = 0; z <= CLIPMAP_SIZE; z++) {
+    for (int x = 0; x <= CLIPMAP_SIZE; x++) {
+      vertices_[z * (CLIPMAP_SIZE + 1) + x] = glm::vec3(x, 0, z);
+      height_[z * (CLIPMAP_SIZE + 1) + x] = 0;
+      uvs.push_back(glm::vec2(x * GetTileSize(), z * GetTileSize()));
+
+      glm::vec3 b;
+      if (z % 3 == 0) {
+        if (x % 3 == 0) b = glm::vec3(1, 0, 0);
+        if (x % 3 == 1) b = glm::vec3(0, 1, 0);
+        if (x % 3 == 2) b = glm::vec3(0, 0, 1);
+      } else if (z % 3 == 1) {
+        if (x % 3 == 0) b = glm::vec3(0, 0, 1);
+        if (x % 3 == 1) b = glm::vec3(1, 0, 0);
+        if (x % 3 == 2) b = glm::vec3(0, 1, 0);
+      } else {
+        if (x % 3 == 0) b = glm::vec3(0, 1, 0);
+        if (x % 3 == 1) b = glm::vec3(0, 0, 1);
+        if (x % 3 == 2) b = glm::vec3(1, 0, 0);
+      }
+      barycentric.push_back(b);
+    }
+  }
+
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, (CLIPMAP_SIZE + 1) * (CLIPMAP_SIZE + 1) * sizeof(glm::vec3), &vertices_, GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, height_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, (CLIPMAP_SIZE + 1) * (CLIPMAP_SIZE + 1) * sizeof(glm::vec3), &height_, GL_DYNAMIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, barycentric_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, barycentric.size() * sizeof(glm::vec3), &barycentric[0], GL_STATIC_DRAW);
+
+
+  // Breaking heart.
+  for (int z = 0; z < CLIPMAP_SIZE+1; z++) {
+    for (int x = 0; x < CLIPMAP_SIZE+1; x++) {
+      height_map_[z * (CLIPMAP_SIZE+1) + x] = float(1 + GetHeight(x * TILE_SIZE, z * TILE_SIZE)) / 2;
+      valid_[z * (CLIPMAP_SIZE+1) + x] = true;
+    }
+  }
+
+  glGenTextures(1, &height_texture_);
+  glBindTexture(GL_TEXTURE_2D, height_texture_);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RED, GL_FLOAT, height_map_);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+}
+
+glm::ivec3 Clipmap::GetToroidalCoordinates(glm::ivec3 grid_coordinates) {
+  glm::ivec3 clipmap_coords;
+  clipmap_coords.x = (grid_coordinates.x - top_left_.x) / int(GetTileSize());
+  clipmap_coords.z = (grid_coordinates.z - top_left_.z) / int(GetTileSize());
+
+  glm::ivec3 toroidal_coords;
+  toroidal_coords.x = (clipmap_coords.x + CLIPMAP_SIZE + 1 - buffer_top_left_.x) % (CLIPMAP_SIZE + 1);
+  toroidal_coords.z = (clipmap_coords.z + CLIPMAP_SIZE + 1 - buffer_top_left_.z) % (CLIPMAP_SIZE + 1);
+  return toroidal_coords;
+}
+
+void Clipmap::InvalidateAll() {
+  for (int z = 0; z <= CLIPMAP_SIZE; z++) {
+    for (int x = 0; x <= CLIPMAP_SIZE; x++) {
+      valid_[z * (CLIPMAP_SIZE+1) + x] = false;
+    }
+  }
+  buffer_top_left_ = glm::ivec3(0, 0, 0);
+}
+
+void Clipmap::InvalidateColumns(glm::ivec3 new_top_left) {
+  if (top_left_.x == new_top_left.x) return;
+
+  // Invalidate all columns.
+  if (abs((new_top_left.x - top_left_.x) / int(GetTileSize())) > CLIPMAP_SIZE) {
+    InvalidateAll();
+    return;
+  }
+
+  glm::ivec3 toroidal_coords;
+  int x = top_left_.x;
+  int step_x = (new_top_left.x > top_left_.x) ? GetTileSize() : -GetTileSize();
+  std::cout << "top_left_.x: " << top_left_.x << std::endl;
+  std::cout << "new_top_left.x: " << new_top_left.x << std::endl;
+  std::cout << "step_x: " << step_x << std::endl;
+  for (; x != new_top_left.x; x += step_x) {
+    toroidal_coords = GetToroidalCoordinates(glm::ivec3(x, 0, 0));
+   
+    std::cout << GetTileSize() << " cut it down: " << toroidal_coords.x << std::endl;
+    // Invalidate column. 
+    for (int z = 0; z <= CLIPMAP_SIZE; z++) {
+      valid_[z * (CLIPMAP_SIZE+1) + toroidal_coords.x] = false;
+    }
+  }
+ 
+  // buffer_top_left_.x = (buffer_top_left_.x + toroidal_coords.x) % (CLIPMAP_SIZE + 1); 
+  buffer_top_left_.x = GetToroidalCoordinates(glm::ivec3(x, 0, 0)).x;
+  std::cout << "bla: " << buffer_top_left_.x << std::endl;
+}
+
+void Clipmap::InvalidateRows(glm::ivec3 new_top_left) {
+  if (top_left_.z == new_top_left.z) return;
+
+  // Invalidate all columns.
+  if (abs((new_top_left.z - top_left_.z) / int(GetTileSize())) > CLIPMAP_SIZE) {
+    InvalidateAll();
+    return;
+  }
+
+  glm::ivec3 toroidal_coords;
+  int z = top_left_.z;
+  int step_z = (new_top_left.z > top_left_.z) ? GetTileSize() : -GetTileSize();
+  for (; z != new_top_left.z; z += step_z) {
+    toroidal_coords = GetToroidalCoordinates(glm::ivec3(0, 0, z));
+   
+    // Invalidate column. 
+    for (int x = 0; x <= CLIPMAP_SIZE; x++) {
+      valid_[toroidal_coords.z * (CLIPMAP_SIZE+1) + x] = false;
+    }
+  }
+ 
+  buffer_top_left_.z = toroidal_coords.z; 
+}
+
+void Clipmap::Invalidate(glm::ivec3 new_top_left) {
+  InvalidateColumns(new_top_left);
+  // InvalidateRows(new_top_left);
+}
+
+void Clipmap::Update(int x, int z) {
+  // Offset to top left.
+  int offset = ((CLIPMAP_SIZE - 2) / 2);
+
+  glm::ivec3 new_top_left;
+  new_top_left.x = (x / (2 * GetTileSize())) * (2 * GetTileSize()) - (offset * GetTileSize());
+  new_top_left.z = (z / (2 * GetTileSize())) * (2 * GetTileSize()) - (offset * GetTileSize());
+  Invalidate(new_top_left);
+  top_left_ = new_top_left;
+
+  for (int z = 0; z <= CLIPMAP_SIZE; z++) {
+    for (int x = 0; x <= CLIPMAP_SIZE; x++) {
+      int world_coord_x = top_left_.x * TILE_SIZE + x * TILE_SIZE * GetTileSize();
+      int world_coord_z = top_left_.z * TILE_SIZE + z * TILE_SIZE * GetTileSize();
+      height_[z * (CLIPMAP_SIZE + 1) + x] = 100 * GetHeight(world_coord_x, world_coord_z);
+
+      if (valid_[z * (CLIPMAP_SIZE+1) + x]) {
+        height_map_[z * (CLIPMAP_SIZE + 1) + x] = 1;
+      } else {
+        height_map_[z * (CLIPMAP_SIZE + 1) + x] = 0;
+      }
+    }
+  }
+
+  glBindBuffer(GL_ARRAY_BUFFER, height_buffer_);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, (CLIPMAP_SIZE + 1) * (CLIPMAP_SIZE + 1) * sizeof(glm::vec3), height_);
+
+  glBindTexture(GL_TEXTURE_2D, height_texture_);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, (CLIPMAP_SIZE + 1), (CLIPMAP_SIZE + 1), GL_RED, GL_FLOAT, height_map_);
+}
+
+void Clipmap::DrawSubRegion(int start_x, int end_x, int start_z, int end_z) {
+  indices_.clear();
+
+  for (unsigned int z = start_z; z < end_z; z++) {
+    if (z > start_z) indices_.push_back(z * (CLIPMAP_SIZE + 1) + start_x);
+    for (unsigned int x = start_x; x <= end_x; x++) {
+      indices_.push_back(z * (CLIPMAP_SIZE + 1) + x);
+      indices_.push_back((z + 1) * (CLIPMAP_SIZE + 1) + x);
+    } 
+    if (z < end_z - 1) indices_.push_back((z + 1) * (CLIPMAP_SIZE + 1) + end_x);
+  }
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(unsigned int), &indices_[0], GL_STATIC_DRAW);
+  glDrawElements(GL_TRIANGLE_STRIP, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
+
+  // buffer_top_left_ = glm::vec3(0, 0, 0);
+}
+
+void Clipmap::Render(
+  glm::vec3 player_pos, Shader* shader, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix,
+  glm::ivec3 next_top_left,
+  glm::ivec3 next_bottom_right
+) {
+  shader->BindTexture("HeightMapSampler", height_texture_);
+
+  // Clipmap grid clamp.
+  glUniform1i(shader->GetUniformId("TILE_SIZE"), TILE_SIZE * GetTileSize());
+  glUniform1i(shader->GetUniformId("CLIPMAP_SIZE"), CLIPMAP_SIZE);
+
+  int x = (int) player_pos.x / TILE_SIZE;
+  int z = (int) player_pos.z / TILE_SIZE;
+  Update(x, z);
+
+  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(top_left_.x * TILE_SIZE, 0, top_left_.z * TILE_SIZE));
+  glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
+  glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
+  glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
+  glUniform3iv(shader->GetUniformId("buffer_top_left"), 1, (int*) &buffer_top_left_);
+  std::cout << "buffer.x: " << buffer_top_left_.x << std::endl;
+
+  glUniformMatrix4fv(shader->GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
+  glUniformMatrix4fv(shader->GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
+  glUniformMatrix4fv(shader->GetUniformId("V"),     1, GL_FALSE, &ViewMatrix[0][0]);
+  glUniformMatrix3fv(shader->GetUniformId("MV3x3"), 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
+
+  unsigned int size_x = CLIPMAP_SIZE - 2;
+  unsigned int size_z = CLIPMAP_SIZE - 2;
+  if (x % (2 * GetTileSize()) != 0) size_x = CLIPMAP_SIZE;
+  if (z % (2 * GetTileSize()) != 0) size_z = CLIPMAP_SIZE;
+
+  bottom_right_.x = top_left_.x + size_x * GetTileSize();
+  bottom_right_.z = top_left_.z + size_z * GetTileSize();
+
+  shader->BindBuffer(vertex_buffer_, 0, 3);
+  shader->BindBuffer(uv_buffer_, 1, 2);
+  shader->BindBuffer(barycentric_buffer_, 2, 3);
+  shader->BindBuffer(height_buffer_, 3, 1);
+
+  if (level_ == 1) {
+    DrawSubRegion(0, size_x, 0, size_z);
+  } else {
+    // Region 1 (LEFT).
+    int start_x = 0;
+    int end_x = (next_top_left.x - top_left_.x) / GetTileSize();
+    int start_z = 0;
+    int end_z = size_z;
+    DrawSubRegion(start_x, end_x, start_z, end_z);
+
+    // Region 2 (UP).
+    start_x = (next_top_left.x - top_left_.x) / GetTileSize();
+    end_x = ((next_bottom_right.x - top_left_.x) / GetTileSize());
+    start_z = 0;
+    end_z = (next_top_left.z - top_left_.z) / GetTileSize();
+    DrawSubRegion(start_x, end_x, start_z, end_z);
+
+    // Region 3 (DOWN).
+    start_x = (next_top_left.x - top_left_.x) / GetTileSize();
+    end_x = ((next_bottom_right.x - top_left_.x) / GetTileSize());
+    start_z = ((next_bottom_right.z - top_left_.z) / GetTileSize());
+    end_z = size_z;
+    DrawSubRegion(start_x, end_x, start_z, end_z);
+
+    // Region 4 (RIGHT).
+    start_x = ((next_bottom_right.x - top_left_.x) / GetTileSize());
+    end_x = size_x;
+    start_z = 0;
+    end_z = size_z;
+    DrawSubRegion(start_x, end_x, start_z, end_z);
+  }
+} 
+
 Terrain::Terrain(
   std::shared_ptr<Player> player,
   Shader shader, 
@@ -12,785 +294,41 @@ Terrain::Terrain(
     shader_(shader),
     diffuse_texture_id_(diffuse_texture_id), 
     normal_texture_id_(normal_texture_id), 
-    specular_texture_id_(specular_texture_id),
-    position_(glm::vec3(0.0, 0.0, 0.0)),
-    last_center_x_(9999),
-    last_center_y_(9999) {
-  UpdateQuads();
-  glGenBuffers(1, &tile_vertex_buffers_[0]);
-  glGenBuffers(1, &tile_uv_buffers_[0]);
-  glGenBuffers(1, &tile_normal_buffers_[0]);
-  glGenBuffers(1, &tile_index_buffers_[0]);
+    specular_texture_id_(specular_texture_id) {
 
-  glm::vec3 vertices[4096];
-  glm::vec2 uvs[4096];
-  unsigned int indices[6144];
+  for (int i = 0; i < CLIPMAP_LEVELS; i++) {
+    clipmaps_[i] = Clipmap(i + 1); 
 
-  for (int i = 0; i < 1024; i++) {
-    int x = i / 32;
-    int z = i % 32;
-
-    vertices[i * 4 + 0] = glm::vec3(x*32 + 0 , 0, z*32 + 0 );
-    vertices[i * 4 + 1] = glm::vec3(x*32 + 0 , 0, z*32 + 32);
-    vertices[i * 4 + 2] = glm::vec3(x*32 + 32, 0, z*32 + 32);
-    vertices[i * 4 + 3] = glm::vec3(x*32 + 32, 0, z*32 + 0 );
-
-    uvs[i * 4 + 0] = glm::vec2(0, 0);
-    uvs[i * 4 + 1] = glm::vec2(0, 1);
-    uvs[i * 4 + 2] = glm::vec2(1, 1);
-    uvs[i * 4 + 3] = glm::vec2(1, 0);
-
-    indices[i * 6 + 0] = i * 4 + 0;
-    indices[i * 6 + 1] = i * 4 + 1;
-    indices[i * 6 + 2] = i * 4 + 2;
-    indices[i * 6 + 3] = i * 4 + 0;
-    indices[i * 6 + 4] = i * 4 + 2;
-    indices[i * 6 + 5] = i * 4 + 3;
-  }
-
-  glBindBuffer(GL_ARRAY_BUFFER, tile_vertex_buffers_[0]);
-  glBufferData(GL_ARRAY_BUFFER, 4096 * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ARRAY_BUFFER, tile_uv_buffers_[0]);
-  glBufferData(GL_ARRAY_BUFFER, 4096 * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tile_index_buffers_[0]);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6144 * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-
-  data = new float[1025 * 1025];
-  for (int i = 0; i < 1025; i++) {
-    for (int j = 0; j < 1025; j++) {
-      data[i*1025 + j] = (GetHeight(j*32, i*32));
-    }
-  }
-
-  glGenTextures(1, &height_map_);
-  glBindTexture(GL_TEXTURE_2D, height_map_);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1025, 1025, 0, GL_RED, GL_FLOAT, data);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-  for (int i = 0; i < 4096; i++) {
-    for (int j = 0; j < 4096; j++) {
-      height_[j][i] = 100 * noise_.noise(1000 + j * 0.01, 1000 + i * 0.01);
-    }
-  }
-}
-
-float Terrain::GetHeight(float x, float y) {
-  return 100 * noise_.noise(1000 + x * 0.01, 1000 + y * 0.01);
-         // 200 * noise_.noise(x * 0.001, y * 0.001);
-         // 2000 * noise_.noise(1000 + x * 0.0001, 1000 + y * 0.0001);
-         // 100 * noise_.noise(x * 0.002, y * 0.002);
-}
-
-// void Terrain::LoadTerrain(int x1, int y1, int center_x, int center_y) {
-//   for (int i = 0; i < NUM_QUADS; i++) {
-//     TerrainQuad& quad = quads_[i];
-//     for (int x2 = 0; x2 < QUAD_SIZE; x2++) {
-//       for (int y2 = 0; y2 < QUAD_SIZE; y2++) {
-//         float x = x1 * QUAD_SIZE * TILE_SIZE + x2 * TILE_SIZE;
-//         float y = y1 * QUAD_SIZE * TILE_SIZE + y2 * TILE_SIZE;
-// 
-//         glm::vec3 v_1 = glm::vec3(x + 0 * TILE_SIZE, GetHeight(x + 0 * TILE_SIZE, y + 0 * TILE_SIZE), y + 0 * TILE_SIZE);
-//         glm::vec3 v_2 = glm::vec3(x + 0 * TILE_SIZE, GetHeight(x + 0 * TILE_SIZE, y + n * TILE_SIZE), y + n * TILE_SIZE);
-//         glm::vec3 v_3 = glm::vec3(x + n * TILE_SIZE, GetHeight(x + n * TILE_SIZE, y + n * TILE_SIZE), y + n * TILE_SIZE);
-//         glm::vec3 v_4 = glm::vec3(x + n * TILE_SIZE, GetHeight(x + n * TILE_SIZE, y + 0 * TILE_SIZE), y + 0 * TILE_SIZE);
-// 
-//         glm::vec3 a = v_2 - v_1;
-//         glm::vec3 b = v_3 - v_1;
-//         glm::vec3 normal = glm::cross(a, b);
-// 
-//         int i = 4 * (x2 * (QUAD_SIZE/n) + y2);
-//         unsigned int v1 = AddVertexToQuad(&quad, i + 0, v_1, x2 * n,     y2 * n,     normal);
-//         unsigned int v2 = AddVertexToQuad(&quad, i + 1, v_2, x2 * n,     y2 * n + n, normal);
-//         unsigned int v3 = AddVertexToQuad(&quad, i + 2, v_3, x2 * n + n, y2 * n + n, normal);
-//         unsigned int v4 = AddVertexToQuad(&quad, i + 3, v_4, x2 * n + n, y2 * n,     normal);
-//       }
-//     }
-//   }
-// }
-
-unsigned int Terrain::AddVertexToQuad(
-  TerrainQuad* quad, 
-  int i,
-  glm::vec3 pos,
-  float u, float v, 
-  glm::vec3 normal
-) {
-  quad->indexed_vertices  [i] = pos;
-  quad->indexed_uvs       [i] = glm::vec2(u, v);
-  quad->indexed_normals   [i] = normal;
-  quad->indexed_tangents  [i] = glm::vec3(0, 0, 0);
-  quad->indexed_bitangents[i] = glm::vec3(0, 0, 0);
-  return i;
-}
-
-void Terrain::UpdateQuad(int x1, int y1, int center_x, int center_y) {
-  bool worse_up=false, worse_down=false, worse_left=false, worse_right=false;
-  int i = x1; int j = y1;
-  if (i == j && i < 0) { // top-left corner
-    worse_up = true; worse_left = true;
-  }
-  else if (i == j && i > 0) { // bottom-right corner
-    worse_down = true; worse_right = true;
-  }
-  else if (i == j && i == 0) { // center
-    worse_up = true; worse_down = true; worse_left = true; worse_right = true;
-  }
-  else if (i + j == 0 && i > 0) { // top-right corner
-    worse_up = true; worse_right = true;
-  }
-  else if (i + j == 0 && i < 0) { // bottom-left corner
-    worse_down = true; worse_left = true;
-  }
-  else if (i + j < 0 && i > j) { // top side
-    worse_up = true;
-  }
-  else if (i + j > 0 && i < j) { // down side
-    worse_down = true;
-  }
-  else if (i + j < 0 && i < j) { // left side
-    worse_left = true;
-  }
-  else if (i + j > 0 && i > j) { // right side
-    worse_right = true;
-  }
-
-  x1 = center_x + x1;
-  y1 = center_x + y1;
-  for (int i = 0; i < NUM_QUADS; i++) {
-    TerrainQuad& quad = quads_[i];
-    if (quad.x == x1 && quad.y == y1 && !quad.empty) return;
-  }
-
-  for (int i = 0; i < NUM_QUADS; i++) {
-    TerrainQuad& quad = quads_[i];
-    if (!quad.empty) continue;
-  
-    quad.x = x1;     
-    quad.y = y1;     
-    quad.empty = false;
-    quad.distance = std::max(abs(quad.x - center_x), abs(quad.y - center_y));
-
-    int n = pow(2, quad.distance);
-    n = (quad.distance < 6) ? n : 32;
-    for (int x2 = 0; x2 < QUAD_SIZE/n; x2++) {
-      for (int y2 = 0; y2 < QUAD_SIZE/n; y2++) {
-        float x = x1 * QUAD_SIZE * TILE_SIZE + x2 * TILE_SIZE * n;
-        float y = y1 * QUAD_SIZE * TILE_SIZE + y2 * TILE_SIZE * n;
-
-        glm::vec3 v_1 = glm::vec3(x + 0 * TILE_SIZE, GetHeight(x + 0 * TILE_SIZE, y + 0 * TILE_SIZE), y + 0 * TILE_SIZE);
-        glm::vec3 v_2 = glm::vec3(x + 0 * TILE_SIZE, GetHeight(x + 0 * TILE_SIZE, y + n * TILE_SIZE), y + n * TILE_SIZE);
-        glm::vec3 v_3 = glm::vec3(x + n * TILE_SIZE, GetHeight(x + n * TILE_SIZE, y + n * TILE_SIZE), y + n * TILE_SIZE);
-        glm::vec3 v_4 = glm::vec3(x + n * TILE_SIZE, GetHeight(x + n * TILE_SIZE, y + 0 * TILE_SIZE), y + 0 * TILE_SIZE);
-
-        glm::vec3 a = v_2 - v_1;
-        glm::vec3 b = v_3 - v_1;
-        glm::vec3 normal = glm::cross(a, b);
-
-        int i = 4 * (x2 * (QUAD_SIZE/n) + y2);
-        unsigned int v1 = AddVertexToQuad(&quad, i + 0, v_1, x2 * n,     y2 * n,     normal);
-        unsigned int v2 = AddVertexToQuad(&quad, i + 1, v_2, x2 * n,     y2 * n + n, normal);
-        unsigned int v3 = AddVertexToQuad(&quad, i + 2, v_3, x2 * n + n, y2 * n + n, normal);
-        unsigned int v4 = AddVertexToQuad(&quad, i + 3, v_4, x2 * n + n, y2 * n,     normal);
-      }
-    }
-
-    // Inside quads.
-    int counter = 0;
-    for (int x2 = 1; x2 < QUAD_SIZE/n - 1; x2++) {
-      for (int y2 = 1; y2 < QUAD_SIZE/n - 1; y2++) {
-        int i = 4 * (x2 * (QUAD_SIZE/n) + y2);
-        // int j = 6 * (x2 * (QUAD_SIZE/n) + y2);
-        quad.actual_indices[counter]   = i + 0;
-        quad.actual_indices[counter+1] = i + 1;
-        quad.actual_indices[counter+2] = i + 2;
-        quad.actual_indices[counter+3] = i + 0;
-        quad.actual_indices[counter+4] = i + 2;
-        quad.actual_indices[counter+5] = i + 3;
-        counter += 6;
-      }
-    }
-
-    // Up side.
-    for (int x2 = 2; x2 < QUAD_SIZE/n - 2; x2++) {
-      int y2 = 0;
-      if (worse_up) {
-        if (x2 % 2 == 0) {
-          quad.actual_indices[counter]   = 4 * (x2 * (QUAD_SIZE/n) + y2) + 0;
-          quad.actual_indices[counter+1] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 1;
-          quad.actual_indices[counter+2] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 2;
-          quad.actual_indices[counter+3] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 0;
-          quad.actual_indices[counter+4] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 2;
-          quad.actual_indices[counter+5] = 4 * ((x2 + 1) * (QUAD_SIZE/n) + y2) + 3;
-          counter += 6;
-        } else {
-          quad.actual_indices[counter]   = 4 * (x2 * (QUAD_SIZE/n) + y2) + 1;
-          quad.actual_indices[counter+1] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 2;
-          quad.actual_indices[counter+2] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 3;
-          counter += 3;
-        }
-      } else {
-        int i = 4 * (x2 * (QUAD_SIZE/n) + y2);
-        quad.actual_indices[counter]   = i + 0;
-        quad.actual_indices[counter+1] = i + 1;
-        quad.actual_indices[counter+2] = i + 2;
-        quad.actual_indices[counter+3] = i + 0;
-        quad.actual_indices[counter+4] = i + 2;
-        quad.actual_indices[counter+5] = i + 3;
-        counter += 6;
-      }
-    }
-
-    // Down side.
-    for (int x2 = 2; x2 < QUAD_SIZE/n - 2; x2++) {
-      int y2 = QUAD_SIZE/n - 1;
-      if (worse_down) {
-        if (x2 % 2 == 0) {
-          quad.actual_indices[counter]   = 4 * (x2 * (QUAD_SIZE/n) + y2) + 0;
-          quad.actual_indices[counter+1] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 1;
-          quad.actual_indices[counter+2] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 3;
-          quad.actual_indices[counter+3] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 1;
-          quad.actual_indices[counter+4] = 4 * ((x2 + 1) * (QUAD_SIZE/n) + y2) + 2;
-          quad.actual_indices[counter+5] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 3;
-          counter += 6;
-        } else {
-          quad.actual_indices[counter]   = 4 * (x2 * (QUAD_SIZE/n) + y2) + 0;
-          quad.actual_indices[counter+1] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 2;
-          quad.actual_indices[counter+2] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 3;
-          counter += 3;
-        }
-      } else {
-        int i = 4 * (x2 * (QUAD_SIZE/n) + y2);
-        quad.actual_indices[counter]   = i + 0;
-        quad.actual_indices[counter+1] = i + 1;
-        quad.actual_indices[counter+2] = i + 2;
-        quad.actual_indices[counter+3] = i + 0;
-        quad.actual_indices[counter+4] = i + 2;
-        quad.actual_indices[counter+5] = i + 3;
-        counter += 6;
-      }
-    }
-
-    // Left side.
-    for (int y2 = 2; y2 < QUAD_SIZE/n - 2; y2++) {
-      int x2 = 0;
-      if (worse_left) {
-        if (y2 % 2 == 0) {
-          quad.actual_indices[counter]   = 4 * (x2 * (QUAD_SIZE/n) + y2) + 0;
-          quad.actual_indices[counter+1] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 2;
-          quad.actual_indices[counter+2] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 3;
-          quad.actual_indices[counter+3] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 0;
-          quad.actual_indices[counter+4] = 4 * (x2 * (QUAD_SIZE/n) + y2 + 1) + 1;
-          quad.actual_indices[counter+5] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 2;
-          counter += 6;
-        } else {
-          quad.actual_indices[counter]   = 4 * (x2 * (QUAD_SIZE/n) + y2) + 1;
-          quad.actual_indices[counter+1] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 2;
-          quad.actual_indices[counter+2] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 3;
-          counter += 3;
-        }
-      } else {
-        int i = 4 * (x2 * (QUAD_SIZE/n) + y2);
-        quad.actual_indices[counter]   = i + 0;
-        quad.actual_indices[counter+1] = i + 1;
-        quad.actual_indices[counter+2] = i + 2;
-        quad.actual_indices[counter+3] = i + 0;
-        quad.actual_indices[counter+4] = i + 2;
-        quad.actual_indices[counter+5] = i + 3;
-        counter += 6;
-      }
-    }
-
-    // Right side.
-    for (int y2 = 2; y2 < QUAD_SIZE/n - 2; y2++) {
-      int x2 = QUAD_SIZE/n - 1;
-      if (worse_right) {
-        if (y2 % 2 == 0) {
-          quad.actual_indices[counter]   = 4 * (x2 * (QUAD_SIZE/n) + y2) + 0;
-          quad.actual_indices[counter+1] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 1;
-          quad.actual_indices[counter+2] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 3;
-          quad.actual_indices[counter+3] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 1;
-          quad.actual_indices[counter+4] = 4 * (x2 * (QUAD_SIZE/n) + y2 + 1) + 2;
-          quad.actual_indices[counter+5] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 3;
-          counter += 6;
-        } else {
-          quad.actual_indices[counter]   = 4 * (x2 * (QUAD_SIZE/n) + y2) + 0;
-          quad.actual_indices[counter+1] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 1;
-          quad.actual_indices[counter+2] = 4 * (x2 * (QUAD_SIZE/n) + y2) + 2;
-          counter += 3;
-        }
-      } else {
-        int i = 4 * (x2 * (QUAD_SIZE/n) + y2);
-        quad.actual_indices[counter]   = i + 0;
-        quad.actual_indices[counter+1] = i + 1;
-        quad.actual_indices[counter+2] = i + 2;
-        quad.actual_indices[counter+3] = i + 0;
-        quad.actual_indices[counter+4] = i + 2;
-        quad.actual_indices[counter+5] = i + 3;
-        counter += 6;
-      }
-    }
-
-    // Top left corner.
-    if (worse_up || worse_left) {
-      if (worse_up && worse_left) {
-        quad.actual_indices[counter]   = 4 * (0 * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+1] = 4 * (0 * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+2] = 4 * (1 * (QUAD_SIZE/n) + 0) + 3;
-        quad.actual_indices[counter+3] = 4 * (0 * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+4] = 4 * (0 * (QUAD_SIZE/n) + 1) + 1;
-        quad.actual_indices[counter+5] = 4 * (0 * (QUAD_SIZE/n) + 0) + 2;
-
-        quad.actual_indices[counter+6]  = 4 * (0 * (QUAD_SIZE/n) + 1) + 1;
-        quad.actual_indices[counter+7]  = 4 * (0 * (QUAD_SIZE/n) + 1) + 2;
-        quad.actual_indices[counter+8]  = 4 * (0 * (QUAD_SIZE/n) + 1) + 3;
-        quad.actual_indices[counter+9]  = 4 * (1 * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+10] = 4 * (1 * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+11] = 4 * (1 * (QUAD_SIZE/n) + 0) + 3;
-        counter += 12;
-      } else if (worse_up) {
-        quad.actual_indices[counter]   = 4 * (0 * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+1] = 4 * (0 * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+2] = 4 * (1 * (QUAD_SIZE/n) + 0) + 3;
-        quad.actual_indices[counter+3]  = 4 * (1 * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+4]  = 4 * (1 * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+5]  = 4 * (1 * (QUAD_SIZE/n) + 0) + 3;
-        quad.actual_indices[counter+6]  = 4 * (0 * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+7] = 4 * (0 * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+8] = 4 * (0 * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+9]  = 4 * (0 * (QUAD_SIZE/n) + 1) + 0;
-        quad.actual_indices[counter+10]  = 4 * (0 * (QUAD_SIZE/n) + 1) + 1;
-        quad.actual_indices[counter+11]  = 4 * (0 * (QUAD_SIZE/n) + 1) + 2;
-        quad.actual_indices[counter+12]  = 4 * (0 * (QUAD_SIZE/n) + 1) + 0;
-        quad.actual_indices[counter+13]  = 4 * (0 * (QUAD_SIZE/n) + 1) + 2;
-        quad.actual_indices[counter+14]  = 4 * (0 * (QUAD_SIZE/n) + 1) + 3;
-        counter += 15;
-      } else {
-        quad.actual_indices[counter] = 4 * (0 * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+1] = 4 * (0 * (QUAD_SIZE/n) + 1) + 1;
-        quad.actual_indices[counter+2] = 4 * (0 * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+3] = 4 * (0 * (QUAD_SIZE/n) + 1) + 1;
-        quad.actual_indices[counter+4] = 4 * (0 * (QUAD_SIZE/n) + 1) + 2;
-        quad.actual_indices[counter+5] = 4 * (0 * (QUAD_SIZE/n) + 1) + 3;
-        quad.actual_indices[counter+6] = 4 * (0 * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+7] = 4 * (0 * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+8] = 4 * (0 * (QUAD_SIZE/n) + 0) + 3;
-        quad.actual_indices[counter+9]  = 4 * (1 * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+10] = 4 * (1 * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+11] = 4 * (1 * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+12] = 4 * (1 * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+13] = 4 * (1 * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+14] = 4 * (1 * (QUAD_SIZE/n) + 0) + 3;
-        counter += 15;
-      }
-    } else {
-      quad.actual_indices[counter]   = 0;
-      quad.actual_indices[counter+1] = 1;
-      quad.actual_indices[counter+2] = 2;
-      quad.actual_indices[counter+3] = 0;
-      quad.actual_indices[counter+4] = 2;
-      quad.actual_indices[counter+5] = 3;
-
-      quad.actual_indices[counter+6]   = 4 * (1 * (QUAD_SIZE/n) + 0) + 0;
-      quad.actual_indices[counter+7] = 4 * (1 * (QUAD_SIZE/n) + 0) + 1;
-      quad.actual_indices[counter+8] = 4 * (1 * (QUAD_SIZE/n) + 0) + 2;
-      quad.actual_indices[counter+9] = 4 * (1 * (QUAD_SIZE/n) + 0) + 0;
-      quad.actual_indices[counter+10] = 4 * (1 * (QUAD_SIZE/n) + 0) + 2;
-      quad.actual_indices[counter+11] = 4 * (1 * (QUAD_SIZE/n) + 0) + 3;
-
-      quad.actual_indices[counter+12]   = 4 * (0 * (QUAD_SIZE/n) + 1) + 0;
-      quad.actual_indices[counter+13] = 4 * (0 * (QUAD_SIZE/n) + 1) + 1;
-      quad.actual_indices[counter+14] = 4 * (0 * (QUAD_SIZE/n) + 1) + 2;
-      quad.actual_indices[counter+15] = 4 * (0 * (QUAD_SIZE/n) + 1) + 0;
-      quad.actual_indices[counter+16] = 4 * (0 * (QUAD_SIZE/n) + 1) + 2;
-      quad.actual_indices[counter+17] = 4 * (0 * (QUAD_SIZE/n) + 1) + 3;
-
-      counter += 18;
-    }
-
-    // Top right corner.
-    if (worse_up || worse_right) {
-      if (worse_up && worse_right) {
-        quad.actual_indices[counter]   = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+1] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+2] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 3;
-        quad.actual_indices[counter+3] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+4] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 2;
-        quad.actual_indices[counter+5] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 3;
-
-        quad.actual_indices[counter+6 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+7 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+8 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+9 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 0;
-        quad.actual_indices[counter+10] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 1;
-        quad.actual_indices[counter+11] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 2;
-
-        counter += 12;
-      } else if (worse_up) {
-        quad.actual_indices[counter]    = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+1]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+2]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 3;
-        quad.actual_indices[counter+3]  = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+4]  = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+5]  = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+6]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+7]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+8]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 3;
-        quad.actual_indices[counter+9]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 0;
-        quad.actual_indices[counter+10] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 1;
-        quad.actual_indices[counter+11] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 2;
-        quad.actual_indices[counter+12] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 0;
-        quad.actual_indices[counter+13] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 2;
-        quad.actual_indices[counter+14] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 3;
-        counter += 15;
-      } else {
-        quad.actual_indices[counter]    = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+1]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 2;
-        quad.actual_indices[counter+2]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 3;
-        quad.actual_indices[counter+3]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 0;
-        quad.actual_indices[counter+4]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 1;
-        quad.actual_indices[counter+5]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 2;
-        quad.actual_indices[counter+6]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+7]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+8]  = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 3;
-        quad.actual_indices[counter+9]  = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+10] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 1;
-        quad.actual_indices[counter+11] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+12] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 0;
-        quad.actual_indices[counter+13] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 2;
-        quad.actual_indices[counter+14] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 3;
-        counter += 15;
-      }
-    } else {
-      quad.actual_indices[counter]   = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 0;
-      quad.actual_indices[counter+1] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 1;
-      quad.actual_indices[counter+2] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 2;
-      quad.actual_indices[counter+3] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 0;
-      quad.actual_indices[counter+4] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 2;
-      quad.actual_indices[counter+5] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 0) + 3;
-
-      quad.actual_indices[counter+6 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 0;
-      quad.actual_indices[counter+7 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 1;
-      quad.actual_indices[counter+8 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 2;
-      quad.actual_indices[counter+9 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 0;
-      quad.actual_indices[counter+10] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 2;
-      quad.actual_indices[counter+11] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + 1) + 3;
-
-      quad.actual_indices[counter+12] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 0;
-      quad.actual_indices[counter+13] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 1;
-      quad.actual_indices[counter+14] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 2;
-      quad.actual_indices[counter+15] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 0;
-      quad.actual_indices[counter+16] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 2;
-      quad.actual_indices[counter+17] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + 0) + 3;
-
-      counter += 18;
-    }
-
-    // Bottom left corner.
-    if (worse_down || worse_left) {
-      if (worse_down && worse_left) {
-        quad.actual_indices[counter]   = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+1] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+2] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        quad.actual_indices[counter+3] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+4] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+5] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-
-        quad.actual_indices[counter+6 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+7 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-        quad.actual_indices[counter+8 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-        quad.actual_indices[counter+9 ] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+10] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+11] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-
-        counter += 12;
-      } else if (worse_down) {
-        quad.actual_indices[counter   ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+1 ] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+2 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        quad.actual_indices[counter+3 ] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+4 ] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+5 ] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        quad.actual_indices[counter+6 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+7 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+8 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        quad.actual_indices[counter+9 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+10] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 1;
-        quad.actual_indices[counter+11] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-        quad.actual_indices[counter+12] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+13] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-        quad.actual_indices[counter+14] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-        counter += 15;
-      } else {
-        quad.actual_indices[counter   ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+1 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+2 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        quad.actual_indices[counter+3 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+4 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-        quad.actual_indices[counter+5 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-        quad.actual_indices[counter+6 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+7 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+8 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        quad.actual_indices[counter+9 ] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+10] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+11] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+12] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+13] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+14] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        counter += 15;
-      }
-    } else {
-      quad.actual_indices[counter   ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-      quad.actual_indices[counter+1 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-      quad.actual_indices[counter+2 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-      quad.actual_indices[counter+3 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-      quad.actual_indices[counter+4 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-      quad.actual_indices[counter+5 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-                                                                                 
-      quad.actual_indices[counter+6 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-      quad.actual_indices[counter+7 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 1;
-      quad.actual_indices[counter+8 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-      quad.actual_indices[counter+9 ] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-      quad.actual_indices[counter+10] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-      quad.actual_indices[counter+11] = 4 * (0 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-                                                                                 
-      quad.actual_indices[counter+12] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-      quad.actual_indices[counter+13] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-      quad.actual_indices[counter+14] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-      quad.actual_indices[counter+15] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-      quad.actual_indices[counter+16] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-      quad.actual_indices[counter+17] = 4 * (1 * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-
-      counter += 18;
-    }
-
-    // Bottom right corner.
-    if (worse_down || worse_right) {
-      if (worse_down && worse_right) {
-        quad.actual_indices[counter]   = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+1] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+2] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+3] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+4] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+5] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-
-        quad.actual_indices[counter+6 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+7 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+8 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        quad.actual_indices[counter+9 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+10] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 1;
-        quad.actual_indices[counter+11] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-        counter += 12;
-      } else if (worse_down) {
-        quad.actual_indices[counter   ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+1 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+2 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+3 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+4 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+5 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        quad.actual_indices[counter+6 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+7 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+8 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        quad.actual_indices[counter+9 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+10] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 1;
-        quad.actual_indices[counter+11] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-        quad.actual_indices[counter+12] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+13] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-        quad.actual_indices[counter+14] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-        counter += 15;
-      } else {
-        quad.actual_indices[counter   ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+1 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+2 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-        quad.actual_indices[counter+3 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-        quad.actual_indices[counter+4 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 1;
-        quad.actual_indices[counter+5 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-        quad.actual_indices[counter+6 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+7 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+8 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+9 ] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+10] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-        quad.actual_indices[counter+11] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+12] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-        quad.actual_indices[counter+13] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-        quad.actual_indices[counter+14] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-        counter += 15;
-      }
-    } else {
-      quad.actual_indices[counter   ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-      quad.actual_indices[counter+1 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-      quad.actual_indices[counter+2 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-      quad.actual_indices[counter+3 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-      quad.actual_indices[counter+4 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-      quad.actual_indices[counter+5 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-
-      quad.actual_indices[counter+6 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-      quad.actual_indices[counter+7 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 1;
-      quad.actual_indices[counter+8 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-      quad.actual_indices[counter+9 ] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 0;
-      quad.actual_indices[counter+10] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 2;
-      quad.actual_indices[counter+11] = 4 * ((QUAD_SIZE/n - 1) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 2)) + 3;
-
-      quad.actual_indices[counter+12] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-      quad.actual_indices[counter+13] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 1;
-      quad.actual_indices[counter+14] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-      quad.actual_indices[counter+15] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 0;
-      quad.actual_indices[counter+16] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 2;
-      quad.actual_indices[counter+17] = 4 * ((QUAD_SIZE/n - 2) * (QUAD_SIZE/n) + (QUAD_SIZE/n - 1)) + 3;
-
-      counter += 18;
-    }
-
-    quad.buffer_size = QUAD_SIZE * QUAD_SIZE * 4 / (n * n);
-    // quad.lod_size = QUAD_SIZE * QUAD_SIZE * 6 / (n * n);
-    quad.lod_size = counter;
-
-    if (!quad.initialized) {
-      glBindBuffer(GL_ARRAY_BUFFER, quad.vertex_buffer);
-      glBufferData(GL_ARRAY_BUFFER, quad.buffer_size * sizeof(glm::vec3), &quad.indexed_vertices[0], GL_DYNAMIC_DRAW);
-      
-      glBindBuffer(GL_ARRAY_BUFFER, quad.uv_buffer);
-      glBufferData(GL_ARRAY_BUFFER, quad.buffer_size * sizeof(glm::vec2), &quad.indexed_uvs[0], GL_DYNAMIC_DRAW);
-      
-      glBindBuffer(GL_ARRAY_BUFFER, quad.normal_buffer);
-      glBufferData(GL_ARRAY_BUFFER, quad.buffer_size * sizeof(glm::vec3), &quad.indexed_normals[0], GL_DYNAMIC_DRAW);
-
-      glBindBuffer(GL_ARRAY_BUFFER, quad.tangent_buffer);
-      glBufferData(GL_ARRAY_BUFFER, quad.buffer_size * sizeof(glm::vec3), &quad.indexed_tangents[0], GL_DYNAMIC_DRAW);
-      
-      glBindBuffer(GL_ARRAY_BUFFER, quad.bitangent_buffer);
-      glBufferData(GL_ARRAY_BUFFER, quad.buffer_size * sizeof(glm::vec3), &quad.indexed_bitangents[0], GL_DYNAMIC_DRAW);
-      
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad.element_buffer);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, quad.lod_size * sizeof(unsigned int), &quad.actual_indices[0], GL_DYNAMIC_DRAW);
-      quad.initialized = true;
-    } else {
-      glBindBuffer(GL_ARRAY_BUFFER, quad.vertex_buffer);
-      glBufferSubData(GL_ARRAY_BUFFER, 0, quad.buffer_size * sizeof(glm::vec3), &quad.indexed_vertices[0]);
-      
-      glBindBuffer(GL_ARRAY_BUFFER, quad.uv_buffer);
-      glBufferSubData(GL_ARRAY_BUFFER, 0, quad.buffer_size * sizeof(glm::vec2), &quad.indexed_uvs[0]);
-      
-      glBindBuffer(GL_ARRAY_BUFFER, quad.normal_buffer);
-      glBufferSubData(GL_ARRAY_BUFFER, 0, quad.buffer_size * sizeof(glm::vec3), &quad.indexed_normals[0]);
-
-      glBindBuffer(GL_ARRAY_BUFFER, quad.tangent_buffer);
-      glBufferSubData(GL_ARRAY_BUFFER, 0, quad.buffer_size * sizeof(glm::vec3), &quad.indexed_tangents[0]);
-      
-      glBindBuffer(GL_ARRAY_BUFFER, quad.bitangent_buffer);
-      glBufferSubData(GL_ARRAY_BUFFER, 0, quad.buffer_size * sizeof(glm::vec3), &quad.indexed_bitangents[0]);
-      
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad.element_buffer);
-      glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, quad.lod_size * sizeof(unsigned int), &quad.actual_indices[0]);
-    }
-    break;
-  }
-}
-
-void Terrain::UpdateQuads() {
-  int center_x = player_->position().x / (QUAD_SIZE * TILE_SIZE);
-  int center_y = player_->position().z / (QUAD_SIZE * TILE_SIZE);
-
-  if (center_x == last_center_x_ && center_y == last_center_y_) return;
-
-  last_center_x_ = center_x;
-  last_center_y_ = center_y;
-
-  // Delete distant quads.
-  for (int i = 0; i < NUM_QUADS; i++) {
-    TerrainQuad& quad = quads_[i];
-
-    quad.empty = true;
-    // int max_distance = BIG_QUAD_SIDE / 2;
-    // if (
-    //   abs(quad.x - center_x) > max_distance || 
-    //   abs(quad.y - center_y) > max_distance
-    // ) {
-    //   quad.empty = true;
-    // }
-  }
-
-  for (int i = -BIG_QUAD_SIDE / 2; i <= BIG_QUAD_SIDE / 2; i++) {
-    for (int j = -BIG_QUAD_SIDE / 2; j <= BIG_QUAD_SIDE / 2; j++) {
-      int x = center_x + i;
-      int y = center_y + j;
-      UpdateQuad(
-        i, j, center_x, center_y
-      );
-    }
+    glm::ivec3 top_left;
+    int offset = ((CLIPMAP_SIZE - 2) / 2);
+    top_left.x = -(offset * clipmaps_[i].GetTileSize());
+    top_left.z = -(offset * clipmaps_[i].GetTileSize());
+    clipmaps_[i].set_top_left(top_left);
   }
 }
 
 void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
   glUseProgram(shader_.program_id());
 
-  // Uniforms.
-  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
-  glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
-  glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
-  glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
-
-  glUniformMatrix4fv(shader_.GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
-  glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
-  glUniformMatrix4fv(shader_.GetUniformId("V"),     1, GL_FALSE, &ViewMatrix[0][0]);
-  glUniformMatrix3fv(shader_.GetUniformId("MV3x3"), 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
-
   // Textures.
   shader_.BindTexture("DiffuseTextureSampler", diffuse_texture_id_);
   shader_.BindTexture("NormalTextureSampler", normal_texture_id_);
   shader_.BindTexture("SpecularTextureSampler", specular_texture_id_);
-  shader_.BindTexture("HeightMapSampler", height_map_);
+  // shader_.BindTexture("HeightMapSampler", height_map_);
 
-  shader_.BindBuffer(tile_vertex_buffers_[0], 0, 3);
-  shader_.BindBuffer(tile_uv_buffers_[0], 1, 2);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tile_index_buffers_[0]);
+  // Clipmap.
+  for (int i = 0; i < CLIPMAP_LEVELS; i++) {
+    glm::ivec3 top_left = glm::ivec3(0, 0, 0);
+    glm::ivec3 bottom_right = glm::ivec3(0, 0, 0);
 
-  int player_pos_x = player_->position().x / 1024 - 16;
-  int player_pos_z = player_->position().z / 1024 - 16;
-  glUniform2i(shader_.GetUniformId("PlayerPosition"), player_pos_x, player_pos_z);
-
-  for (int i = 0; i < 1025; i++) {
-    for (int j = 0; j < 1025; j++) {
-      // data[i*1025 + j] = (GetHeight(player_pos_x*1024 + j*32, player_pos_z*1024 + i*32));
-      data[i*1025 + j] = height_[player_pos_x + j][player_pos_z + i];
+    if (i > 0) {
+      top_left = clipmaps_[i - 1].top_left();
+      bottom_right = clipmaps_[i - 1].bottom_right();
     }
+    clipmaps_[i].Render(player_->position(), &shader_, ProjectionMatrix, ViewMatrix, top_left, bottom_right);
   }
 
-  glBindTexture(GL_TEXTURE_2D, height_map_);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1025, 1025, GL_RED, GL_FLOAT, data);
-  // glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*) 0, 256 * 256);
-  glDrawElementsInstanced(GL_TRIANGLES, 6144, GL_UNSIGNED_INT, (void*) 0, 1024);
-
-  // for (int i = 0; i < NUM_QUADS; i++) {
-  //   TerrainQuad& quad = quads_[i];
-
-  //   // Buffers.
-  //   shader_.BindBuffer(quad.vertex_buffer, 0, 3);
-  //   shader_.BindBuffer(quad.uv_buffer, 1, 2);
-  //   shader_.BindBuffer(quad.normal_buffer, 2, 3);
-  //   
-  //   // Index buffer.
-  //   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad.element_buffer);
-
-  //   // glDrawElements(GL_TRIANGLES, quad.indices.size(), GL_UNSIGNED_INT, (void*) 0);
-  //   glDrawElements(GL_TRIANGLES, quad.lod_size, GL_UNSIGNED_INT, (void*) 0);
-  // }
-
-  // glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const void * indices, GLsizei primcount);
   shader_.Clear();
-}
-
-void Terrain::Clean() {
-  // glDeleteBuffers(1, &vertex_buffer_);
-  // glDeleteBuffers(1, &uv_buffer_);
-  // glDeleteBuffers(1, &normal_buffer_);
-  // glDeleteBuffers(1, &element_buffer_);
-  // glDeleteBuffers(1, &tangent_buffer_);
-  // glDeleteBuffers(1, &bitangent_buffer_);
 }
 
 } // End of namespace.

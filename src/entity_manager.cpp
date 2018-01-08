@@ -90,9 +90,10 @@ void EntityManager::Initialize() {
   shader.CreateUniform("V");
   shader.CreateUniform("M");
   shader.CreateUniform("MV3x3");
-  shader.CreateUniform("x");
-  shader.CreateUniform("z");
   shader.CreateUniform("PlayerPosition");
+  shader.CreateUniform("TILE_SIZE");
+  shader.CreateUniform("CLIPMAP_SIZE");
+  shader.CreateUniform("buffer_top_left");
   shaders_.insert(std::make_pair("terrain", shader));
 
   shader = Shader("sky", "shaders/vshade_normals", "shaders/fshade_sky");

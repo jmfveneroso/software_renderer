@@ -5,7 +5,7 @@ namespace Sibyl {
 Player::Player()
   : position_(glm::vec3(0, 300, 0)),
     speed_(glm::vec3(0, 0, 0)),
-    horizontal_angle_(3.14f),
+    horizontal_angle_(0.0f),
     vertical_angle_(0.0f),
     fov_(45.0f),
     mouse_speed_(0.005f),
@@ -51,7 +51,8 @@ void Player::ChangeOrientation(double x_pos, double y_pos) {
 }
 
 void Player::Jump() {
-  speed_.y += 0.3f;
+  // speed_.y += 0.3f;
+  speed_.y += 10.0f;
   // if (over_ground_ || position_.y < 11.2f) {
   //   if (position_.y < 11.2f) {
   //     speed_.y = 0.3f;

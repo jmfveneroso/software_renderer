@@ -19,108 +19,72 @@
 #include "simplex_noise.hpp"
 #include "config.h"
 
-#define QUAD_SIZE 64
-#define BIG_QUAD_SIDE 4
-#define NUM_QUADS (BIG_QUAD_SIDE * BIG_QUAD_SIDE)
-
-#define BLA QUAD_SIZE * QUAD_SIZE
-#define BLI BLA * 4
-#define BLE BLA * 6
+#define CLIPMAP_LEVELS 1
+#define CLIPMAP_SIZE 6
+#define TILE_SIZE 32
 
 namespace Sibyl {
 
-struct TerrainQuad {
-  int x, y;
-  int level_of_detail;
-
-  bool initialized;
-  bool empty;
-  int distance;
-
-  unsigned int indices[BLE];
-  glm::vec3 indexed_vertices  [BLI];
-  glm::vec2 indexed_uvs       [BLI];
-  glm::vec3 indexed_normals   [BLI];
-  glm::vec3 indexed_tangents  [BLI];
-  glm::vec3 indexed_bitangents[BLI];
-
-  int buffer_size;
-  int lod_size;
-  unsigned int actual_indices[BLE];
-
-  GLuint vertex_buffer;
-  GLuint uv_buffer;
-  GLuint normal_buffer;
-  GLuint tangent_buffer;
-  GLuint bitangent_buffer;
-  GLuint element_buffer;
-
-  TerrainQuad() : x(0), y(0), empty(true), initialized(false) {
-    glGenBuffers(1, &vertex_buffer);
-    glGenBuffers(1, &uv_buffer);
-    glGenBuffers(1, &normal_buffer);
-    glGenBuffers(1, &tangent_buffer);
-    glGenBuffers(1, &bitangent_buffer);
-    glGenBuffers(1, &element_buffer);
-  }
-};
-
-#define CLIPMAP_LEVELS 1
-#define CLIPMAP_SIZE 32
-#define TILE_SIZE 32
-
 class Clipmap {
-  unsigned int level;
-  GLuint vertex_buffer;
-  GLuint element_buffer;
-  glm::vec3* vertices;
-  glm::vec3* indices;
+  unsigned int level_;
+  GLuint vertex_buffer_;
+  GLuint height_buffer_;
 
+  GLuint uv_buffer_;
+  GLuint barycentric_buffer_;
+  GLuint element_buffer_;
+  std::vector<unsigned int> indices_;
+  bool valid_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
 
-  glm::vec2i top_left;
-  float height_map[CLIPMAP_SIZE][CLIPMAP_SIZE];
-  
-  void Update() {} 
-  void CalculateActiveRegion() {} 
-  void Render() {} 
+  glm::vec3 vertices_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+  float height_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+
+  GLuint height_texture_;
+  SimplexNoise noise_;
+
+  glm::ivec3 buffer_top_left_;
+  glm::ivec3 top_left_;
+  glm::ivec3 bottom_right_;
+  float height_map_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+
+  void DrawSubRegion(int, int, int, int);
+
+  glm::ivec3 GetToroidalCoordinates(glm::ivec3);
+  void InvalidateAll();
+  void InvalidateColumns(glm::ivec3);
+  void InvalidateRows(glm::ivec3);
+  void Invalidate(glm::ivec3);
+
+ public:
+  Clipmap();
+  Clipmap(unsigned int);
+
+  unsigned int GetTileSize();
+  void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, glm::ivec3, glm::ivec3);
+  float GetHeight(float, float);
+  void Init();
+  void Update(int, int);
+
+  GLuint vertex_buffer() { return vertex_buffer_; }
+  GLuint uv_buffer() { return uv_buffer_; }
+  GLuint element_buffer() { return element_buffer_; }
+  std::vector<unsigned int> indices() { return indices_; }
+  GLuint barycentric_buffer() { return barycentric_buffer_; }
+  void set_level(unsigned int level) { level_ = level; }
+  glm::ivec3 top_left() { return top_left_; }
+  glm::ivec3 bottom_right() { return bottom_right_; }
+  void set_top_left(glm::ivec3 top_left) { top_left_ = top_left; }
 };
 
 class Terrain : public IEntity {
   Clipmap clipmaps_[CLIPMAP_LEVELS]; 
-   
 
-
-
-
-
-  float* data;
-  float height_[4096][4096];
-
-  int last_center_x_;
-  int last_center_y_;
-
-  int active_buffer_;
-  TerrainQuad quads_[NUM_QUADS];
-
-  GLuint tile_vertex_buffers_[10];
-  GLuint tile_uv_buffers_[10];
-  GLuint tile_normal_buffers_[10];
-  GLuint tile_index_buffers_[10];
-  GLuint height_map_;
-
-  glm::vec3 prev_player_position_;
   std::shared_ptr<Player> player_;
+  SimplexNoise noise_;
   Shader shader_;
-  glm::vec3 position_;
   GLuint diffuse_texture_id_;
   GLuint normal_texture_id_;
   GLuint specular_texture_id_;
-
-  std::vector<glm::vec3> indexed_vertices_;
-  SimplexNoise noise_;
-
-  unsigned int AddVertexToQuad(TerrainQuad*, int, glm::vec3, float, float, glm::vec3 normal = glm::vec3(0,0,0));
-  void UpdateQuad(int, int, int, int);
 
  public:
   Terrain(
@@ -131,12 +95,11 @@ class Terrain : public IEntity {
     GLuint specular_texture_id
   );
 
-  void UpdateQuads();
-  float GetHeight(float, float);
-  std::vector<glm::vec3> vertices() { return indexed_vertices_; }
   void Draw(glm::mat4, glm::mat4, glm::vec3);
+
+  std::vector<glm::vec3> vertices() { return std::vector<glm::vec3>(); }
   void set_position(glm::vec3 v) {}
-  void Clean();
+  void Clean() {}
 };
 
 } // End of namespace.
