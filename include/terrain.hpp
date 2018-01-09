@@ -19,12 +19,19 @@
 #include "simplex_noise.hpp"
 #include "config.h"
 
-#define CLIPMAP_LEVELS 8
+#define CLIPMAP_LEVELS 11
 #define CLIPMAP_SIZE 90
 #define TILE_SIZE 64
 #define CLIPMAP_OFFSET ((CLIPMAP_SIZE - 2) / 2)
 
 namespace Sibyl {
+
+enum RenderRegion {
+  RR_LEFT,
+  RR_TOP,
+  RR_BOTTOM,
+  RR_RIGHT
+};
 
 struct HeightBuffer {
   glm::ivec2 top_left;
@@ -40,7 +47,6 @@ class Clipmap {
   unsigned int level_;
   SimplexNoise noise_;
   HeightBuffer height_buffer_;
-  glm::ivec2 clipmap_size_;
 
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
@@ -51,8 +57,6 @@ class Clipmap {
   unsigned int subregion_indices_[5][(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
   unsigned int subregion_sizes_[5];
 
-  int counter_ = 0;
-  bool update_indices_;
   GLuint height_texture_;
   GLuint normals_texture_;
   GLuint valid_texture_;
@@ -62,25 +66,28 @@ class Clipmap {
   glm::vec3 vertices_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
 
   glm::ivec2 top_left_;
-  glm::ivec3 bottom_right_;
 
 
   glm::ivec2 WorldToGridCoordinates(glm::vec3);
   glm::vec3 GridToWorldCoordinates(glm::ivec2);
-  glm::ivec2 ClampGridCoordinates(glm::ivec2);
+  glm::ivec2 ClampGridCoordinates(glm::ivec2, int);
   glm::ivec2 GridToBufferCoordinates(glm::ivec2);
   glm::ivec2 BufferToGridCoordinates(glm::ivec2);
   void InvalidateOuterBuffer(glm::ivec2);
   void UpdateHeightMap();
 
-  void DrawSubRegion(int, int, int, int, int);
+  GLuint center_region_buffer_;
+  int center_region_size_;
+  GLuint render_region_buffers_[2][2][4];
+  int render_region_sizes_[2][2][4];
+  int CreateRenderRegion(glm::ivec2, glm::ivec2);
 
  public:
   Clipmap();
   Clipmap(unsigned int);
 
   int GetTileSize();
-  void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, glm::ivec2, glm::ivec3);
+  void Render(glm::vec3, Shader*, glm::mat4, glm::mat4);
   float GetHeight(float, float);
   void Init();
   void Update(glm::vec3);
@@ -92,7 +99,6 @@ class Clipmap {
   GLuint barycentric_buffer() { return barycentric_buffer_; }
   void set_level(unsigned int level) { level_ = level; }
   glm::ivec2 top_left() { return top_left_; }
-  glm::ivec3 bottom_right() { return bottom_right_; }
   void set_top_left(glm::ivec2 top_left) { top_left_ = top_left; }
 };
 
