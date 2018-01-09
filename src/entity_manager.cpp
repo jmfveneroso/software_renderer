@@ -86,6 +86,8 @@ void EntityManager::Initialize() {
   shader.CreateUniform("NormalTextureSampler");
   shader.CreateUniform("SpecularTextureSampler");
   shader.CreateUniform("HeightMapSampler");
+  shader.CreateUniform("NormalsSampler");
+  shader.CreateUniform("ValidSampler");
   shader.CreateUniform("MVP");
   shader.CreateUniform("V");
   shader.CreateUniform("M");

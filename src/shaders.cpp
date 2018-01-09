@@ -120,9 +120,9 @@ GLuint Shader::GetUniformId(const std::string& name) {
   return it->second; 
 }
 
-void Shader::BindTexture(const std::string& name, const GLuint& texture_id) {
+void Shader::BindTexture(const std::string& name, const GLuint& texture_id, const GLenum& target) {
   glActiveTexture(available_texture_slot_);
-  glBindTexture(GL_TEXTURE_2D, texture_id);
+  glBindTexture(target, texture_id);
   glUniform1i(GetUniformId(name), available_texture_slot_ - GL_TEXTURE0);
   available_texture_slot_++;
 }

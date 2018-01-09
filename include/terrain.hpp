@@ -19,51 +19,71 @@
 #include "simplex_noise.hpp"
 #include "config.h"
 
-#define CLIPMAP_LEVELS 1
-#define CLIPMAP_SIZE 6
-#define TILE_SIZE 32
+#define CLIPMAP_LEVELS 8
+#define CLIPMAP_SIZE 90
+#define TILE_SIZE 64
+#define CLIPMAP_OFFSET ((CLIPMAP_SIZE - 2) / 2)
 
 namespace Sibyl {
 
+struct HeightBuffer {
+  glm::ivec2 top_left;
+
+  float height[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+  float valid[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+  glm::vec3 normals[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+
+  glm::ivec2 world_coords[(CLIPMAP_SIZE+1)];
+};
+
 class Clipmap {
   unsigned int level_;
-  GLuint vertex_buffer_;
-  GLuint height_buffer_;
+  SimplexNoise noise_;
+  HeightBuffer height_buffer_;
+  glm::ivec2 clipmap_size_;
 
+  GLuint vertex_buffer_;
   GLuint uv_buffer_;
   GLuint barycentric_buffer_;
   GLuint element_buffer_;
-  std::vector<unsigned int> indices_;
-  bool valid_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
 
-  glm::vec3 vertices_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
-  float height_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+  GLuint subregion_buffers_[5];
+  unsigned int subregion_indices_[5][(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+  unsigned int subregion_sizes_[5];
 
+  int counter_ = 0;
+  bool update_indices_;
   GLuint height_texture_;
-  SimplexNoise noise_;
+  GLuint normals_texture_;
+  GLuint valid_texture_;
 
-  glm::ivec3 buffer_top_left_;
-  glm::ivec3 top_left_;
+
+  std::vector<unsigned int> indices_;
+  glm::vec3 vertices_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+
+  glm::ivec2 top_left_;
   glm::ivec3 bottom_right_;
-  float height_map_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
 
-  void DrawSubRegion(int, int, int, int);
 
-  glm::ivec3 GetToroidalCoordinates(glm::ivec3);
-  void InvalidateAll();
-  void InvalidateColumns(glm::ivec3);
-  void InvalidateRows(glm::ivec3);
-  void Invalidate(glm::ivec3);
+  glm::ivec2 WorldToGridCoordinates(glm::vec3);
+  glm::vec3 GridToWorldCoordinates(glm::ivec2);
+  glm::ivec2 ClampGridCoordinates(glm::ivec2);
+  glm::ivec2 GridToBufferCoordinates(glm::ivec2);
+  glm::ivec2 BufferToGridCoordinates(glm::ivec2);
+  void InvalidateOuterBuffer(glm::ivec2);
+  void UpdateHeightMap();
+
+  void DrawSubRegion(int, int, int, int, int);
 
  public:
   Clipmap();
   Clipmap(unsigned int);
 
-  unsigned int GetTileSize();
-  void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, glm::ivec3, glm::ivec3);
+  int GetTileSize();
+  void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, glm::ivec2, glm::ivec3);
   float GetHeight(float, float);
   void Init();
-  void Update(int, int);
+  void Update(glm::vec3);
 
   GLuint vertex_buffer() { return vertex_buffer_; }
   GLuint uv_buffer() { return uv_buffer_; }
@@ -71,9 +91,9 @@ class Clipmap {
   std::vector<unsigned int> indices() { return indices_; }
   GLuint barycentric_buffer() { return barycentric_buffer_; }
   void set_level(unsigned int level) { level_ = level; }
-  glm::ivec3 top_left() { return top_left_; }
+  glm::ivec2 top_left() { return top_left_; }
   glm::ivec3 bottom_right() { return bottom_right_; }
-  void set_top_left(glm::ivec3 top_left) { top_left_ = top_left; }
+  void set_top_left(glm::ivec2 top_left) { top_left_ = top_left; }
 };
 
 class Terrain : public IEntity {
@@ -95,6 +115,7 @@ class Terrain : public IEntity {
     GLuint specular_texture_id
   );
 
+  float GetHeight(float x , float y) { return clipmaps_[0].GetHeight(x, y); }
   void Draw(glm::mat4, glm::mat4, glm::vec3);
 
   std::vector<glm::vec3> vertices() { return std::vector<glm::vec3>(); }

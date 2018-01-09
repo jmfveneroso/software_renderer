@@ -51,8 +51,8 @@ void Player::ChangeOrientation(double x_pos, double y_pos) {
 }
 
 void Player::Jump() {
-  // speed_.y += 0.3f;
-  speed_.y += 10.0f;
+  speed_.y += 0.3f;
+  // speed_.y += 10.0f;
   // if (over_ground_ || position_.y < 11.2f) {
   //   if (position_.y < 11.2f) {
   //     speed_.y = 0.3f;

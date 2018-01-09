@@ -4,7 +4,6 @@
 layout(location = 0) in vec3 vertexPosition_modelspace;
 layout(location = 1) in vec2 vertexUV;
 layout(location = 2) in vec3 vertexBarycentric;
-layout(location = 3) in float vertexHeight;
 
 // Output data ; will be interpolated for each fragment.
 out vec2 UV;
@@ -12,15 +11,18 @@ out vec3 vBC;
 out vec3 Normal_cameraspace;
 out vec3 LightDirection_cameraspace;
 out vec3 color_magna;
+out vec3 normal_cameraspace;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
 uniform mat4 V;
 uniform mat4 M;
 uniform mat3 MV3x3;
-uniform sampler2D HeightMapSampler;
+uniform sampler2DRect NormalsSampler;
+uniform sampler2DRect HeightMapSampler;
+uniform sampler2DRect ValidSampler;
 uniform ivec2 PlayerPosition;
-uniform ivec3 buffer_top_left;
+uniform ivec2 buffer_top_left;
 uniform int TILE_SIZE;
 uniform int CLIPMAP_SIZE;
 
@@ -28,12 +30,16 @@ void main(){
   // Output position of the vertex, in clip space : MVP * position
   vec3 position = vertexPosition_modelspace;
 
+  float valid = texelFetch(ValidSampler, ivec2(position.x, position.z)).r;
+
+  ivec2 toroidal_coords = ivec2(position.x, position.z);
+  ivec2 buffer_coords = (toroidal_coords + buffer_top_left + CLIPMAP_SIZE + 1) % (CLIPMAP_SIZE + 1);
+  float height = -2000 + 4000 * texelFetch(HeightMapSampler, buffer_coords).r;
+  vec3 normal = texelFetch(NormalsSampler, buffer_coords).rgb * 2 - 1;
+
   position.x *= TILE_SIZE;
   position.z *= TILE_SIZE;
-  position.y = vertexHeight;
-
-  // position.x = ((int(position.x) + CLIPMAP_SIZE + 1 - buffer_top_left.x) % (CLIPMAP_SIZE + 1)) * TILE_SIZE;
-  // position.z = ((int(position.z) + CLIPMAP_SIZE + 1 - buffer_top_left.z) % (CLIPMAP_SIZE + 1)) * TILE_SIZE;
+  position.y = height;
 
   gl_Position = MVP * vec4(position, 1);
   
@@ -42,8 +48,8 @@ void main(){
 
   vBC = vertexBarycentric;
 
-  // float x = float((int(vertexPosition_modelspace.x) + CLIPMAP_SIZE + 1 - buffer_top_left.x) % (CLIPMAP_SIZE + 1)) / (CLIPMAP_SIZE + 1);
-  // float z = float((int(vertexPosition_modelspace.z) + CLIPMAP_SIZE + 1 - buffer_top_left.z) % (CLIPMAP_SIZE + 1)) / (CLIPMAP_SIZE + 1);
-  // color_magna = vec3(buffer_top_left.x, 0, 0);
-  color_magna = vec3(1, 1, 1);
+  // color_magna = vec3(valid, 0, 0);
+  color_magna = normal;
+
+  normal_cameraspace = (V * M * vec4(normal, 0)).xyz; 
 }

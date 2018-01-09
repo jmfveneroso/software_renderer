@@ -30,7 +30,7 @@ class Shader {
   void Load(const std::string&, const std::string&, const std::string&);
   void CreateUniform(const std::string&);
   GLuint GetUniformId(const std::string&);
-  void BindTexture(const std::string&, const GLuint&);
+  void BindTexture(const std::string&, const GLuint&, const GLenum& = GL_TEXTURE_2D);
   void BindBuffer(const GLuint&, int, int dimension = 3);
   void Clear();
 
