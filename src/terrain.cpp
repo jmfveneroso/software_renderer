@@ -148,7 +148,8 @@ int Clipmap::GetTileSize() {
 }
 
 float Clipmap::GetHeight(float x, float y) {
-  return (3450 * noise_.noise(x * 0.00005, y * 0.00005) +
+  return (2450 * noise_.noise(x * 0.00002, y * 0.00002) +
+         1500 * noise_.noise((1000 + x) * 0.00002, (1000 + y) * 0.00002) +
          510 * noise_.noise(x * 0.0001, y * 0.0001) +
          40 * noise_.noise(x * 0.001, y * 0.001)) / 4000.0f;
 }
@@ -224,9 +225,9 @@ void Clipmap::UpdateHeightMap() {
         height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x] = 1;
 
         float step = GetTileSize() * TILE_SIZE;
-        glm::vec3 a = glm::vec3(0,    4000 * (float(1 + GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
-        glm::vec3 b = glm::vec3(step, 4000 * (float(1 + GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
-        glm::vec3 c = glm::vec3(0,    4000 * (float(1 + GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
+        glm::vec3 a = glm::vec3(0,    8000 * (float(1 + GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
+        glm::vec3 b = glm::vec3(step, 8000 * (float(1 + GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
+        glm::vec3 c = glm::vec3(0,    8000 * (float(1 + GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
         height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x] = (normalize(glm::cross(c - a, b - a)) + 1.0f) / 2.0f;
 
         glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
@@ -292,6 +293,9 @@ void Clipmap::Render(
   if (level_ == 1) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);
     glDrawElements(GL_TRIANGLE_STRIP, center_region_size_, GL_UNSIGNED_INT, (void*) 0);
+
+    // When i need to offset look here.
+    // glDrawElements(GL_TRIANGLE_STRIP, 54, GL_UNSIGNED_INT, (void*) (44 * sizeof(unsigned int)));
   } else {
     glm::ivec2 grid_coords = WorldToGridCoordinates(player_pos);
     glm::ivec2 clipmap_offset = ClampGridCoordinates(grid_coords, GetTileSize() >> 1);
