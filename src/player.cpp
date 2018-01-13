@@ -14,15 +14,15 @@ Player::Player()
 
 void Player::Move(Direction direction, float delta_time) {
   glm::vec3 right = glm::vec3(
-    sin(horizontal_angle_ - 3.14f/2.0f) * 2, 
+    sin(horizontal_angle_ - 3.14f/2.0f), 
     0,
-    cos(horizontal_angle_ - 3.14f/2.0f) * 2
+    cos(horizontal_angle_ - 3.14f/2.0f)
   );
 
   glm::vec3 front = glm::vec3(
-    sin(horizontal_angle_) * 2, 
+    sin(horizontal_angle_), 
     0,
-    cos(horizontal_angle_) * 2
+    cos(horizontal_angle_)
   );
   
   switch (direction) {

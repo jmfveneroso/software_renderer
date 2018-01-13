@@ -35,10 +35,13 @@ void main(){
   
   vec3 light_color = vec3(1, 1, 1);
   float light_power = 1.0;
-  vec3 light_cameraspace = (V * M * vec4(0, 1, 0, 0)).xyz;
+
+  vec4 light_direction = vec4(1, 1, 0, 0);
+  vec3 light_cameraspace = (V * M * light_direction).xyz;
 
   vec3 n = normalize(normal_cameraspace);
   vec3 l = normalize(light_cameraspace);
   float cos_theta = clamp(dot(n, l), 0, 1);
-  color = ambient_color + diffuse_color * light_color * (cos_theta - 0.75) * 4;
+  // color = ambient_color + diffuse_color * light_color * light_power * cos_theta;
+  color = ambient_color + diffuse_color * light_color * (cos_theta - 0.5) * 2;
 }

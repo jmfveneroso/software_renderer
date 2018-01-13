@@ -12,6 +12,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/norm.hpp>
+#include <glm/gtx/rotate_vector.hpp> 
 #include "shaders.h"
 #include "mesh.hpp"
 #include "player.hpp"
@@ -20,7 +21,7 @@
 #include "config.h"
 
 #define CLIPMAP_LEVELS 11
-#define CLIPMAP_SIZE 90
+#define CLIPMAP_SIZE 258
 #define TILE_SIZE 64
 #define CLIPMAP_OFFSET ((CLIPMAP_SIZE - 2) / 2)
 
@@ -37,13 +38,15 @@ struct HeightBuffer {
   glm::ivec2 top_left;
 
   float height[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
-  float valid[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
   glm::vec3 normals[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+  float valid[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
 
   glm::ivec2 world_coords[(CLIPMAP_SIZE+1)];
 };
 
 class Clipmap {
+  std::shared_ptr<Player> player_;
+
   unsigned int level_;
   SimplexNoise noise_;
   HeightBuffer height_buffer_;
@@ -57,8 +60,9 @@ class Clipmap {
   unsigned int subregion_indices_[5][(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
   unsigned int subregion_sizes_[5];
 
-  GLuint height_texture_;
-  GLuint normals_texture_;
+  int active_texture_ = 0;
+  GLuint height_texture_[2];
+  GLuint normals_texture_[2];
   GLuint valid_texture_;
 
 
@@ -66,6 +70,8 @@ class Clipmap {
   glm::vec3 vertices_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
 
   glm::ivec2 top_left_;
+  int num_invalid_ = (CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1);
+
 
 
   glm::ivec2 WorldToGridCoordinates(glm::vec3);
@@ -80,14 +86,24 @@ class Clipmap {
   int center_region_size_;
   GLuint render_region_buffers_[2][2][4];
   int render_region_sizes_[2][2][4];
+  glm::ivec2 render_region_top_left_[2][2][4];
+  glm::ivec2 render_region_clip_size_[2][2][4];
+
+
+
   int CreateRenderRegion(glm::ivec2, glm::ivec2);
+  // glm::vec2 QuadIntersection(glm::vec2, glm::vec2, glm::vec2, glm::vec2);
+  glm::vec2 QuadIntersection();
+
+  bool IsInsideFrustum(glm::vec2, glm::vec2, glm::vec2);
+  bool IsSubregionVisible(glm::vec2, glm::vec2);
 
  public:
   Clipmap();
-  Clipmap(unsigned int);
+  Clipmap(std::shared_ptr<Player>, unsigned int);
 
   int GetTileSize();
-  void Render(glm::vec3, Shader*, glm::mat4, glm::mat4);
+  void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, bool);
   float GetHeight(float, float);
   void Init();
   void Update(glm::vec3);
@@ -100,6 +116,7 @@ class Clipmap {
   void set_level(unsigned int level) { level_ = level; }
   glm::ivec2 top_left() { return top_left_; }
   void set_top_left(glm::ivec2 top_left) { top_left_ = top_left; }
+  int num_invalid() { return num_invalid_; }
 };
 
 class Terrain : public IEntity {

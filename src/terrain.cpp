@@ -2,11 +2,89 @@
 
 namespace Sibyl {
 
+static int update_counter_ = 0;
+
 Clipmap::Clipmap() {}
 
-Clipmap::Clipmap(unsigned int level) 
-  : level_(level) {
+Clipmap::Clipmap(
+  std::shared_ptr<Player> player,
+  unsigned int level
+) : player_(player), level_(level) {
   Init();
+  QuadIntersection();
+}
+
+// bool Clipmap::LineIntersection(glm::vec2 a[2], glm::vec2 b[2], glm::vec2* intersection) {
+//   double numerator   = glm::determinant(glm::mat2(a[1] - a[0], b[1] - b[0]));
+//   double denominator = glm::determinant(glm::mat2(a[1] - a[0], b[1] - b[0]));
+// 
+//   double delta = (numerator / denominator);
+//   if (delta < 0) return false;
+// 
+//   *intersection = b[0] + b[1] * delta;
+//   return true;
+// }
+
+bool Clipmap::IsInsideFrustum(glm::vec2 lft, glm::vec2 rgt, glm::vec2 p) {
+  double denominator = glm::determinant(glm::mat2(lft, rgt));
+  double alpha = glm::determinant(glm::mat2(p, rgt)) / denominator;
+  double beta  = glm::determinant(glm::mat2(lft, p)) / denominator;
+  // std::cout << "alpha: " << alpha << " beta:" << beta << std::endl;
+  return alpha >= 0 && beta >= 0;
+}
+
+bool Clipmap::IsSubregionVisible(glm::vec2 top_left, glm::vec2 bottom_right) {
+  glm::vec2 view_direction = glm::vec2(
+    sin(player_->horizontal_angle()),
+    cos(player_->horizontal_angle())
+  );
+  // std::cout << "horizontal: " << player_->horizontal_angle() << std::endl;
+  // std::cout << "viewdirection x: " << view_direction.x << " y:" << view_direction.y << std::endl;
+
+  glm::vec2 pos = glm::vec2(player_->position().x, player_->position().z);
+  top_left -= pos;
+  bottom_right -= pos;
+
+  glm::vec2 lft = glm::rotate(view_direction, glm::radians(player_->fov()));
+  glm::vec2 rgt = glm::rotate(view_direction, -glm::radians(player_->fov()));
+
+  // std::cout << "lft x: "    << lft.x          << " y:" << lft.y          << std::endl;
+  // std::cout << "rgt x: "    << rgt.x          << " y:" << rgt.y          << std::endl;
+  // std::cout << "toplft x: " << top_left.x     << " y:" << top_left.y     << std::endl;
+  // std::cout << "btmrgt x: " << bottom_right.x << " y:" << bottom_right.y << std::endl;
+
+  if (IsInsideFrustum(lft, rgt, top_left)    ) return true;
+  if (IsInsideFrustum(lft, rgt, bottom_right)) return true;
+  if (IsInsideFrustum(lft, rgt, glm::vec2(top_left.x, bottom_right.y))) return true;
+  if (IsInsideFrustum(lft, rgt, glm::vec2(bottom_right.x, top_left.y))) return true;
+  return false;
+}
+
+glm::vec2 Clipmap::QuadIntersection(
+//  glm::vec2 a, glm::vec2 b, glm::vec2 top_lft, glm::vec2 bot_rgt
+) {
+  // glm::vec2 view_direction = glm::vec2(
+  //   cos(glm::radians(player_->horizontal_angle())),
+  //   sin(glm::radians(player_->horizontal_angle()))
+  // );
+
+  // glm::vec2 lft = player_->position() + glm::rotate(view_direction, glm::radians(player_->fov()));
+  // glm::vec2 rgt = player_->position() + glm::rotate(view_direction, -glm::radians(player_->fov()));
+
+
+
+  // detail::tvec2<T> glm::rotate    (       detail::tvec2< T > const &      v,
+  //   T const &       angle 
+  // )       
+  //  
+  //  
+  // ProjectionMatrix = glm::perspective(glm::radians(player_->fov()), 4.0f / 3.0f, 20.0f, 2000000.0f);
+
+  // glm::vec2 frustum_top
+  // glm::vec2 frustum_bot
+
+  // LineIntersection(glm::vec2 a[2], glm::vec2 b[2], glm::vec2* intersection) {
+  return glm::vec2(0, 0);
 }
 
 void Clipmap::Init() {
@@ -62,13 +140,15 @@ void Clipmap::Init() {
     }
   }
 
-  glGenTextures(1, &height_texture_);
-  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RED, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RED, GL_FLOAT, height_buffer_.height);
+  for (int i = 0; i < 2; i++) {
+    glGenTextures(1, &height_texture_[i]);
+    glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[i]);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RED, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RED, GL_FLOAT, height_buffer_.height);
 
-  glGenTextures(1, &normals_texture_);
-  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.normals);
+    glGenTextures(1, &normals_texture_[i]);
+    glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[i]);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.normals);
+  }
 
   glGenTextures(1, &valid_texture_);
   glBindTexture(GL_TEXTURE_RECTANGLE, valid_texture_);
@@ -109,6 +189,9 @@ void Clipmap::Init() {
             break;
           default: throw;
         }
+        render_region_top_left_[x][y][region] = top_left;
+        render_region_clip_size_[x][y][region] = size;
+
         render_region_sizes_[x][y][region] = CreateRenderRegion(top_left, size);
       }
     }
@@ -148,10 +231,13 @@ int Clipmap::GetTileSize() {
 }
 
 float Clipmap::GetHeight(float x, float y) {
-  return (2450 * noise_.noise(x * 0.00002, y * 0.00002) +
+  float h = (2450 * noise_.noise(x * 0.00002, y * 0.00002) +
          1500 * noise_.noise((1000 + x) * 0.00002, (1000 + y) * 0.00002) +
-         510 * noise_.noise(x * 0.0001, y * 0.0001) +
-         40 * noise_.noise(x * 0.001, y * 0.001)) / 4000.0f;
+         // 510 * noise_.noise(x * 0.0001, y * 0.0001) +
+         // 40 * noise_.noise(x * 0.001, y * 0.001) 
+         0)/ 4000.0f;
+
+  return h;
 }
 
 glm::ivec2 Clipmap::WorldToGridCoordinates(glm::vec3 coords) {
@@ -195,7 +281,10 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
     if (grid_coords.x < new_top_left.x || grid_coords.x > new_bottom_right.x) {
       // Invalidate column.
       for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
-        height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x] = 0;
+        if (height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x]) {
+          height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x] = 0;
+          num_invalid_++;
+        }
       }
     }
   }
@@ -206,7 +295,10 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
     if (grid_coords.y < new_top_left.y || grid_coords.y > new_bottom_right.y) {
       // Invalidate row.
       for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
-        height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x] = 0;
+        if (height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x]) {
+          height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x] = 0;
+          num_invalid_++;
+        }
       }
     }
   }
@@ -215,35 +307,51 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
 }
 
 void Clipmap::UpdateHeightMap() {
+  if (num_invalid_ <= 0) return;
+  // if (update_counter_ >= CLIPMAP_SIZE * CLIPMAP_SIZE) return;
+
   for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
+    if (num_invalid_ <= 0) break;
+    // if (update_counter_ >= CLIPMAP_SIZE * CLIPMAP_SIZE) break;
     for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
+      if (num_invalid_ <= 0) break;
+      if (height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x]) continue;
+      // if (update_counter_++ >= CLIPMAP_SIZE * CLIPMAP_SIZE) break;
+
       glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, y));
       glm::vec3 world_coords = GridToWorldCoordinates(grid_coords);
 
-      if (!height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x]) {
-        height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = float(1 + GetHeight(world_coords.x, world_coords.z)) / 2;
-        height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x] = 1;
+      height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = float(1 + GetHeight(world_coords.x, world_coords.z)) / 2;
+      height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x] = 1;
 
-        float step = GetTileSize() * TILE_SIZE;
-        glm::vec3 a = glm::vec3(0,    8000 * (float(1 + GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
-        glm::vec3 b = glm::vec3(step, 8000 * (float(1 + GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
-        glm::vec3 c = glm::vec3(0,    8000 * (float(1 + GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
-        height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x] = (normalize(glm::cross(c - a, b - a)) + 1.0f) / 2.0f;
+      float step = GetTileSize() * TILE_SIZE;
+      glm::vec3 a = glm::vec3(0,    8000 * (float(1 + GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
+      glm::vec3 b = glm::vec3(step, 8000 * (float(1 + GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
+      glm::vec3 c = glm::vec3(0,    8000 * (float(1 + GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
+      height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x] = (normalize(glm::cross(c - a, b - a)) + 1.0f) / 2.0f;
 
-        glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
-        glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, x, y, 1, 1, GL_RED, GL_FLOAT, &height_buffer_.height[y * (CLIPMAP_SIZE+1) + x]);
+      // glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
+      // glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, x, y, 1, 1, GL_RED, GL_FLOAT, &height_buffer_.height[y * (CLIPMAP_SIZE+1) + x]);
 
-        glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
-        glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, x, y, 1, 1, GL_RGB, GL_FLOAT, &height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x]);
-      }
+      // glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
+      // glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, x, y, 1, 1, GL_RGB, GL_FLOAT, &height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x]);
+      num_invalid_--;
     }
   }
+ 
+  if (++active_texture_ > 1) active_texture_ = 0;
+  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[active_texture_]);
+  glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RED, GL_FLOAT, &height_buffer_.height[0]);
+  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[active_texture_]);
+  glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.normals[0]);
 }
 
 void Clipmap::Update(glm::vec3 player_pos) {
   glm::ivec2 grid_coords = WorldToGridCoordinates(player_pos);
   glm::ivec2 new_top_left = ClampGridCoordinates(grid_coords, GetTileSize()) - CLIPMAP_OFFSET * GetTileSize();
+
   InvalidateOuterBuffer(new_top_left);
+  if (top_left_ == new_top_left && num_invalid_ == 0) return;
   top_left_ = new_top_left;
 
   UpdateHeightMap();
@@ -256,11 +364,9 @@ void Clipmap::Render(
   glm::vec3 player_pos, 
   Shader* shader, 
   glm::mat4 ProjectionMatrix, 
-  glm::mat4 ViewMatrix
+  glm::mat4 ViewMatrix,
+  bool full
 ) {
-  Update(player_pos);
-
-
   // Draw.
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(top_left_.x * TILE_SIZE, 0, top_left_.y * TILE_SIZE));
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
@@ -279,18 +385,18 @@ void Clipmap::Render(
   shader->BindBuffer(barycentric_buffer_, 2, 3);
 
   glActiveTexture(GL_TEXTURE5);
-  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
+  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[active_texture_]);
   glUniform1i(shader->GetUniformId("NormalsSampler"), 5);
 
   glActiveTexture(GL_TEXTURE4);
-  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
+  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[active_texture_]);
   glUniform1i(shader->GetUniformId("HeightMapSampler"), 4);
 
   glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_RECTANGLE, valid_texture_);
   glUniform1i(shader->GetUniformId("ValidSampler"), 3);
 
-  if (level_ == 1) {
+  if (full) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);
     glDrawElements(GL_TRIANGLE_STRIP, center_region_size_, GL_UNSIGNED_INT, (void*) 0);
 
@@ -303,8 +409,12 @@ void Clipmap::Render(
     clipmap_offset /= GetTileSize();
 
     for (int region = 0 ; region < 4; region++) {
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_region_buffers_[clipmap_offset.x][clipmap_offset.y][region]);
-      glDrawElements(GL_TRIANGLE_STRIP, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
+      glm::vec2 top_lft = top_left_ * TILE_SIZE + render_region_top_left_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE;
+      glm::vec2 bot_rgt = top_lft + glm::vec2(render_region_clip_size_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE);
+      if (IsSubregionVisible(top_lft, bot_rgt)) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_region_buffers_[clipmap_offset.x][clipmap_offset.y][region]);
+        glDrawElements(GL_TRIANGLE_STRIP, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
+      }
     }
   }
 } 
@@ -322,7 +432,7 @@ Terrain::Terrain(
     specular_texture_id_(specular_texture_id) {
 
   for (int i = 0; i < CLIPMAP_LEVELS; i++) {
-    clipmaps_[i] = Clipmap(i + 1); 
+    clipmaps_[i] = Clipmap(player_, i + 1); 
 
     glm::ivec2 top_left;
     top_left.x = -(CLIPMAP_OFFSET * clipmaps_[i].GetTileSize());
@@ -340,8 +450,18 @@ void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
   shader_.BindTexture("SpecularTextureSampler", specular_texture_id_);
 
   // Clipmap.
+  update_counter_ = 0;
+  // for (int i = CLIPMAP_LEVELS - 1; i >= 0; i--) {
   for (int i = 0; i < CLIPMAP_LEVELS; i++) {
-    clipmaps_[i].Render(player_->position(), &shader_, ProjectionMatrix, ViewMatrix);
+    clipmaps_[i].Update(player_->position());
+  }
+
+  bool first = true;
+  for (int i = 0; i < CLIPMAP_LEVELS; i++) {
+    // if (clipmaps_[i].num_invalid() == 0) {
+    clipmaps_[i].Render(player_->position(), &shader_, ProjectionMatrix, ViewMatrix, first);
+    first = false;
+    // }
   }
 
   shader_.Clear();

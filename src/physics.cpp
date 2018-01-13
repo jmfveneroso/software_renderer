@@ -99,7 +99,7 @@ void Physics::UpdateForces() {
 
     player_->set_speed(speed);
   } else {
-    player_->ApplyForce(glm::vec3(0, -0.2, 0)); 
+    player_->ApplyForce(glm::vec3(0, -0.5, 0)); 
   }
   player_->Update();
   // player_->set_speed(glm::vec3(0, 0, 0));
