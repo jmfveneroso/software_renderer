@@ -3,15 +3,13 @@
 // Input vertex data, different for all executions of this shader.
 layout(location = 0) in vec3 vertexPosition_modelspace;
 layout(location = 1) in vec2 vertexUV;
-layout(location = 2) in vec3 vertexBarycentric;
+layout(location = 2) in vec4 vertexBarycentric;
 
-// Output data. Will be interpolated for each fragment.
-out vec2 UV;
-out vec3 vBC;
-out vec3 Normal_cameraspace;
-out vec3 LightDirection_cameraspace;
-out vec3 color_magna;
-out vec3 normal_cameraspace;
+out VertexData {
+  vec2 UV;
+  vec3 color_magna;
+  vec3 normal_cameraspace;
+} out_data;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
@@ -44,12 +42,7 @@ void main(){
   gl_Position = MVP * vec4(position, 1);
   
   // UV of the vertex. No special space for this one.
-  UV = vertexUV; 
-
-  vBC = vertexBarycentric;
-
-  // color_magna = vec3(valid, 0, 0);
-  color_magna = normal;
-
-  normal_cameraspace = (V * M * vec4(normal, 0)).xyz; 
+  out_data.UV = vertexUV; 
+  out_data.color_magna = normal;
+  out_data.normal_cameraspace = (V * M * vec4(normal, 0)).xyz; 
 }

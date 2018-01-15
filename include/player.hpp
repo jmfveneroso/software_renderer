@@ -12,6 +12,7 @@
 namespace Sibyl {
 
 #define PLAYER_SPEED 1500.0f
+// #define PLAYER_SPEED 100.0f
 
 enum Direction {
   FORWARD,

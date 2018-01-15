@@ -83,14 +83,14 @@ void Physics::TestCollision(glm::vec3 last_pos, std::shared_ptr<IEntity> entity)
 
 void Physics::TestCollisionTerrain() {
   float height = 4000 * entity_manager_->GetTerrain()->GetHeight(player_->position().x, player_->position().z);
-  if (player_->position().y - 45.0f < height) {
+  // if (player_->position().y - 45.0f < height) {
     glm::vec3 pos = player_->position();
     pos.y = height + 45.0f;
     player_->set_position(pos);
     glm::vec3 speed = player_->speed();
     if (speed.y < 0) speed.y = 0.0f;
     player_->set_speed(speed);
-  }
+  // }
 }
 
 void Physics::UpdateForces() {
@@ -99,7 +99,7 @@ void Physics::UpdateForces() {
 
     player_->set_speed(speed);
   } else {
-    player_->ApplyForce(glm::vec3(0, -0.5, 0)); 
+    player_->ApplyForce(glm::vec3(0, -0.2, 0)); 
   }
   player_->Update();
   // player_->set_speed(glm::vec3(0, 0, 0));

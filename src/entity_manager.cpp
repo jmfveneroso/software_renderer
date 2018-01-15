@@ -81,7 +81,7 @@ void EntityManager::Initialize() {
   shader.CreateUniform("plane");
   shaders_.insert(std::make_pair("default", shader));
 
-  shader = Shader("terrain", "shaders/vshade_terrain", "shaders/fshade_terrain");
+  shader = Shader("terrain", "shaders/vshade_terrain", "shaders/fshade_terrain", "shaders/gshade_terrain");
   shader.CreateUniform("DiffuseTextureSampler");
   shader.CreateUniform("NormalTextureSampler");
   shader.CreateUniform("SpecularTextureSampler");

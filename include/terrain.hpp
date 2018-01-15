@@ -91,7 +91,7 @@ class Clipmap {
 
 
 
-  int CreateRenderRegion(glm::ivec2, glm::ivec2);
+  int CreateRenderRegion(glm::ivec2, glm::ivec2, bool*);
   // glm::vec2 QuadIntersection(glm::vec2, glm::vec2, glm::vec2, glm::vec2);
   glm::vec2 QuadIntersection();
 

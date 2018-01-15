@@ -95,26 +95,26 @@ void Clipmap::Init() {
   glGenBuffers(5, subregion_buffers_);
 
   std::vector<glm::vec2> uvs;
-  std::vector<glm::vec3> barycentric;
+  std::vector<glm::vec4> barycentric;
 
   for (int z = 0; z <= CLIPMAP_SIZE; z++) {
     for (int x = 0; x <= CLIPMAP_SIZE; x++) {
       vertices_[z * (CLIPMAP_SIZE + 1) + x] = glm::vec3(x, 0, z);
       uvs.push_back(glm::vec2(x * GetTileSize(), z * GetTileSize()));
 
-      glm::vec3 b;
+      glm::vec4 b;
       if (z % 3 == 0) {
-        if (x % 3 == 0) b = glm::vec3(1, 0, 0);
-        if (x % 3 == 1) b = glm::vec3(0, 1, 0);
-        if (x % 3 == 2) b = glm::vec3(0, 0, 1);
+        if (x % 3 == 0) b = glm::vec4(1, 0, 0, 0);
+        if (x % 3 == 1) b = glm::vec4(0, 1, 0, 0);
+        if (x % 3 == 2) b = glm::vec4(0, 0, 1, 0);
       } else if (z % 3 == 1) {
-        if (x % 3 == 0) b = glm::vec3(0, 0, 1);
-        if (x % 3 == 1) b = glm::vec3(1, 0, 0);
-        if (x % 3 == 2) b = glm::vec3(0, 1, 0);
+        if (x % 3 == 0) b = glm::vec4(0, 0, 1, 0);
+        if (x % 3 == 1) b = glm::vec4(1, 0, 0, 0);
+        if (x % 3 == 2) b = glm::vec4(0, 1, 0, 0);
       } else {
-        if (x % 3 == 0) b = glm::vec3(0, 1, 0);
-        if (x % 3 == 1) b = glm::vec3(0, 0, 1);
-        if (x % 3 == 2) b = glm::vec3(1, 0, 0);
+        if (x % 3 == 0) b = glm::vec4(0, 1, 0, 0);
+        if (x % 3 == 1) b = glm::vec4(0, 0, 1, 0);
+        if (x % 3 == 2) b = glm::vec4(1, 0, 0, 0);
       }
       barycentric.push_back(b);
     }
@@ -127,7 +127,7 @@ void Clipmap::Init() {
   glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
 
   glBindBuffer(GL_ARRAY_BUFFER, barycentric_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, barycentric.size() * sizeof(glm::vec3), &barycentric[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, barycentric.size() * sizeof(glm::vec4), &barycentric[0], GL_STATIC_DRAW);
 
   for (int i = 0; i < 5; i++) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, subregion_buffers_[i]);
@@ -157,7 +157,10 @@ void Clipmap::Init() {
 
   glGenBuffers(1, &center_region_buffer_);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);
-  center_region_size_ = CreateRenderRegion(glm::ivec2(0, 0), glm::ivec2(CLIPMAP_SIZE, CLIPMAP_SIZE));
+
+  bool borders[4] = { true, true, true, true };
+  center_region_size_ = CreateRenderRegion(glm::ivec2(0, 0), glm::ivec2(CLIPMAP_SIZE, CLIPMAP_SIZE), borders);
+  borders[0] = false; borders[1] = false; borders[2] = false; borders[3] = false;
 
   for (int x = 0; x < 2; x++) {
     for (int y = 0; y < 2; y++) {
@@ -172,18 +175,22 @@ void Clipmap::Init() {
         glm::ivec2 size;   
         switch (region) {
           case RR_LEFT:
+            borders[RR_LEFT] = true; borders[RR_TOP] = true; borders[RR_BOTTOM] = true; borders[RR_RIGHT] = false;
             top_left = glm::ivec2(0, 0);
             size = glm::ivec2(left_size, CLIPMAP_SIZE);
             break;
           case RR_TOP:
+            borders[RR_LEFT] = false; borders[RR_TOP] = true; borders[RR_BOTTOM] = false; borders[RR_RIGHT] = false;
             top_left = glm::ivec2(left_size, 0);
             size = glm::ivec2(CLIPMAP_SIZE/2, up_size);
             break;
           case RR_BOTTOM:
+            borders[RR_LEFT] = false; borders[RR_TOP] = false; borders[RR_BOTTOM] = true; borders[RR_RIGHT] = false;
             top_left = glm::ivec2(left_size, up_size + CLIPMAP_SIZE/2);
             size = glm::ivec2(CLIPMAP_SIZE/2, CLIPMAP_SIZE/2 - up_size);
             break;
           case RR_RIGHT:
+            borders[RR_LEFT] = false; borders[RR_TOP] = true; borders[RR_BOTTOM] = true; borders[RR_RIGHT] = true;
             top_left = glm::ivec2(left_size + CLIPMAP_SIZE / 2, 0);
             size = glm::ivec2(CLIPMAP_SIZE/2 - left_size, CLIPMAP_SIZE);
             break;
@@ -192,28 +199,112 @@ void Clipmap::Init() {
         render_region_top_left_[x][y][region] = top_left;
         render_region_clip_size_[x][y][region] = size;
 
-        render_region_sizes_[x][y][region] = CreateRenderRegion(top_left, size);
+        render_region_sizes_[x][y][region] = CreateRenderRegion(top_left, size, borders);
       }
     }
   }
 }
 
-int Clipmap::CreateRenderRegion(glm::ivec2 top_left, glm::ivec2 size) {
+int Clipmap::CreateRenderRegion(glm::ivec2 top_left, glm::ivec2 size, bool borders[4]) {
   std::vector<unsigned int> indices;
+  for (int y = top_left.y; y < top_left.y + size.y; y++) {
+    for (int x = top_left.x; x < top_left.x + size.x; x++) {
+      if (borders[RR_TOP] && y == 0) {
+        if (x % 2 == 0) {
+          if (x == 0 && borders[RR_LEFT]) {
+            indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+            indices.push_back((y + 2) * (CLIPMAP_SIZE + 1) + x);
+            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+          } else {
+            indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+          }
 
-  int end_x = top_left.x + size.x;
-  int end_y = top_left.y + size.y;
-  for (int y = top_left.y; y < end_y; y++) {
-    if (y > top_left.y)
-      indices.push_back(y * (CLIPMAP_SIZE + 1) + top_left.x);
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 2));
+        } else {
+          if (x == CLIPMAP_SIZE - 1 && borders[RR_RIGHT]) {
+            indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+            indices.push_back((y + 2) * (CLIPMAP_SIZE + 1) + (x + 1));
+          } else {
+            indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+          }
+        }
+        continue;
+      }
 
-    for (int x = top_left.x; x <= end_x; x++) {
-      indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-      indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+      if (borders[RR_BOTTOM] && y == CLIPMAP_SIZE - 1) {
+        if (x % 2 == 0) {
+          if (!borders[RR_LEFT] || x != 0) {
+            indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+            indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+          }
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 2));
+        } else {
+          if (borders[RR_RIGHT] && x == CLIPMAP_SIZE - 1) continue;
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+        }
+        continue;
+      }
+
+      if (borders[RR_LEFT] && x == 0) {
+        if (y % 2 == 0) {
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 2) * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+        } else {
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+        }
+        continue;
+      }
+
+      if (borders[RR_RIGHT] && x == CLIPMAP_SIZE - 1) {
+        if (y % 2 == 0) {
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 2) * (CLIPMAP_SIZE + 1) + (x + 1));
+        } else {
+          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+        }
+        continue;
+      }
+
+      if ((y % 2 == 0 && x % 2 == 0) || (y % 2 == 1 && x % 2 == 1)) {
+        indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+        indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+        indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+      } else {
+        indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
+        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+        indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+        indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
+        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
+        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
+      }
     } 
-
-    if (y < end_y - 1)
-      indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + end_x);
   }
 
   glBufferData(
@@ -233,8 +324,8 @@ int Clipmap::GetTileSize() {
 float Clipmap::GetHeight(float x, float y) {
   float h = (2450 * noise_.noise(x * 0.00002, y * 0.00002) +
          1500 * noise_.noise((1000 + x) * 0.00002, (1000 + y) * 0.00002) +
-         // 510 * noise_.noise(x * 0.0001, y * 0.0001) +
-         // 40 * noise_.noise(x * 0.001, y * 0.001) 
+         510 * noise_.noise(x * 0.0001, y * 0.0001) +
+         40 * noise_.noise(x * 0.001, y * 0.001) +
          0)/ 4000.0f;
 
   return h;
@@ -382,7 +473,7 @@ void Clipmap::Render(
 
   shader->BindBuffer(vertex_buffer_, 0, 3);
   shader->BindBuffer(uv_buffer_, 1, 2);
-  shader->BindBuffer(barycentric_buffer_, 2, 3);
+  shader->BindBuffer(barycentric_buffer_, 2, 4);
 
   glActiveTexture(GL_TEXTURE5);
   glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[active_texture_]);
@@ -398,7 +489,8 @@ void Clipmap::Render(
 
   if (full) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);
-    glDrawElements(GL_TRIANGLE_STRIP, center_region_size_, GL_UNSIGNED_INT, (void*) 0);
+    // glDrawElements(GL_TRIANGLE_STRIP, center_region_size_, GL_UNSIGNED_INT, (void*) 0);
+    glDrawElements(GL_TRIANGLES, center_region_size_, GL_UNSIGNED_INT, (void*) 0);
 
     // When i need to offset look here.
     // glDrawElements(GL_TRIANGLE_STRIP, 54, GL_UNSIGNED_INT, (void*) (44 * sizeof(unsigned int)));
@@ -411,10 +503,11 @@ void Clipmap::Render(
     for (int region = 0 ; region < 4; region++) {
       glm::vec2 top_lft = top_left_ * TILE_SIZE + render_region_top_left_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE;
       glm::vec2 bot_rgt = top_lft + glm::vec2(render_region_clip_size_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE);
-      if (IsSubregionVisible(top_lft, bot_rgt)) {
+      // if (IsSubregionVisible(top_lft, bot_rgt)) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_region_buffers_[clipmap_offset.x][clipmap_offset.y][region]);
-        glDrawElements(GL_TRIANGLE_STRIP, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
-      }
+        // glDrawElements(GL_TRIANGLE_STRIP, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
+        glDrawElements(GL_TRIANGLES, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
+      // }
     }
   }
 } 
