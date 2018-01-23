@@ -33,7 +33,7 @@ void main(){
   ivec2 toroidal_coords = ivec2(position.x, position.z);
   ivec2 buffer_coords = (toroidal_coords + buffer_top_left + CLIPMAP_SIZE + 1) % (CLIPMAP_SIZE + 1);
   // float height = -4000 + 8000 * texelFetch(HeightMapSampler, buffer_coords).r;
-  float height = -4000 + 8000 * texelFetch(HeightMapSampler, buffer_coords).r;
+  float height = -256000 + 512000 * texelFetch(HeightMapSampler, buffer_coords).r;
   vec3 normal = texelFetch(NormalsSampler, buffer_coords).rgb * 2 - 1;
 
   position.x *= TILE_SIZE;

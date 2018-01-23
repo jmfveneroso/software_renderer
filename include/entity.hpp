@@ -78,6 +78,25 @@ class Water : public Solid {
   void Draw(glm::mat4, glm::mat4, glm::vec3);
 };
 
+class TextureScreen : public IEntity {
+ protected:
+  glm::vec3 position_;
+  Shader shader_;
+  GLuint texture_id_;
+
+ public:
+  TextureScreen(
+    Shader shader,
+    GLuint texture_id
+  );
+
+  void Draw(glm::mat4, glm::mat4, glm::vec3);
+  void Clean();
+
+  std::vector<glm::vec3> vertices() { return std::vector<glm::vec3>(); }
+  void set_position(glm::vec3 position) { position_ = position; }
+};
+
 } // End of namespace.
 
 #endif

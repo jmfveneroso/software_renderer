@@ -43,6 +43,8 @@ set(
   src/texture.cpp 
   src/shaders.cpp
   src/mesh.cpp
+  src/height_map.cpp
+  src/clipmap.cpp
   src/terrain.cpp
   src/simplex_noise.cpp
 )

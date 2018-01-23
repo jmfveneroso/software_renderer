@@ -121,4 +121,18 @@ void Water::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 cam
   shader_.Clear();
 }
 
+TextureScreen::TextureScreen(
+  Shader shader,
+  GLuint texture_id
+) : shader_(shader),
+    texture_id_(texture_id), 
+    position_(glm::vec3(0.0, 0.0, 0.0)) {
+}
+
+void TextureScreen::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
+}
+
+void TextureScreen::Clean() {
+}
+
 } // End of namespace.
