@@ -128,11 +128,6 @@ void EntityManager::Initialize() {
   shaders_.insert(std::make_pair("water", shader));
 
   LoadSolid(
-    "terrain", "res/terrain.obj", "textures/large_terrain.bmp", 
-    "textures/normal.bmp", "textures/specular_orange.bmp", "default"
-  );
-
-   LoadSolid(
     "sky", "res/skydome.obj", "textures/skydome.bmp", 
     "textures/normal.bmp", "textures/specular_orange.bmp", "sky"
   );
@@ -164,6 +159,7 @@ void EntityManager::Initialize() {
   diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/dirt.bmp");
   normal_texture_id = LoadTexture("normal_terrain", "textures/dirt.bmp");
   GLuint specular_texture_id = LoadTexture("specular_terrain", "textures/specular.bmp");
+
   terrain_ = std::make_shared<Terrain>(
     player_,
     it->second,

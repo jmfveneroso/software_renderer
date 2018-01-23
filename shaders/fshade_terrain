@@ -24,10 +24,8 @@ void main(){
   //   color = vec3(0.0, 0.0, 0.0);
   // } else{
   //   // color = in_data.barycentric;
-  //   color = vec3(0.5, 0.5, 0.5);
+  //   color = in_data.color_magna;
   // }
-  // color = 0.8 * color_magna + 0.2 * color;
-  // color = color_magna;
 
   // Material properties
   vec3 diffuse_color = texture(DiffuseTextureSampler, in_data.UV).rgb;

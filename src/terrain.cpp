@@ -4,6 +4,8 @@ namespace Sibyl {
 
 static int update_counter_ = 0;
 
+std::vector<glm::ivec2> Clipmap::feature_points = std::vector<glm::ivec2>();
+
 Clipmap::Clipmap() {}
 
 Clipmap::Clipmap(
@@ -24,6 +26,26 @@ Clipmap::Clipmap(
 //   *intersection = b[0] + b[1] * delta;
 //   return true;
 // }
+
+void Clipmap::CreateVoronoiDiagram() {
+  feature_points.reserve(10);
+
+  for (int i = 0; i < 10; i++) {
+    int x = -500 * TILE_SIZE + rand() % (1000 * TILE_SIZE);
+    int y = -500 * TILE_SIZE + rand() % (1000 * TILE_SIZE); 
+    feature_points[i] = glm::ivec2(x, y);
+    std::cout << "x: " << x << " y: " << y << std::endl;
+  }
+}
+
+void Clipmap::CreateHeightmap() {
+  CreateVoronoiDiagram();
+  // for (int x = 0; x < 1000; x++) {
+  //   for (int y = 0; y < 1000; y++) {
+  //     height_map_[x * 1000 + y] = GetHeight(x * TILE_SIZE, y * TILE_SIZE);
+  //   }
+  // }
+}
 
 bool Clipmap::IsInsideFrustum(glm::vec2 lft, glm::vec2 rgt, glm::vec2 p) {
   double denominator = glm::determinant(glm::mat2(lft, rgt));
@@ -203,6 +225,9 @@ void Clipmap::Init() {
       }
     }
   }
+
+  height_map_ = new float[1000000];
+  CreateHeightmap();
 }
 
 int Clipmap::CreateRenderRegion(glm::ivec2 top_left, glm::ivec2 size, bool borders[4]) {
@@ -322,14 +347,105 @@ int Clipmap::GetTileSize() {
 }
 
 float Clipmap::GetHeight(float x, float y) {
-  float h = (2450 * noise_.noise(x * 0.00002, y * 0.00002) +
-         1500 * noise_.noise((1000 + x) * 0.00002, (1000 + y) * 0.00002) +
-         510 * noise_.noise(x * 0.0001, y * 0.0001) +
-         40 * noise_.noise(x * 0.001, y * 0.001) +
-         0)/ 4000.0f;
+  glm::ivec2 world_coords = glm::ivec2(x, y);
+
+  int point_1 = -1;
+  int point_2 = -1;
+  int point_3 = -1;
+  float distance_1 = 1000000000;
+  float distance_2 = 1000000000;
+  float distance_3 = 1000000000;
+  for (int i = 0; i < 10; i++) {
+    float distance = sqrt(pow(feature_points[i].x - world_coords.x, 2) + pow(feature_points[i].y - world_coords.y, 2)); 
+    if (distance < distance_1) {
+      distance_1 = distance;
+      point_1 = i;
+    }
+  }
+
+  for (int i = 0; i < 10; i++) {
+    if (i == point_1) continue;
+    float distance = sqrt(pow(feature_points[i].x - world_coords.x, 2) + pow(feature_points[i].y - world_coords.y, 2)); 
+    if (distance < distance_2) {
+      distance_2 = distance;
+      point_2 = i;
+    }
+  }
+
+  for (int i = 0; i < 10; i++) {
+    if (i == point_1) continue;
+    if (i == point_2) continue;
+    float distance = sqrt(pow(feature_points[i].x - world_coords.x, 2) + pow(feature_points[i].y - world_coords.y, 2)); 
+    if (distance < distance_3) {
+      distance_3 = distance;
+      point_3 = i;
+    }
+  }
+
+  float h = -1 + (distance_1 - distance_2) / float(10000);
+
+  h = 0.3 * h + 0.7 * (
+    2450 * noise_.noise(x * 0.00002, y * 0.00002) +
+    1500 * noise_.noise((1000 + x) * 0.00002, (1000 + y) * 0.00002) +
+    510 * noise_.noise(x * 0.0001, y * 0.0001) +
+    40 * noise_.noise(x * 0.001, y * 0.001) +
+    0
+  )/ 4000.0f;
 
   return h;
 }
+
+float Clipmap::GetGridPointHeight(int x, int y) {
+  glm::ivec2 world_coords = glm::ivec2(x * TILE_SIZE, y * TILE_SIZE);
+
+  int point_1 = -1;
+  int point_2 = -1;
+  int point_3 = -1;
+  float distance_1 = 1000000000;
+  float distance_2 = 1000000000;
+  float distance_3 = 1000000000;
+  for (int i = 0; i < 10; i++) {
+    float distance = sqrt(pow(feature_points[i].x - world_coords.x, 2) + pow(feature_points[i].y - world_coords.y, 2)); 
+    if (distance < distance_1) {
+      distance_1 = distance;
+      point_1 = i;
+    }
+  }
+
+  for (int i = 0; i < 10; i++) {
+    if (i == point_1) continue;
+    float distance = sqrt(pow(feature_points[i].x - world_coords.x, 2) + pow(feature_points[i].y - world_coords.y, 2)); 
+    if (distance < distance_2) {
+      distance_2 = distance;
+      point_2 = i;
+    }
+  }
+
+  for (int i = 0; i < 10; i++) {
+    if (i == point_1) continue;
+    if (i == point_2) continue;
+    float distance = sqrt(pow(feature_points[i].x - world_coords.x, 2) + pow(feature_points[i].y - world_coords.y, 2)); 
+    if (distance < distance_3) {
+      distance_3 = distance;
+      point_3 = i;
+    }
+  }
+
+  return -1 + (distance_1 - distance_2 - distance_3) / float(10000);
+  
+
+
+  // if (x >= -128 && x < 130 && y >= -128 && y < 130) {
+  //   x += 128;
+  //   y += 128;
+  //   std::cout << height_map_[x * 258 + y] << std::endl;
+  //   return height_map_[x * 258 + y];
+  // }
+  // return -1;
+
+  // return GetHeight(x * TILE_SIZE, y * TILE_SIZE);
+}
+
 
 glm::ivec2 Clipmap::WorldToGridCoordinates(glm::vec3 coords) {
   return glm::ivec2(coords.x, coords.z) / TILE_SIZE;
@@ -399,33 +515,29 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
 
 void Clipmap::UpdateHeightMap() {
   if (num_invalid_ <= 0) return;
-  // if (update_counter_ >= CLIPMAP_SIZE * CLIPMAP_SIZE) return;
 
   for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
     if (num_invalid_ <= 0) break;
-    // if (update_counter_ >= CLIPMAP_SIZE * CLIPMAP_SIZE) break;
     for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
       if (num_invalid_ <= 0) break;
       if (height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x]) continue;
-      // if (update_counter_++ >= CLIPMAP_SIZE * CLIPMAP_SIZE) break;
 
       glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, y));
       glm::vec3 world_coords = GridToWorldCoordinates(grid_coords);
 
+      // height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = float(1 + GetGridPointHeight(grid_coords.x, grid_coords.y)) / 2;
       height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = float(1 + GetHeight(world_coords.x, world_coords.z)) / 2;
       height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x] = 1;
 
       float step = GetTileSize() * TILE_SIZE;
+      // glm::vec3 a = glm::vec3(0,    8000 * (float(1 + GetGridPointHeight(grid_coords.x       , grid_coords.y        )) / 2), 0);
+      // glm::vec3 b = glm::vec3(step, 8000 * (float(1 + GetGridPointHeight(grid_coords.x + 1, grid_coords.y        )) / 2), 0);
+      // glm::vec3 c = glm::vec3(0,    8000 * (float(1 + GetGridPointHeight(grid_coords.x       , grid_coords.y + 1)) / 2), step);
       glm::vec3 a = glm::vec3(0,    8000 * (float(1 + GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
       glm::vec3 b = glm::vec3(step, 8000 * (float(1 + GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
       glm::vec3 c = glm::vec3(0,    8000 * (float(1 + GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
       height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x] = (normalize(glm::cross(c - a, b - a)) + 1.0f) / 2.0f;
 
-      // glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
-      // glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, x, y, 1, 1, GL_RED, GL_FLOAT, &height_buffer_.height[y * (CLIPMAP_SIZE+1) + x]);
-
-      // glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
-      // glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, x, y, 1, 1, GL_RGB, GL_FLOAT, &height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x]);
       num_invalid_--;
     }
   }

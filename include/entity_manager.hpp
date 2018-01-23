@@ -14,7 +14,7 @@
 namespace Sibyl {
 
 typedef std::map< std::string, std::shared_ptr<IEntity> > EntityMap;
-typedef std::map<std::string, std::shared_ptr<FrameBuffer> > FrameBufferMap;
+typedef std::map< std::string, std::shared_ptr<FrameBuffer> > FrameBufferMap;
 typedef std::map<std::string, GLuint> TextureMap;
 typedef std::map<std::string, Shader> ShaderMap;
 

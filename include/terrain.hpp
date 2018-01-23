@@ -21,8 +21,10 @@
 #include "config.h"
 
 #define CLIPMAP_LEVELS 11
+// #define CLIPMAP_LEVELS 7
 #define CLIPMAP_SIZE 258
-#define TILE_SIZE 64
+// #define TILE_SIZE 64
+#define TILE_SIZE 1024
 #define CLIPMAP_OFFSET ((CLIPMAP_SIZE - 2) / 2)
 
 namespace Sibyl {
@@ -45,6 +47,7 @@ struct HeightBuffer {
 };
 
 class Clipmap {
+  static std::vector<glm::ivec2> feature_points;
   std::shared_ptr<Player> player_;
 
   unsigned int level_;
@@ -65,6 +68,7 @@ class Clipmap {
   GLuint normals_texture_[2];
   GLuint valid_texture_;
 
+  float *height_map_;
 
   std::vector<unsigned int> indices_;
   glm::vec3 vertices_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
@@ -91,6 +95,8 @@ class Clipmap {
 
 
 
+  void CreateVoronoiDiagram();
+  void CreateHeightmap();
   int CreateRenderRegion(glm::ivec2, glm::ivec2, bool*);
   // glm::vec2 QuadIntersection(glm::vec2, glm::vec2, glm::vec2, glm::vec2);
   glm::vec2 QuadIntersection();
@@ -104,6 +110,7 @@ class Clipmap {
 
   int GetTileSize();
   void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, bool);
+  float GetGridPointHeight(int, int);
   float GetHeight(float, float);
   void Init();
   void Update(glm::vec3);
