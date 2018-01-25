@@ -40,6 +40,19 @@ void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
   }
 
   shader_.Clear();
+
+  // static bool bla = false;
+  // if(player_->position().x != 0 && !bla) {
+  //   height_map_->CalculateErosion();
+  //   bla = true;
+  // }
+}
+
+void Terrain::Erode() {
+  height_map_->CalculateErosion();
+  for (int i = 0; i < CLIPMAP_LEVELS; i++) {
+    clipmaps_[i].Clear();
+  }
 }
 
 } // End of namespace.

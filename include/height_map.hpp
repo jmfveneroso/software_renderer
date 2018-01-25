@@ -14,15 +14,26 @@
 #include "simplex_noise.hpp"
 #include "config.h"
 
+#define MAX_HEIGHT 256000
+#define TILE_SIZE 64
+#define HEIGHT_MAP_SIZE 5000
+
 namespace Sibyl {
 
 class HeightMap {
   SimplexNoise noise_;
   std::vector<glm::ivec2> feature_points_;
+  float* height_map_;
+  float* secondary_height_map_;
+
+  float Interpolate(float);
+  void CreateHeightMap();
+  void ApplyPerturbationFilter();
 
  public:
   HeightMap();
-  float GetHeight(float x , float y);
+  float GetHeight(float, float);
+  void CalculateErosion();
 };
 
 } // End of namespace.

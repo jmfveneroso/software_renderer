@@ -23,7 +23,6 @@
 
 #define CLIPMAP_LEVELS 11
 #define CLIPMAP_SIZE 258
-#define TILE_SIZE 64
 #define CLIPMAP_OFFSET ((CLIPMAP_SIZE - 2) / 2)
 
 #define LEFT_BORDERS 14
@@ -42,7 +41,7 @@ enum RenderRegion {
 };
 
 struct HeightBuffer {
-  glm::ivec2 top_left;
+  glm::ivec2 top_left = glm::ivec2(1, 1);
   float height[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
   glm::vec3 normals[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
   float valid[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
@@ -95,6 +94,7 @@ class Clipmap {
   void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, bool);
   void Init();
   void Update(glm::vec3);
+  void Clear();
 };
 
 } // End of namespace.

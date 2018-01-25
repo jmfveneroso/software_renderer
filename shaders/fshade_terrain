@@ -30,7 +30,7 @@ void main(){
   // Material properties
   vec3 diffuse_color = texture(DiffuseTextureSampler, in_data.UV).rgb;
   vec3 ambient_color = vec3(0.3, 0.3, 0.3) * diffuse_color;
-  // vec3 MaterialSpecularColor = texture(SpecularTextureSampler, in_data.UV).rgb * 0.3;
+  vec3 MaterialSpecularColor = texture(SpecularTextureSampler, in_data.UV).rgb * 0.3;
   
   vec3 light_color = vec3(1, 1, 1);
   float light_power = 1.0;
@@ -41,6 +41,8 @@ void main(){
   vec3 n = normalize(in_data.normal_cameraspace);
   vec3 l = normalize(light_cameraspace);
   float cos_theta = clamp(dot(n, l), 0, 1);
-  // color = ambient_color + diffuse_color * light_color * light_power * cos_theta;
-  color = ambient_color + diffuse_color * light_color * (cos_theta - 0.5) * 2;
+  color = ambient_color + diffuse_color * light_color * light_power * cos_theta;
+
+  // // Increase contrast.
+  // // color = ambient_color + diffuse_color * light_color * (cos_theta - 0.5) * 2;
 }

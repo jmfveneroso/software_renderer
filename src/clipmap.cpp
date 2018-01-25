@@ -247,6 +247,16 @@ void Clipmap::Init() {
   }
 }
 
+void Clipmap::Clear() {
+  num_invalid_ = 0;
+  for (int z = 0; z < CLIPMAP_SIZE+1; z++) {
+    for (int x = 0; x < CLIPMAP_SIZE+1; x++) {
+      height_buffer_.valid[z * (CLIPMAP_SIZE+1) + x] = 0;
+      num_invalid_++;
+    }
+  }
+}
+
 int Clipmap::GetTileSize() {
   return 1 << (level_ - 1);
 }
@@ -343,9 +353,9 @@ void Clipmap::Update(glm::vec3 player_pos) {
       // glm::vec3 a = glm::vec3(0,    8000 * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
       // glm::vec3 b = glm::vec3(step, 8000 * (float(1 + height_map_->GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
       // glm::vec3 c = glm::vec3(0,    8000 * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
-      glm::vec3 a = glm::vec3(0,    512000 * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
-      glm::vec3 b = glm::vec3(step, 512000 * (float(1 + height_map_->GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
-      glm::vec3 c = glm::vec3(0,    512000 * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
+      glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
+      glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + height_map_->GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
+      glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
       height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x] = (normalize(glm::cross(c - a, b - a)) + 1.0f) / 2.0f;
       num_invalid_--;
     }
@@ -375,19 +385,20 @@ void Clipmap::Render(
   glUniformMatrix3fv(shader->GetUniformId("MV3x3"), 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
   glUniform1i(shader->GetUniformId("TILE_SIZE"), TILE_SIZE * GetTileSize());
   glUniform1i(shader->GetUniformId("CLIPMAP_SIZE"), CLIPMAP_SIZE);
+  glUniform1i(shader->GetUniformId("MAX_HEIGHT"), MAX_HEIGHT);
   glUniform2iv(shader->GetUniformId("buffer_top_left"), 1, (int*) &height_buffer_.top_left);
 
   shader->BindBuffer(vertex_buffer_, 0, 3);
   shader->BindBuffer(uv_buffer_, 1, 2);
   shader->BindBuffer(barycentric_buffer_, 2, 4);
 
-  glActiveTexture(GL_TEXTURE5);
-  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[active_texture_]);
-  glUniform1i(shader->GetUniformId("NormalsSampler"), 5);
-
   glActiveTexture(GL_TEXTURE4);
+  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[active_texture_]);
+  glUniform1i(shader->GetUniformId("NormalsSampler"), 4);
+
+  glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[active_texture_]);
-  glUniform1i(shader->GetUniformId("HeightMapSampler"), 4);
+  glUniform1i(shader->GetUniformId("HeightMapSampler"), 3);
 
   if (center) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);

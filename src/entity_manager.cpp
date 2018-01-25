@@ -95,6 +95,7 @@ void EntityManager::Initialize() {
   shader.CreateUniform("PlayerPosition");
   shader.CreateUniform("TILE_SIZE");
   shader.CreateUniform("CLIPMAP_SIZE");
+  shader.CreateUniform("MAX_HEIGHT");
   shader.CreateUniform("buffer_top_left");
   shaders_.insert(std::make_pair("terrain", shader));
 

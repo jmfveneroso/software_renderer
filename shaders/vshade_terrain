@@ -18,22 +18,20 @@ uniform mat4 M;
 uniform mat3 MV3x3;
 uniform sampler2DRect NormalsSampler;
 uniform sampler2DRect HeightMapSampler;
-uniform sampler2DRect ValidSampler;
 uniform ivec2 PlayerPosition;
 uniform ivec2 buffer_top_left;
 uniform int TILE_SIZE;
 uniform int CLIPMAP_SIZE;
+uniform int MAX_HEIGHT;
 
 void main(){
   // Output position of the vertex, in clip space : MVP * position
   vec3 position = vertexPosition_modelspace;
 
-  float valid = texelFetch(ValidSampler, ivec2(position.x, position.z)).r;
-
   ivec2 toroidal_coords = ivec2(position.x, position.z);
   ivec2 buffer_coords = (toroidal_coords + buffer_top_left + CLIPMAP_SIZE + 1) % (CLIPMAP_SIZE + 1);
   // float height = -4000 + 8000 * texelFetch(HeightMapSampler, buffer_coords).r;
-  float height = -256000 + 512000 * texelFetch(HeightMapSampler, buffer_coords).r;
+  float height = -(MAX_HEIGHT / 2) + MAX_HEIGHT * texelFetch(HeightMapSampler, buffer_coords).r;
   vec3 normal = texelFetch(NormalsSampler, buffer_coords).rgb * 2 - 1;
 
   position.x *= TILE_SIZE;

@@ -49,6 +49,7 @@ class Terrain : public IEntity {
   std::vector<glm::vec3> vertices() { return std::vector<glm::vec3>(); }
   void set_position(glm::vec3 v) {}
   void Clean() {}
+  void Erode();
 };
 
 } // End of namespace.

@@ -4,8 +4,9 @@ namespace Sibyl {
 
 Input::Input(
   std::shared_ptr<Window> window,
-  std::shared_ptr<Player> player
-) : window_(window), player_(player) {
+  std::shared_ptr<Player> player,
+  std::shared_ptr<EntityManager> entity_manager 
+) : window_(window), player_(player), entity_manager_(entity_manager) {
 }
 
 void Input::ProcessInput(){
@@ -30,6 +31,10 @@ void Input::ProcessInput(){
   // Strafe left
   if (glfwGetKey(window_->window(), GLFW_KEY_A) == GLFW_PRESS)
     player_->Move(LEFT, delta_time);
+
+  if (glfwGetKey(window_->window(), GLFW_KEY_Q) == GLFW_PRESS) {
+    entity_manager_->GetTerrain()->Erode();
+  }
 
   if (glfwGetKey(window_->window(), GLFW_KEY_SPACE) == GLFW_PRESS)
     player_->Jump();
