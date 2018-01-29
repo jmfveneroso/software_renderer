@@ -85,6 +85,9 @@ void EntityManager::Initialize() {
   shader.CreateUniform("DiffuseTextureSampler");
   shader.CreateUniform("NormalTextureSampler");
   shader.CreateUniform("SpecularTextureSampler");
+  shader.CreateUniform("RockTextureSampler");
+  shader.CreateUniform("Rock2TextureSampler");
+  shader.CreateUniform("SandTextureSampler");
   shader.CreateUniform("HeightMapSampler");
   shader.CreateUniform("NormalsSampler");
   shader.CreateUniform("ValidSampler");
@@ -120,12 +123,19 @@ void EntityManager::Initialize() {
   shader.CreateUniform("normalMap");
   shader.CreateUniform("depthMap");
   shader.CreateUniform("LightPosition_worldspace");
+  shader.CreateUniform("moveFactor");
+  shader.CreateUniform("cameraPosition");
+
+  shader.CreateUniform("HeightMapSampler");
   shader.CreateUniform("MVP");
   shader.CreateUniform("V");
   shader.CreateUniform("M");
   shader.CreateUniform("MV3x3");
-  shader.CreateUniform("moveFactor");
-  shader.CreateUniform("cameraPosition");
+  shader.CreateUniform("PlayerPosition");
+  shader.CreateUniform("TILE_SIZE");
+  shader.CreateUniform("CLIPMAP_SIZE");
+  shader.CreateUniform("MAX_HEIGHT");
+  shader.CreateUniform("buffer_top_left");
   shaders_.insert(std::make_pair("water", shader));
 
   LoadSolid(
@@ -136,13 +146,13 @@ void EntityManager::Initialize() {
   GLuint diffuse_texture_id = LoadTexture("textures/water_dudv.bmp", "textures/water_dudv.bmp");
   GLuint normal_texture_id = LoadTexture("textures/water_normal.bmp", "textures/water_normal.bmp");
 
-  auto it = shaders_.find("water");
-  if (it == shaders_.end()) 
-    throw "Shader does not exist";
+  auto water_it = shaders_.find("water");
+  if (water_it == shaders_.end()) 
+    throw "Shader water does not exist";
 
   std::shared_ptr<Water> water = std::make_shared<Water>(
     "res/water.obj", 
-    it->second,
+    water_it->second,
     diffuse_texture_id, 
     normal_texture_id, 
     frame_buffers_["reflection"]->GetTexture(),
@@ -153,20 +163,29 @@ void EntityManager::Initialize() {
 
 
   // Procedural terrain.
-  it = shaders_.find("terrain");
+  auto it = shaders_.find("terrain");
   if (it == shaders_.end()) 
     throw "Shader does not exist";
 
-  diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/dirt.bmp");
-  normal_texture_id = LoadTexture("normal_terrain", "textures/dirt.bmp");
-  GLuint specular_texture_id = LoadTexture("specular_terrain", "textures/specular.bmp");
+  // diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/dirt.bmp");
+  diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/wild_grass.bmp");
+  normal_texture_id = LoadTexture("normal_terrain", "textures/wild_grass_2.bmp");
+  GLuint specular_texture_id = LoadTexture("specular_terrain", "textures/noise.bmp");
+  GLuint rock_texture_id = LoadTexture("rock_terrain", "textures/rock_3.bmp");
+  GLuint rock_2_texture_id = LoadTexture("rock_2_terrain", "textures/rock.bmp");
+  GLuint sand_texture_id = LoadTexture("sand_terrain", "textures/sand.bmp");
 
   terrain_ = std::make_shared<Terrain>(
     player_,
     it->second,
+    water_it->second,
     diffuse_texture_id, 
     normal_texture_id,
-    specular_texture_id
+    specular_texture_id,
+    rock_texture_id,
+    rock_2_texture_id,
+    sand_texture_id,
+    water
   );
   entities_.insert(std::make_pair("pro_terrain", terrain_));
 }

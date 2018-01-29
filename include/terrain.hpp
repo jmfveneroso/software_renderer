@@ -30,17 +30,28 @@ class Terrain : public IEntity {
   std::shared_ptr<HeightMap> height_map_;
   SimplexNoise noise_;
   Shader shader_;
+  Shader water_shader_;
   GLuint diffuse_texture_id_;
   GLuint normal_texture_id_;
   GLuint specular_texture_id_;
+  GLuint rock_texture_id_;
+  GLuint rock_2_texture_id_;
+  GLuint sand_texture_id_;
+  std::shared_ptr<Water> water_;
+  bool draw_water_ = false;
 
  public:
   Terrain(
     std::shared_ptr<Player> player,
     Shader shader, 
+    Shader water_shader, 
     GLuint diffuse_texture_id, 
     GLuint normal_texture_id, 
-    GLuint specular_texture_id
+    GLuint specular_texture_id,
+    GLuint rock_texture_id,
+    GLuint rock_2_texture_id,
+    GLuint sand_texture_id,
+    std::shared_ptr<Water>
   );
 
   float GetHeight(float x , float y) { return height_map_->GetHeight(x, y); }
@@ -50,6 +61,7 @@ class Terrain : public IEntity {
   void set_position(glm::vec3 v) {}
   void Clean() {}
   void Erode();
+  void DrawWater(bool flag) { draw_water_ = flag; }
 };
 
 } // End of namespace.

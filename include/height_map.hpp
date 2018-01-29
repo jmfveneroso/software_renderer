@@ -15,8 +15,10 @@
 #include "config.h"
 
 #define MAX_HEIGHT 256000
-#define TILE_SIZE 64
+#define TILE_SIZE 128
 #define HEIGHT_MAP_SIZE 5000
+#define NUM_FEATURE_POINTS 12
+#define PI 3.14159265359
 
 namespace Sibyl {
 
@@ -28,7 +30,12 @@ class HeightMap {
 
   float Interpolate(float);
   void CreateHeightMap();
+  void ApplyNoise();
+  void ApplySmoothing();
   void ApplyPerturbationFilter();
+  void ApplyRadialFilter();
+  float GetNoise(float, float);
+  float GetRadialFilter(float, float);
 
  public:
   HeightMap();

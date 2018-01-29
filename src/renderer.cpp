@@ -91,17 +91,21 @@ void Renderer::Render() {
   sky_position.y = 0.0;
   entity_manager_->GetEntity("sky")->set_position(sky_position);
 
-  // Camera old_camera = camera;
-  // SetReflectionCamera(WATER_HEIGHT);
-  // DrawScene(1000, 750, "reflection");
-  // camera = old_camera;
+  Camera old_camera = camera;
+  SetReflectionCamera(-100);
+  DrawScene(1000, 750, "reflection");
+  camera = old_camera;
+
+  PushRenderEntity("pro_terrain");
+  entity_manager_->GetTerrain()->DrawWater(false);
 
   ComputeMatrices();
-  // DrawScene(1000, 750, "refraction");
+  DrawScene(1000, 750, "refraction");
 
   // PushRenderEntity("water");
 
-  PushRenderEntity("pro_terrain");
+  entity_manager_->GetTerrain()->DrawWater(true);
+  // PushRenderEntity("pro_terrain");
   DrawScene(window_->width(), window_->height(), "screen");
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);

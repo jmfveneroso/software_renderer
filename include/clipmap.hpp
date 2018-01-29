@@ -92,6 +92,7 @@ class Clipmap {
   Clipmap(std::shared_ptr<Player>, std::shared_ptr<HeightMap>, unsigned int);
 
   void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, bool);
+  void RenderWater(glm::vec3, Shader*, glm::mat4, glm::mat4, glm::vec3, bool, std::shared_ptr<Water>);
   void Init();
   void Update(glm::vec3);
   void Clear();

@@ -6,9 +6,12 @@ layout(location = 1) in vec2 vertexUV;
 layout(location = 2) in vec4 vertexBarycentric;
 
 out VertexData {
+  vec3 position;
   vec2 UV;
   vec3 color_magna;
   vec3 normal_cameraspace;
+  float visibility;
+  float steepness;
 } out_data;
 
 // Values that stay constant for the whole mesh.
@@ -24,24 +27,40 @@ uniform int TILE_SIZE;
 uniform int CLIPMAP_SIZE;
 uniform int MAX_HEIGHT;
 
+const float density = 0.003;
+const float gradient = 0.15;
+
 void main(){
   // Output position of the vertex, in clip space : MVP * position
-  vec3 position = vertexPosition_modelspace;
+  out_data.position = vertexPosition_modelspace;
 
-  ivec2 toroidal_coords = ivec2(position.x, position.z);
+  ivec2 toroidal_coords = ivec2(out_data.position.x, out_data.position.z);
   ivec2 buffer_coords = (toroidal_coords + buffer_top_left + CLIPMAP_SIZE + 1) % (CLIPMAP_SIZE + 1);
   // float height = -4000 + 8000 * texelFetch(HeightMapSampler, buffer_coords).r;
   float height = -(MAX_HEIGHT / 2) + MAX_HEIGHT * texelFetch(HeightMapSampler, buffer_coords).r;
   vec3 normal = texelFetch(NormalsSampler, buffer_coords).rgb * 2 - 1;
 
-  position.x *= TILE_SIZE;
-  position.z *= TILE_SIZE;
-  position.y = height;
+  out_data.position.x *= TILE_SIZE;
+  out_data.position.z *= TILE_SIZE;
+  out_data.position.y = height;
 
-  gl_Position = MVP * vec4(position, 1);
+  gl_Position = MVP * vec4(out_data.position, 1);
   
   // UV of the vertex. No special space for this one.
   out_data.UV = vertexUV; 
   out_data.color_magna = vec3(texelFetch(HeightMapSampler, buffer_coords).r, 0, 0);
   out_data.normal_cameraspace = (V * M * vec4(normal, 0)).xyz; 
+
+  vec3 position_cameraspace = (V * M * vec4(out_data.position, 1)).xyz;
+  float distance = length(position_cameraspace.xyz);
+  // out_data.visibility = exp(-pow((distance * density), gradient));
+  // out_data.visibility = clamp(out_data.visibility, 0.0, 1.0);
+
+  out_data.visibility = distance / 1000000;
+  out_data.visibility = clamp(out_data.visibility, 0.0, 1.0);
+
+  out_data.position = (M * vec4(out_data.position, 1)).xyz;
+  out_data.steepness = 1 - normal.y;
+
+  out_data.steepness = (clamp(out_data.steepness, 0, 0.3) - 0.0) / 0.3;
 }

@@ -392,13 +392,66 @@ void Clipmap::Render(
   shader->BindBuffer(uv_buffer_, 1, 2);
   shader->BindBuffer(barycentric_buffer_, 2, 4);
 
-  glActiveTexture(GL_TEXTURE4);
+  glActiveTexture(GL_TEXTURE7);
   glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[active_texture_]);
-  glUniform1i(shader->GetUniformId("NormalsSampler"), 4);
+  glUniform1i(shader->GetUniformId("NormalsSampler"), 7);
 
-  glActiveTexture(GL_TEXTURE3);
+  glActiveTexture(GL_TEXTURE6);
   glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[active_texture_]);
-  glUniform1i(shader->GetUniformId("HeightMapSampler"), 3);
+  glUniform1i(shader->GetUniformId("HeightMapSampler"), 6);
+
+  if (center) {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);
+    glDrawElements(GL_TRIANGLES, center_region_size_, GL_UNSIGNED_INT, (void*) 0);
+    return;
+  } 
+
+  glm::ivec2 grid_coords = WorldToGridCoordinates(player_pos);
+  glm::ivec2 clipmap_offset = ClampGridCoordinates(grid_coords, GetTileSize() >> 1);
+  clipmap_offset -= ClampGridCoordinates(grid_coords, GetTileSize());
+  clipmap_offset /= GetTileSize();
+  for (int region = 0 ; region < 4; region++) {
+    glm::vec2 top_lft = top_left_ * TILE_SIZE + render_region_top_left_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE;
+    glm::vec2 bot_rgt = top_lft + glm::vec2(render_region_clip_size_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_region_buffers_[clipmap_offset.x][clipmap_offset.y][region]);
+    glDrawElements(GL_TRIANGLES, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
+  }
+} 
+
+void Clipmap::RenderWater(
+  glm::vec3 player_pos, 
+  Shader* shader, 
+  glm::mat4 ProjectionMatrix, 
+  glm::mat4 ViewMatrix,
+  glm::vec3 camera,
+  bool center,
+  std::shared_ptr<Water> water
+) {
+  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(top_left_.x * TILE_SIZE, 0, top_left_.y * TILE_SIZE));
+  glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
+  glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
+  glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+  glUniformMatrix4fv(shader->GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
+  glUniformMatrix4fv(shader->GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
+  glUniformMatrix4fv(shader->GetUniformId("V"),     1, GL_FALSE, &ViewMatrix[0][0]);
+  glUniformMatrix3fv(shader->GetUniformId("MV3x3"), 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
+  glUniform1i(shader->GetUniformId("TILE_SIZE"), TILE_SIZE * GetTileSize());
+  glUniform1i(shader->GetUniformId("CLIPMAP_SIZE"), CLIPMAP_SIZE);
+  glUniform1i(shader->GetUniformId("MAX_HEIGHT"), MAX_HEIGHT);
+  glUniform2iv(shader->GetUniformId("buffer_top_left"), 1, (int*) &height_buffer_.top_left);
+
+  glm::vec3 lightPos = glm::vec3(0, 2000, 0);
+  glUniform3f(shader->GetUniformId("LightPosition_worldspace"), lightPos.x, lightPos.y, lightPos.z);
+  glUniform3fv(shader->GetUniformId("cameraPosition"), 1, (float*) &camera);
+  glUniform1f(shader->GetUniformId("moveFactor"), Water::move_factor);
+
+  shader->BindBuffer(vertex_buffer_, 0, 3);
+  shader->BindBuffer(uv_buffer_, 1, 2);
+  shader->BindBuffer(barycentric_buffer_, 2, 4);
+
+  glActiveTexture(GL_TEXTURE5);
+  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[active_texture_]);
+  glUniform1i(shader->GetUniformId("HeightMapSampler"), 5);
 
   if (center) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);

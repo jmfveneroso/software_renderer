@@ -34,13 +34,13 @@ class Solid : public IEntity {
   glm::vec3 position_;
   Shader shader_;
 
+  void BindBuffers();
+
+ public:
   GLuint diffuse_texture_id_;
   GLuint normal_texture_id_;
   GLuint specular_texture_id_;
 
-  void BindBuffers();
-
- public:
   Solid(
     const std::string& filename, 
     Shader shader, 
@@ -57,11 +57,11 @@ class Solid : public IEntity {
 };
 
 class Water : public Solid {
+ public:
   GLuint reflection_texture_id_;
   GLuint refraction_texture_id_;
   GLuint refraction_depth_texture_id_;
 
- public:
   static float move_factor;
 
   Water(

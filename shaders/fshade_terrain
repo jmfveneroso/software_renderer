@@ -1,10 +1,13 @@
 #version 330 core
 
 in FragData {
+  vec3 position;
   vec2 UV;
   vec3 barycentric;
   vec3 color_magna;
   vec3 normal_cameraspace;
+  float visibility;
+  float steepness;
 } in_data;
 
 // Output data
@@ -14,6 +17,9 @@ layout(location = 0) out vec3 color;
 uniform sampler2D DiffuseTextureSampler;
 uniform sampler2D NormalTextureSampler;
 uniform sampler2D SpecularTextureSampler;
+uniform sampler2D RockTextureSampler;
+uniform sampler2D Rock2TextureSampler;
+uniform sampler2D SandTextureSampler;
 uniform mat4 MVP;
 uniform mat4 V;
 uniform mat4 M;
@@ -29,8 +35,21 @@ void main(){
 
   // Material properties
   vec3 diffuse_color = texture(DiffuseTextureSampler, in_data.UV).rgb;
+
+  vec2 noise_uv = vec2(float(int(in_data.position.x) % 10001) / 10000, float(int(in_data.position.z) % 10001) / 10000);
+  float noise = texture(SpecularTextureSampler, noise_uv).r;
+
+  diffuse_color = mix(diffuse_color, texture(NormalTextureSampler, in_data.UV).rgb, noise);
+
+  vec3 rock = mix(texture(Rock2TextureSampler, in_data.UV).rgb, texture(RockTextureSampler, in_data.UV).rgb, noise);
+  diffuse_color = mix(diffuse_color, rock, in_data.steepness);
+
+  float limit = 1000 * noise;
+  float height = float(clamp(in_data.position.y, 0, limit)) / limit;
+  diffuse_color = mix(texture(SandTextureSampler, in_data.UV).rgb, diffuse_color, height);
+
   vec3 ambient_color = vec3(0.3, 0.3, 0.3) * diffuse_color;
-  vec3 MaterialSpecularColor = texture(SpecularTextureSampler, in_data.UV).rgb * 0.3;
+  // vec3 MaterialSpecularColor = texture(SpecularTextureSampler, in_data.UV).rgb * 0.3;
   
   vec3 light_color = vec3(1, 1, 1);
   float light_power = 1.0;
@@ -41,8 +60,11 @@ void main(){
   vec3 n = normalize(in_data.normal_cameraspace);
   vec3 l = normalize(light_cameraspace);
   float cos_theta = clamp(dot(n, l), 0, 1);
+  // color = ambient_color + diffuse_color * light_color * light_power * cos_theta;
   color = ambient_color + diffuse_color * light_color * light_power * cos_theta;
 
   // // Increase contrast.
   // // color = ambient_color + diffuse_color * light_color * (cos_theta - 0.5) * 2;
+
+  color = mix(color, vec3(0.274509804, 0.509803922, 0.705882353), in_data.visibility);
 }
