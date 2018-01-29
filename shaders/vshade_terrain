@@ -26,6 +26,7 @@ uniform ivec2 buffer_top_left;
 uniform int TILE_SIZE;
 uniform int CLIPMAP_SIZE;
 uniform int MAX_HEIGHT;
+uniform vec4 plane;
 
 const float density = 0.003;
 const float gradient = 0.15;
@@ -43,6 +44,9 @@ void main(){
   out_data.position.x *= TILE_SIZE;
   out_data.position.z *= TILE_SIZE;
   out_data.position.y = height;
+
+  vec3 position_worldspace = (M * vec4(out_data.position, 1)).xyz;
+  gl_ClipDistance[0] = dot(vec4(position_worldspace, 1.0), vec4(0, -1, 0, 1));
 
   gl_Position = MVP * vec4(out_data.position, 1);
   

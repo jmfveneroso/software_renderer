@@ -22,13 +22,16 @@ uniform sampler2DRect NormalsSampler;
 uniform sampler2DRect HeightMapSampler;
 uniform ivec2 PlayerPosition;
 uniform ivec2 buffer_top_left;
+uniform ivec2 top_left;
 uniform int TILE_SIZE;
 uniform int CLIPMAP_SIZE;
 uniform int MAX_HEIGHT;
 uniform vec3 LightPosition_worldspace;
 uniform vec3 cameraPosition;
+uniform vec4 plane;
  
 void main(){
+
   // Output position of the vertex, in clip space : MVP * position
   out_data.position = vertexPosition_modelspace;
 
@@ -40,13 +43,17 @@ void main(){
   out_data.position.z *= TILE_SIZE;
   out_data.position.y = -100;
 
+  vec3 position_worldspace = (M * vec4(out_data.position, 1)).xyz;
+  // gl_ClipDistance[0] = dot(vec4(position_worldspace, 1.0), plane);
+
   out_data.clipSpace = MVP * vec4(out_data.position, 1);
   gl_Position = out_data.clipSpace;
   
   // UV of the vertex. No special space for this one.
-  out_data.UV = vertexUV / 20;
-  out_data.to_camera_vector = cameraPosition - out_data.position;
-  out_data.from_light_vector = out_data.position.xyz - LightPosition_worldspace;
+
+  out_data.UV = ((top_left / TILE_SIZE) % 20) + vertexUV / 20;
+  out_data.to_camera_vector = position_worldspace - cameraPosition;
+  out_data.from_light_vector = position_worldspace - LightPosition_worldspace;
 }
 
 

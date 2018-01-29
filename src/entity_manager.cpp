@@ -100,6 +100,8 @@ void EntityManager::Initialize() {
   shader.CreateUniform("CLIPMAP_SIZE");
   shader.CreateUniform("MAX_HEIGHT");
   shader.CreateUniform("buffer_top_left");
+  shader.CreateUniform("top_left");
+  shader.CreateUniform("plane");
   shaders_.insert(std::make_pair("terrain", shader));
 
   shader = Shader("sky", "shaders/vshade_normals", "shaders/fshade_sky");
@@ -136,6 +138,7 @@ void EntityManager::Initialize() {
   shader.CreateUniform("CLIPMAP_SIZE");
   shader.CreateUniform("MAX_HEIGHT");
   shader.CreateUniform("buffer_top_left");
+  shader.CreateUniform("top_left");
   shaders_.insert(std::make_pair("water", shader));
 
   LoadSolid(
@@ -150,7 +153,7 @@ void EntityManager::Initialize() {
   if (water_it == shaders_.end()) 
     throw "Shader water does not exist";
 
-  std::shared_ptr<Water> water = std::make_shared<Water>(
+  water_ = std::make_shared<Water>(
     "res/water.obj", 
     water_it->second,
     diffuse_texture_id, 
@@ -159,7 +162,7 @@ void EntityManager::Initialize() {
     frame_buffers_["refraction"]->GetTexture(),
     frame_buffers_["refraction"]->GetDepthTexture()
   );
-  entities_.insert(std::make_pair("water", water));
+  entities_.insert(std::make_pair("water", water_));
 
 
   // Procedural terrain.
@@ -185,7 +188,7 @@ void EntityManager::Initialize() {
     rock_texture_id,
     rock_2_texture_id,
     sand_texture_id,
-    water
+    water_
   );
   entities_.insert(std::make_pair("pro_terrain", terrain_));
 }

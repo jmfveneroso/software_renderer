@@ -91,12 +91,16 @@ void Renderer::Render() {
   sky_position.y = 0.0;
   entity_manager_->GetEntity("sky")->set_position(sky_position);
 
+  PushRenderEntity("pro_terrain");
+  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 100.0f));
+  entity_manager_->GetTerrain()->DrawWater(false);
+
   Camera old_camera = camera;
   SetReflectionCamera(-100);
   DrawScene(1000, 750, "reflection");
   camera = old_camera;
 
-  PushRenderEntity("pro_terrain");
+  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, -1, 0, 100.0f + 1.0f));
   entity_manager_->GetTerrain()->DrawWater(false);
 
   ComputeMatrices();
@@ -104,6 +108,7 @@ void Renderer::Render() {
 
   // PushRenderEntity("water");
 
+  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, -1, 0, 100000000.0f));
   entity_manager_->GetTerrain()->DrawWater(true);
   // PushRenderEntity("pro_terrain");
   DrawScene(window_->width(), window_->height(), "screen");

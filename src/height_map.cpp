@@ -75,8 +75,8 @@ void HeightMap::CreateHeightMap() {
   CalculateErosion();
 }
 
-float HeightMap::GetNoise(float world_x, float world_y) {
-  return -3000 + 1.5f * (
+float HeightMap::GetNoise(float world_x, float world_y, float height) {
+  return height + 1.5f * (
     2000 * noise_.noise(world_x * 0.00002, world_y * 0.00002) +
     // 1500 * noise_.noise((1000 + world_x) * 0.00002, (1000 + world_y) * 0.00002) +
     // 200 * noise_.noise(world_x * 0.0003, world_y * 0.0003) +

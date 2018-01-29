@@ -387,6 +387,7 @@ void Clipmap::Render(
   glUniform1i(shader->GetUniformId("CLIPMAP_SIZE"), CLIPMAP_SIZE);
   glUniform1i(shader->GetUniformId("MAX_HEIGHT"), MAX_HEIGHT);
   glUniform2iv(shader->GetUniformId("buffer_top_left"), 1, (int*) &height_buffer_.top_left);
+  glUniform2iv(shader->GetUniformId("top_left"), 1, (int*) &top_left_);
 
   shader->BindBuffer(vertex_buffer_, 0, 3);
   shader->BindBuffer(uv_buffer_, 1, 2);
@@ -439,8 +440,9 @@ void Clipmap::RenderWater(
   glUniform1i(shader->GetUniformId("CLIPMAP_SIZE"), CLIPMAP_SIZE);
   glUniform1i(shader->GetUniformId("MAX_HEIGHT"), MAX_HEIGHT);
   glUniform2iv(shader->GetUniformId("buffer_top_left"), 1, (int*) &height_buffer_.top_left);
+  glUniform2iv(shader->GetUniformId("top_left"), 1, (int*) &top_left_);
 
-  glm::vec3 lightPos = glm::vec3(0, 2000, 0);
+  glm::vec3 lightPos = glm::vec3(0, 20000, 0);
   glUniform3f(shader->GetUniformId("LightPosition_worldspace"), lightPos.x, lightPos.y, lightPos.z);
   glUniform3fv(shader->GetUniformId("cameraPosition"), 1, (float*) &camera);
   glUniform1f(shader->GetUniformId("moveFactor"), Water::move_factor);

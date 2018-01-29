@@ -39,6 +39,7 @@ class Terrain : public IEntity {
   GLuint sand_texture_id_;
   std::shared_ptr<Water> water_;
   bool draw_water_ = false;
+  glm::vec4 clip_plane_;
 
  public:
   Terrain(
@@ -62,6 +63,7 @@ class Terrain : public IEntity {
   void Clean() {}
   void Erode();
   void DrawWater(bool flag) { draw_water_ = flag; }
+  void SetClipPlane(glm::vec4 plane) { clip_plane_ = plane; }
 };
 
 } // End of namespace.

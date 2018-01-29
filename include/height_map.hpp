@@ -16,7 +16,7 @@
 
 #define MAX_HEIGHT 256000
 #define TILE_SIZE 128
-#define HEIGHT_MAP_SIZE 5000
+#define HEIGHT_MAP_SIZE 500
 #define NUM_FEATURE_POINTS 12
 #define PI 3.14159265359
 
@@ -34,7 +34,7 @@ class HeightMap {
   void ApplySmoothing();
   void ApplyPerturbationFilter();
   void ApplyRadialFilter();
-  float GetNoise(float, float);
+  float GetNoise(float, float, float height = -4000.0f);
   float GetRadialFilter(float, float);
 
  public:

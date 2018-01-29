@@ -21,7 +21,7 @@
 #include "entity.hpp"
 #include "config.h"
 
-#define CLIPMAP_LEVELS 11
+#define CLIPMAP_LEVELS 7
 #define CLIPMAP_SIZE 258
 #define CLIPMAP_OFFSET ((CLIPMAP_SIZE - 2) / 2)
 

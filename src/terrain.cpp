@@ -40,6 +40,7 @@ void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
   shader_.BindTexture("RockTextureSampler", rock_texture_id_);
   shader_.BindTexture("Rock2TextureSampler", rock_2_texture_id_);
   shader_.BindTexture("SandTextureSampler", sand_texture_id_);
+  glUniform4fv(shader_.GetUniformId("plane"), 1, (float*) &clip_plane_);
 
   // Clipmap.
   for (int i = 0; i < CLIPMAP_LEVELS; i++) {

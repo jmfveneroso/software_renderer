@@ -25,6 +25,7 @@ class EntityManager {
   FrameBufferMap frame_buffers_;
   EntityMap entities_;
   std::shared_ptr<Terrain> terrain_;
+  std::shared_ptr<Water> water_;
 
   void LoadShader(const std::string&, const std::string&, const std::string&);
   GLuint LoadTexture(const std::string&, const std::string&);
@@ -42,6 +43,7 @@ class EntityManager {
   EntityMap entities() { return entities_; };
   void Initialize();
   std::shared_ptr<Terrain> GetTerrain() { return terrain_; }
+  std::shared_ptr<Water> GetWater() { return water_; }
   std::shared_ptr<IEntity> GetEntity(const std::string&);
   std::shared_ptr<FrameBuffer> GetFrameBuffer(const std::string&);
   void Clean();
