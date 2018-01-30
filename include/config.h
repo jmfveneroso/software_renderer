@@ -4,6 +4,6 @@
 #define APP_NAME "Sybil"
 #define WINDOW_WIDTH 600
 #define WINDOW_HEIGHT 400
-#define WAVE_SPEED 0.005f
+#define WAVE_SPEED 0.01f
 
 #endif

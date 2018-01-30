@@ -97,6 +97,7 @@ void EntityManager::Initialize() {
   shader.CreateUniform("MV3x3");
   shader.CreateUniform("PlayerPosition");
   shader.CreateUniform("TILE_SIZE");
+  shader.CreateUniform("PURE_TILE_SIZE");
   shader.CreateUniform("CLIPMAP_SIZE");
   shader.CreateUniform("MAX_HEIGHT");
   shader.CreateUniform("buffer_top_left");
@@ -135,6 +136,7 @@ void EntityManager::Initialize() {
   shader.CreateUniform("MV3x3");
   shader.CreateUniform("PlayerPosition");
   shader.CreateUniform("TILE_SIZE");
+  shader.CreateUniform("PURE_TILE_SIZE");
   shader.CreateUniform("CLIPMAP_SIZE");
   shader.CreateUniform("MAX_HEIGHT");
   shader.CreateUniform("buffer_top_left");
