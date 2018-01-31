@@ -105,18 +105,12 @@ void EntityManager::Initialize() {
   shader.CreateUniform("plane");
   shaders_.insert(std::make_pair("terrain", shader));
 
-  shader = Shader("sky", "shaders/vshade_normals", "shaders/fshade_sky");
-  shader.CreateUniform("DiffuseTextureSampler");
-  shader.CreateUniform("NormalTextureSampler");
-  shader.CreateUniform("SpecularTextureSampler");
-  shader.CreateUniform("water_fog");
-  shader.CreateUniform("LightPosition_worldspace");
+  shader = Shader("sky", "shaders/vshade_sky", "shaders/fshade_sky");
   shader.CreateUniform("MVP");
   shader.CreateUniform("V");
   shader.CreateUniform("M");
   shader.CreateUniform("MV3x3");
-  shader.CreateUniform("use_normals");
-  shader.CreateUniform("plane");
+  shader.CreateUniform("SkyTextureSampler");
   shaders_.insert(std::make_pair("sky", shader));
 
   shader = Shader("water", "shaders/vshade_water", "shaders/fshade_water");
@@ -143,11 +137,15 @@ void EntityManager::Initialize() {
   shader.CreateUniform("top_left");
   shaders_.insert(std::make_pair("water", shader));
 
-  LoadSolid(
-    "sky", "res/skydome.obj", "textures/skydome.bmp", 
-    "textures/normal.bmp", "textures/specular_orange.bmp", "sky"
+  // Sky.
+  sky_dome_ = std::make_shared<SkyDome>(
+    player_,
+    shaders_.find("sky")->second
   );
+  entities_.insert(std::make_pair("sky", sky_dome_));
 
+
+  // Water.
   GLuint diffuse_texture_id = LoadTexture("textures/water_dudv.bmp", "textures/water_dudv.bmp");
   GLuint normal_texture_id = LoadTexture("textures/water_normal.bmp", "textures/water_normal.bmp");
 

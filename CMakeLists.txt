@@ -39,6 +39,7 @@ set(
   src/shaders.cpp 
   src/frame_buffer.cpp 
   src/entity_manager.cpp 
+  src/sky_dome.cpp 
   src/renderer.cpp
   src/texture.cpp 
   src/shaders.cpp

@@ -85,7 +85,7 @@ void Renderer::PopRenderEntity() {
 
 void Renderer::Render() {
   // PushRenderEntity("terrain");
-  // PushRenderEntity("sky");
+  PushRenderEntity("sky");
 
   glm::vec3 sky_position = camera.position;
   sky_position.y = 0.0;

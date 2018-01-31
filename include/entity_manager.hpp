@@ -9,6 +9,7 @@
 #include "entity.hpp"
 #include "terrain.hpp"
 #include "texture.hpp"
+#include "sky_dome.hpp"
 #include "frame_buffer.hpp"
 
 namespace Sibyl {
@@ -26,6 +27,7 @@ class EntityManager {
   EntityMap entities_;
   std::shared_ptr<Terrain> terrain_;
   std::shared_ptr<Water> water_;
+  std::shared_ptr<SkyDome> sky_dome_;
 
   void LoadShader(const std::string&, const std::string&, const std::string&);
   GLuint LoadTexture(const std::string&, const std::string&);
