@@ -23,7 +23,7 @@
 
 #define NUM_CIRCLES 8
 #define NUM_POINTS_IN_CIRCLE 64
-#define DOME_RADIUS 100000
+#define DOME_RADIUS 500000
 
 namespace Sibyl {
 

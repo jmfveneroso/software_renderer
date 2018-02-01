@@ -68,7 +68,7 @@ void SkyDome::CreateMesh() {
     indices_.push_back(next_j);
   }
 
-  for (int i = 0; i < NUM_CIRCLES; i++) {
+  for (int i = 0; i < NUM_CIRCLES - 1; i++) {
     for (int j = 0; j < NUM_POINTS_IN_CIRCLE; j++) {
       int next_j = (j == NUM_POINTS_IN_CIRCLE - 1) ? 0 : j + 1;
       indices_.push_back(1 + i       * NUM_POINTS_IN_CIRCLE + j);
@@ -98,7 +98,8 @@ void SkyDome::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
   glUniform1i(shader_.GetUniformId("SkyTextureSampler"), 0);
 
   glm::vec3 position = player_->position();
-  // position.y = 0.0f;
+  // position.y = 98.0f;
+  position.y = -10000.0f;
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position);
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
   glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);

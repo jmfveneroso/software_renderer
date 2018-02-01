@@ -122,6 +122,7 @@ void Renderer::Render() {
   // PopRenderEntity();
   // PopRenderEntity();
   PopRenderEntity();
+  PopRenderEntity();
 }
 
 void Renderer::Clean() {
