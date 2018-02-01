@@ -346,16 +346,16 @@ void Clipmap::Update(glm::vec3 player_pos) {
       glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, y));
       glm::vec3 world_coords = GridToWorldCoordinates(grid_coords);
 
-      height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = float(1 + height_map_->GetHeight(world_coords.x, world_coords.z)) / 2;
+      height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = float(1 + height_map_->GetGridHeight(world_coords.x, world_coords.z)) / 2;
       height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x] = 1;
 
       float step = GetTileSize() * TILE_SIZE;
       // glm::vec3 a = glm::vec3(0,    8000 * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
       // glm::vec3 b = glm::vec3(step, 8000 * (float(1 + height_map_->GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
       // glm::vec3 c = glm::vec3(0,    8000 * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
-      glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
-      glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + height_map_->GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
-      glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
+      glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z        )) / 2), 0);
+      glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
+      glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z + step )) / 2), step);
       height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x] = (normalize(glm::cross(c - a, b - a)) + 1.0f) / 2.0f;
       num_invalid_--;
     }
@@ -367,6 +367,34 @@ void Clipmap::Update(glm::vec3 player_pos) {
   glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[active_texture_]);
   glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.normals[0]);
 }
+
+bool Clipmap::IsInsideFrustum(glm::vec2 lft, glm::vec2 rgt, glm::vec2 p) {
+  double denominator = glm::determinant(glm::mat2(lft, rgt));
+  double alpha = glm::determinant(glm::mat2(p, rgt)) / denominator;
+  double beta  = glm::determinant(glm::mat2(lft, p)) / denominator;
+  return alpha >= 0 && beta >= 0;
+}
+
+bool Clipmap::IsSubregionVisible(glm::vec2 top_left, glm::vec2 bottom_right) {
+  glm::vec2 view_direction = glm::vec2(
+    sin(player_->horizontal_angle()),
+    cos(player_->horizontal_angle())
+  );
+
+  glm::vec2 pos = glm::vec2(player_->position().x, player_->position().z);
+  top_left -= pos;
+  bottom_right -= pos;
+
+  glm::vec2 lft = glm::rotate(view_direction, glm::radians(player_->fov()));
+  glm::vec2 rgt = glm::rotate(view_direction, -glm::radians(player_->fov()));
+
+  if (IsInsideFrustum(lft, rgt, top_left)    ) return true;
+  if (IsInsideFrustum(lft, rgt, bottom_right)) return true;
+  if (IsInsideFrustum(lft, rgt, glm::vec2(top_left.x, bottom_right.y))) return true;
+  if (IsInsideFrustum(lft, rgt, glm::vec2(bottom_right.x, top_left.y))) return true;
+  return false;
+}
+
 
 void Clipmap::Render(
   glm::vec3 player_pos, 
@@ -414,6 +442,8 @@ void Clipmap::Render(
   for (int region = 0 ; region < 4; region++) {
     glm::vec2 top_lft = top_left_ * TILE_SIZE + render_region_top_left_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE;
     glm::vec2 bot_rgt = top_lft + glm::vec2(render_region_clip_size_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE);
+    if (!IsSubregionVisible(top_lft, bot_rgt)) continue;
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_region_buffers_[clipmap_offset.x][clipmap_offset.y][region]);
     glDrawElements(GL_TRIANGLES, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
   }
@@ -469,6 +499,8 @@ void Clipmap::RenderWater(
   for (int region = 0 ; region < 4; region++) {
     glm::vec2 top_lft = top_left_ * TILE_SIZE + render_region_top_left_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE;
     glm::vec2 bot_rgt = top_lft + glm::vec2(render_region_clip_size_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE);
+    if (!IsSubregionVisible(top_lft, bot_rgt)) continue;
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_region_buffers_[clipmap_offset.x][clipmap_offset.y][region]);
     glDrawElements(GL_TRIANGLES, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
   }
@@ -491,40 +523,6 @@ void Clipmap::RenderWater(
 // 
 //   *intersection = b[0] + b[1] * delta;
 //   return true;
-// }
-
-// bool Clipmap::IsInsideFrustum(glm::vec2 lft, glm::vec2 rgt, glm::vec2 p) {
-//   double denominator = glm::determinant(glm::mat2(lft, rgt));
-//   double alpha = glm::determinant(glm::mat2(p, rgt)) / denominator;
-//   double beta  = glm::determinant(glm::mat2(lft, p)) / denominator;
-//   return alpha >= 0 && beta >= 0;
-// }
-// 
-// bool Clipmap::IsSubregionVisible(glm::vec2 top_left, glm::vec2 bottom_right) {
-//   glm::vec2 view_direction = glm::vec2(
-//     sin(player_->horizontal_angle()),
-//     cos(player_->horizontal_angle())
-//   );
-//   // std::cout << "horizontal: " << player_->horizontal_angle() << std::endl;
-//   // std::cout << "viewdirection x: " << view_direction.x << " y:" << view_direction.y << std::endl;
-// 
-//   glm::vec2 pos = glm::vec2(player_->position().x, player_->position().z);
-//   top_left -= pos;
-//   bottom_right -= pos;
-// 
-//   glm::vec2 lft = glm::rotate(view_direction, glm::radians(player_->fov()));
-//   glm::vec2 rgt = glm::rotate(view_direction, -glm::radians(player_->fov()));
-// 
-//   // std::cout << "lft x: "    << lft.x          << " y:" << lft.y          << std::endl;
-//   // std::cout << "rgt x: "    << rgt.x          << " y:" << rgt.y          << std::endl;
-//   // std::cout << "toplft x: " << top_left.x     << " y:" << top_left.y     << std::endl;
-//   // std::cout << "btmrgt x: " << bottom_right.x << " y:" << bottom_right.y << std::endl;
-// 
-//   if (IsInsideFrustum(lft, rgt, top_left)    ) return true;
-//   if (IsInsideFrustum(lft, rgt, bottom_right)) return true;
-//   if (IsInsideFrustum(lft, rgt, glm::vec2(top_left.x, bottom_right.y))) return true;
-//   if (IsInsideFrustum(lft, rgt, glm::vec2(bottom_right.x, top_left.y))) return true;
-//   return false;
 // }
 
 } // End of namespace.

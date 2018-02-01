@@ -90,15 +90,12 @@ void SkyDome::CreateMesh() {
 }
 
 void SkyDome::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
-  // top_left_ = player_->position() + glm::vec3(1000, 1000, 0);
-  top_left_ = glm::vec3(1000, 1000, 0);
   glUseProgram(shader_.program_id());
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture_);
   glUniform1i(shader_.GetUniformId("SkyTextureSampler"), 0);
 
   glm::vec3 position = player_->position();
-  // position.y = 98.0f;
   position.y = -10000.0f;
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position);
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;

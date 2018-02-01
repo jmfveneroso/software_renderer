@@ -5,6 +5,7 @@ namespace Sibyl {
 Window::Window() 
   : window_width_(WINDOW_WIDTH), window_height_(WINDOW_HEIGHT) {
   CreateWindow();
+  glfwSwapInterval(0);
 }
 
 void Window::CreateWindow() {

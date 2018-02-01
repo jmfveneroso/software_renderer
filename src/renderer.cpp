@@ -97,14 +97,14 @@ void Renderer::Render() {
 
   Camera old_camera = camera;
   SetReflectionCamera(-100);
-  DrawScene(1000, 750, "reflection");
+  // DrawScene(1000, 750, "reflection");
   camera = old_camera;
 
   entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, -1, 0, 100.0f + 1.0f));
   entity_manager_->GetTerrain()->DrawWater(false);
 
   ComputeMatrices();
-  DrawScene(1000, 750, "refraction");
+  // DrawScene(1000, 750, "refraction");
 
   // PushRenderEntity("water");
 

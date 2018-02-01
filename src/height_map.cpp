@@ -19,6 +19,9 @@ float HeightMap::Interpolate(float height) {
 
 void HeightMap::CreateHeightMap() {
   height_map_ = new float[HEIGHT_MAP_SIZE * HEIGHT_MAP_SIZE];
+  Load("assets/height_maps/small_height_map.data");
+  return;
+
   secondary_height_map_ = new float[HEIGHT_MAP_SIZE * HEIGHT_MAP_SIZE];
   for (int x = 0; x < HEIGHT_MAP_SIZE; x++) {
     for (int y = 0; y < HEIGHT_MAP_SIZE; y++) {
@@ -73,6 +76,7 @@ void HeightMap::CreateHeightMap() {
   }
 
   CalculateErosion();
+  Save("assets/height_maps/small_height_map.data");
 }
 
 float HeightMap::GetNoise(float world_x, float world_y, float height) {
@@ -217,33 +221,68 @@ void HeightMap::CalculateErosion() {
   }
 }
 
-float HeightMap::GetHeight(float x, float y) {
+void HeightMap::Load(const std::string& filename) {
+  std::ifstream is;  
+  is.open(filename, std::ios::binary);
+  for (int x = 0; x < HEIGHT_MAP_SIZE; x++) {
+    for (int y = 0; y < HEIGHT_MAP_SIZE; y++) {
+      is.read((char*) &height_map_[y * HEIGHT_MAP_SIZE + x], sizeof(float));
+    }
+  }
+  is.close();
+}
+
+void HeightMap::Save(const std::string& filename) {
+  std::ofstream os;  
+  os.open(filename, std::ios::binary);
+  for (int x = 0; x < HEIGHT_MAP_SIZE; x++) {
+    for (int y = 0; y < HEIGHT_MAP_SIZE; y++) {
+      os.write((char*) &height_map_[y * HEIGHT_MAP_SIZE + x], sizeof(float));
+    }
+  }
+  os.close();
+}
+
+float HeightMap::GetGridHeight(float x, float y) {
   int buffer_x = x / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
   int buffer_y = y / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
-  // std::cout << "x:  " << buffer_x           << " y:   " << buffer_y           << std::endl;
-  // buffer_x = buffer_x % HEIGHT_MAP_SIZE;
-  // buffer_y = buffer_y % HEIGHT_MAP_SIZE;
-  // if (buffer_x < 0 || buffer_y < 0) return 0;
 
-  if (buffer_x < 0 || buffer_x >= HEIGHT_MAP_SIZE - 1|| buffer_y < 0 || buffer_y >= HEIGHT_MAP_SIZE - 1) {
-    // return 0;
-    return Interpolate(GetNoise(x, y));
+  float h = Interpolate(GetNoise(x, y));
+  if (
+    buffer_x < 0 || buffer_x >= HEIGHT_MAP_SIZE - 1 || 
+    buffer_y < 0 || buffer_y >= HEIGHT_MAP_SIZE - 1
+  ) {
+    return h;
   }
-  //   return Interpolate(2 * (
-  //     2450 * noise_.noise(x * 0.00002, y * 0.00002) +
-  //     1500 * noise_.noise((1000 + x) * 0.00002, (1000 + y) * 0.00002) +
-  //     510 * noise_.noise(x * 0.0001, y * 0.0001) +
-  //     40 * noise_.noise(x * 0.001, y * 0.001) +
-  //     0
-  //   ));
-  // }  
 
-  float h = height_map_[buffer_y * HEIGHT_MAP_SIZE + buffer_x];
   float alpha = GetRadialFilter(x, y);
-  h = alpha * h + (1 - alpha) * Interpolate(GetNoise(x, y));
+  return alpha * height_map_[buffer_y * HEIGHT_MAP_SIZE + buffer_x] + (1.0f - alpha) * h;
+}
 
-  // return (h > 0.0f) ? h : 0;
-  return h;
+float HeightMap::GetHeight(float x, float y) {
+  // Clamp to grid.
+  glm::ivec2 top_left = (glm::ivec2(x, y) / TILE_SIZE) * TILE_SIZE;
+  if (x < 0 && fabs(top_left.x - x) > 0.00001) top_left.x -= TILE_SIZE;
+  if (y < 0 && fabs(top_left.y - y) > 0.00001) top_left.y -= TILE_SIZE;
+
+  float v[4];
+  v[0] = GetGridHeight(top_left.x                  , top_left.y                  );
+  v[1] = GetGridHeight(top_left.x                  , top_left.y + TILE_SIZE + 0.1);
+  v[2] = GetGridHeight(top_left.x + TILE_SIZE + 0.1, top_left.y + TILE_SIZE + 0.1);
+  v[3] = GetGridHeight(top_left.x + TILE_SIZE + 0.1, top_left.y                  );
+
+  glm::vec2 tile_v = (glm::vec2(x, y) - glm::vec2(top_left)) / float(TILE_SIZE);
+
+  // Top triangle.
+  float h;
+  if (tile_v.x + tile_v.y < 1.0f) {
+    return v[0] + tile_v.x * (v[3] - v[0]) + tile_v.y * (v[1] - v[0]);
+
+  // Bottom triangle.
+  } else {
+    tile_v = glm::vec2(1.0f) - tile_v; 
+    return v[2] + tile_v.x * (v[1] - v[2]) + tile_v.y * (v[3] - v[2]);
+  }
 }
 
 } // End of namespace.

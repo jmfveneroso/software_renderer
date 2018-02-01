@@ -31,7 +31,6 @@ class SkyDome : public IEntity {
   std::shared_ptr<Player> player_;
   Shader shader_;
 
-  glm::ivec2 top_left_;
   GLuint texture_;
   GLuint vertex_buffer_;
   GLuint uv_buffer_;

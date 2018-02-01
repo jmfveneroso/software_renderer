@@ -1,6 +1,7 @@
 #ifndef _HEIGHT_MAP_HPP_
 #define _HEIGHT_MAP_HPP_
 
+#include <fstream>
 #include <vector>
 #include <iostream>
 #include <math.h>
@@ -14,7 +15,7 @@
 #include "simplex_noise.hpp"
 #include "config.h"
 
-#define MAX_HEIGHT 256000
+#define MAX_HEIGHT 10000
 #define TILE_SIZE 128
 #define HEIGHT_MAP_SIZE 5000
 #define NUM_FEATURE_POINTS 12
@@ -39,8 +40,11 @@ class HeightMap {
 
  public:
   HeightMap();
+  float GetGridHeight(float, float);
   float GetHeight(float, float);
   void CalculateErosion();
+  void Load(const std::string&);
+  void Save(const std::string&);
 };
 
 } // End of namespace.
