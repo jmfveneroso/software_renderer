@@ -45,6 +45,7 @@ set(
   src/shaders.cpp
   src/mesh.cpp
   src/height_map.cpp
+  src/subregion.cpp
   src/clipmap.cpp
   src/terrain.cpp
   src/simplex_noise.cpp

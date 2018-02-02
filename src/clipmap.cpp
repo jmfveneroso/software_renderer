@@ -2,8 +2,6 @@
 
 namespace Sibyl {
 
-std::vector<glm::ivec2> Clipmap::feature_points = std::vector<glm::ivec2>();
-
 Clipmap::Clipmap() {}
 
 Clipmap::Clipmap(
@@ -14,201 +12,16 @@ Clipmap::Clipmap(
   Init();
 }
 
-int Clipmap::CreateSubRegion(glm::ivec2 top_left, glm::ivec2 size, short subregion_borders) {
-  bool borders[4];
-  borders[RR_LEFT  ] = subregion_borders & 8;
-  borders[RR_TOP   ] = subregion_borders & 4;
-  borders[RR_BOTTOM] = subregion_borders & 2;
-  borders[RR_RIGHT ] = subregion_borders & 1;
-
-  std::vector<unsigned int> indices;
-  for (int y = top_left.y; y < top_left.y + size.y; y++) {
-    for (int x = top_left.x; x < top_left.x + size.x; x++) {
-      if (borders[RR_TOP] && y == 0) {
-        if (x % 2 == 0) {
-          if (x == 0 && borders[RR_LEFT]) {
-            indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-            indices.push_back((y + 2) * (CLIPMAP_SIZE + 1) + x);
-            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-          } else {
-            indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-          }
-
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 2));
-        } else {
-          if (x == CLIPMAP_SIZE - 1 && borders[RR_RIGHT]) {
-            indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-            indices.push_back((y + 2) * (CLIPMAP_SIZE + 1) + (x + 1));
-          } else {
-            indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-          }
-        }
-        continue;
-      }
-
-      if (borders[RR_BOTTOM] && y == CLIPMAP_SIZE - 1) {
-        if (x % 2 == 0) {
-          if (!borders[RR_LEFT] || x != 0) {
-            indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-            indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-            indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-          }
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 2));
-        } else {
-          if (borders[RR_RIGHT] && x == CLIPMAP_SIZE - 1) continue;
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-        }
-        continue;
-      }
-
-      if (borders[RR_LEFT] && x == 0) {
-        if (y % 2 == 0) {
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 2) * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-        } else {
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-        }
-        continue;
-      }
-
-      if (borders[RR_RIGHT] && x == CLIPMAP_SIZE - 1) {
-        if (y % 2 == 0) {
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 2) * (CLIPMAP_SIZE + 1) + (x + 1));
-        } else {
-          indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-          indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-        }
-        continue;
-      }
-
-      if ((y % 2 == 0 && x % 2 == 0) || (y % 2 == 1 && x % 2 == 1)) {
-        indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-        indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-        indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-      } else {
-        indices.push_back(y * (CLIPMAP_SIZE + 1) + x);
-        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-        indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-        indices.push_back(y * (CLIPMAP_SIZE + 1) + (x + 1));
-        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + x);
-        indices.push_back((y + 1) * (CLIPMAP_SIZE + 1) + (x + 1));
-      }
-    } 
-  }
-
-  glBufferData(
-    GL_ELEMENT_ARRAY_BUFFER, 
-    indices.size() * sizeof(unsigned int), 
-    &indices[0], 
-    GL_STATIC_DRAW
-  );
-
-  return indices.size();
-}
-
-void Clipmap::CreateSubRegions() {
-  glGenBuffers(1, &center_region_buffer_);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);
-  center_region_size_ = CreateSubRegion(glm::ivec2(0, 0), glm::ivec2(CLIPMAP_SIZE, CLIPMAP_SIZE), CENTER_BORDERS);
-
-  for (int x = 0; x < 2; x++) {
-    for (int y = 0; y < 2; y++) {
-      int left_size = CLIPMAP_SIZE / 4 + x;
-      int up_size   = CLIPMAP_SIZE / 4 + y;
- 
-      for (int region = 0; region < 4; region++) {
-        glGenBuffers(1, &render_region_buffers_[x][y][region]);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_region_buffers_[x][y][region]);
-     
-        short borders = 0; 
-        glm::ivec2 top_left;   
-        glm::ivec2 size;   
-        switch (region) {
-          case RR_LEFT:
-            borders = LEFT_BORDERS;
-            top_left = glm::ivec2(0, 0);
-            size = glm::ivec2(left_size, CLIPMAP_SIZE);
-            break;
-          case RR_TOP:
-            borders = TOP_BORDERS;
-            top_left = glm::ivec2(left_size, 0);
-            size = glm::ivec2(CLIPMAP_SIZE/2, up_size);
-            break;
-          case RR_BOTTOM:
-            borders = BOTTOM_BORDERS;
-            top_left = glm::ivec2(left_size, up_size + CLIPMAP_SIZE/2);
-            size = glm::ivec2(CLIPMAP_SIZE/2, CLIPMAP_SIZE/2 - up_size);
-            break;
-          case RR_RIGHT:
-            borders = RIGHT_BORDERS;
-            top_left = glm::ivec2(left_size + CLIPMAP_SIZE / 2, 0);
-            size = glm::ivec2(CLIPMAP_SIZE/2 - left_size, CLIPMAP_SIZE);
-            break;
-          default: throw;
-        }
-        render_region_top_left_[x][y][region] = top_left;
-        render_region_clip_size_[x][y][region] = size;
-        render_region_sizes_[x][y][region] = CreateSubRegion(top_left, size, borders);
-      }
-    }
-  }
-}
-
 void Clipmap::Init() {
   glGenBuffers(1, &vertex_buffer_);
   glGenBuffers(1, &uv_buffer_);
   glGenBuffers(1, &element_buffer_);
-  glGenBuffers(1, &barycentric_buffer_);
 
   std::vector<glm::vec2> uvs;
-  std::vector<glm::vec4> barycentric;
-
   for (int z = 0; z <= CLIPMAP_SIZE; z++) {
     for (int x = 0; x <= CLIPMAP_SIZE; x++) {
       vertices_[z * (CLIPMAP_SIZE + 1) + x] = glm::vec3(x, 0, z);
       uvs.push_back(glm::vec2(x * GetTileSize(), z * GetTileSize()));
-
-      glm::vec4 b;
-      if (z % 3 == 0) {
-        if (x % 3 == 0) b = glm::vec4(1, 0, 0, 0);
-        if (x % 3 == 1) b = glm::vec4(0, 1, 0, 0);
-        if (x % 3 == 2) b = glm::vec4(0, 0, 1, 0);
-      } else if (z % 3 == 1) {
-        if (x % 3 == 0) b = glm::vec4(0, 0, 1, 0);
-        if (x % 3 == 1) b = glm::vec4(1, 0, 0, 0);
-        if (x % 3 == 2) b = glm::vec4(0, 1, 0, 0);
-      } else {
-        if (x % 3 == 0) b = glm::vec4(0, 1, 0, 0);
-        if (x % 3 == 1) b = glm::vec4(0, 0, 1, 0);
-        if (x % 3 == 2) b = glm::vec4(1, 0, 0, 0);
-      }
-      barycentric.push_back(b);
     }
   }
 
@@ -218,42 +31,23 @@ void Clipmap::Init() {
   glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_);
   glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
 
-  glBindBuffer(GL_ARRAY_BUFFER, barycentric_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, barycentric.size() * sizeof(glm::vec4), &barycentric[0], GL_STATIC_DRAW);
-
   for (int z = 0; z < CLIPMAP_SIZE+1; z++) {
     for (int x = 0; x < CLIPMAP_SIZE+1; x++) {
       height_buffer_.valid[z * (CLIPMAP_SIZE+1) + x] = 0;
     }
   }
 
-  for (int i = 0; i < 2; i++) {
-    glGenTextures(1, &height_texture_[i]);
-    glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[i]);
-    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RED, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RED, GL_FLOAT, height_buffer_.height);
+  glGenTextures(1, &height_texture_);
+  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
+  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RED, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RED, GL_FLOAT, height_buffer_.height);
 
-    glGenTextures(1, &normals_texture_[i]);
-    glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[i]);
-    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.normals);
-  }
+  glGenTextures(1, &normals_texture_);
+  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
+  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.normals);
 
-  CreateSubRegions();
-
-  feature_points.reserve(10);
-  for (int i = 0; i < 10; i++) {
-    int x = -500 * TILE_SIZE + rand() % (1000 * TILE_SIZE);
-    int y = -500 * TILE_SIZE + rand() % (1000 * TILE_SIZE); 
-    feature_points[i] = glm::ivec2(x, y);
-  }
-}
-
-void Clipmap::Clear() {
-  num_invalid_ = 0;
-  for (int z = 0; z < CLIPMAP_SIZE+1; z++) {
-    for (int x = 0; x < CLIPMAP_SIZE+1; x++) {
-      height_buffer_.valid[z * (CLIPMAP_SIZE+1) + x] = 0;
-      num_invalid_++;
-    }
+  // Create subregions.
+  for (int region = 0; region < 5; region++) {
+    subregions_[region] = Subregion(player_, static_cast<SubregionLabel>(region), level_);
   }
 }
 
@@ -335,24 +129,25 @@ void Clipmap::Update(glm::vec3 player_pos) {
   if (top_left_ == new_top_left && num_invalid_ == 0) return;
   top_left_ = new_top_left;
 
-  if (num_invalid_ <= 0) return;
+  for (int region = 0 ; region < 5; region++) {
+    subregions_[region].Clear();
+  }
 
   for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
-    if (num_invalid_ <= 0) break;
     for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
-      if (num_invalid_ <= 0) break;
       if (height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x]) continue;
 
       glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, y));
       glm::vec3 world_coords = GridToWorldCoordinates(grid_coords);
 
-      height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = float(1 + height_map_->GetGridHeight(world_coords.x, world_coords.z)) / 2;
+      float height = float(1 + height_map_->GetGridHeight(world_coords.x, world_coords.z)) / 2;
+      for (int region = 0 ; region < 5; region++) {
+        subregions_[region].UpdateHeight(x, y, height);
+      }
+      height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = height;
       height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x] = 1;
 
       float step = GetTileSize() * TILE_SIZE;
-      // glm::vec3 a = glm::vec3(0,    8000 * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z        )) / 2), 0);
-      // glm::vec3 b = glm::vec3(step, 8000 * (float(1 + height_map_->GetHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
-      // glm::vec3 c = glm::vec3(0,    8000 * (float(1 + height_map_->GetHeight(world_coords.x       , world_coords.z + step )) / 2), step);
       glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z        )) / 2), 0);
       glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
       glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z + step )) / 2), step);
@@ -361,10 +156,9 @@ void Clipmap::Update(glm::vec3 player_pos) {
     }
   }
  
-  if (++active_texture_ > 1) active_texture_ = 0;
-  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[active_texture_]);
+  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
   glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RED, GL_FLOAT, &height_buffer_.height[0]);
-  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[active_texture_]);
+  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
   glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.normals[0]);
 }
 
@@ -395,7 +189,6 @@ bool Clipmap::IsSubregionVisible(glm::vec2 top_left, glm::vec2 bottom_right) {
   return false;
 }
 
-
 void Clipmap::Render(
   glm::vec3 player_pos, 
   Shader* shader, 
@@ -419,33 +212,26 @@ void Clipmap::Render(
 
   shader->BindBuffer(vertex_buffer_, 0, 3);
   shader->BindBuffer(uv_buffer_, 1, 2);
-  shader->BindBuffer(barycentric_buffer_, 2, 4);
 
   glActiveTexture(GL_TEXTURE7);
-  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_[active_texture_]);
+  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
   glUniform1i(shader->GetUniformId("NormalsSampler"), 7);
 
   glActiveTexture(GL_TEXTURE6);
-  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[active_texture_]);
+  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
   glUniform1i(shader->GetUniformId("HeightMapSampler"), 6);
 
-  if (center) {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);
-    glDrawElements(GL_TRIANGLES, center_region_size_, GL_UNSIGNED_INT, (void*) 0);
-    return;
-  } 
+  glm::ivec2 clipmap_offset = glm::ivec2(0, 0);
+  if (!center) {
+    glm::ivec2 grid_coords = WorldToGridCoordinates(player_pos);
+    clipmap_offset = ClampGridCoordinates(grid_coords, GetTileSize() >> 1);
+    clipmap_offset -= ClampGridCoordinates(grid_coords, GetTileSize());
+    clipmap_offset /= GetTileSize();
+  }
 
-  glm::ivec2 grid_coords = WorldToGridCoordinates(player_pos);
-  glm::ivec2 clipmap_offset = ClampGridCoordinates(grid_coords, GetTileSize() >> 1);
-  clipmap_offset -= ClampGridCoordinates(grid_coords, GetTileSize());
-  clipmap_offset /= GetTileSize();
-  for (int region = 0 ; region < 4; region++) {
-    glm::vec2 top_lft = top_left_ * TILE_SIZE + render_region_top_left_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE;
-    glm::vec2 bot_rgt = top_lft + glm::vec2(render_region_clip_size_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE);
-    if (!IsSubregionVisible(top_lft, bot_rgt)) continue;
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_region_buffers_[clipmap_offset.x][clipmap_offset.y][region]);
-    glDrawElements(GL_TRIANGLES, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
+  for (int region = 0 ; region < 5; region++) {
+    if (!center && region == 4) continue;
+    subregions_[region].Draw(clipmap_offset, top_left_);
   }
 } 
 
@@ -458,6 +244,7 @@ void Clipmap::RenderWater(
   bool center,
   std::shared_ptr<Water> water
 ) {
+  return;
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(top_left_.x * TILE_SIZE, 0, top_left_.y * TILE_SIZE));
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
   glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
@@ -480,31 +267,34 @@ void Clipmap::RenderWater(
 
   shader->BindBuffer(vertex_buffer_, 0, 3);
   shader->BindBuffer(uv_buffer_, 1, 2);
-  shader->BindBuffer(barycentric_buffer_, 2, 4);
 
   glActiveTexture(GL_TEXTURE5);
-  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_[active_texture_]);
+  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
   glUniform1i(shader->GetUniformId("HeightMapSampler"), 5);
 
-  if (center) {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, center_region_buffer_);
-    glDrawElements(GL_TRIANGLES, center_region_size_, GL_UNSIGNED_INT, (void*) 0);
-    return;
-  } 
+  glm::ivec2 clipmap_offset = glm::ivec2(0, 0);
+  if (!center) {
+    glm::ivec2 grid_coords = WorldToGridCoordinates(player_pos);
+    clipmap_offset = ClampGridCoordinates(grid_coords, GetTileSize() >> 1);
+    clipmap_offset -= ClampGridCoordinates(grid_coords, GetTileSize());
+    clipmap_offset /= GetTileSize();
+  }
 
-  glm::ivec2 grid_coords = WorldToGridCoordinates(player_pos);
-  glm::ivec2 clipmap_offset = ClampGridCoordinates(grid_coords, GetTileSize() >> 1);
-  clipmap_offset -= ClampGridCoordinates(grid_coords, GetTileSize());
-  clipmap_offset /= GetTileSize();
-  for (int region = 0 ; region < 4; region++) {
-    glm::vec2 top_lft = top_left_ * TILE_SIZE + render_region_top_left_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE;
-    glm::vec2 bot_rgt = top_lft + glm::vec2(render_region_clip_size_[clipmap_offset.x][clipmap_offset.y][region] * GetTileSize() * TILE_SIZE);
-    if (!IsSubregionVisible(top_lft, bot_rgt)) continue;
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_region_buffers_[clipmap_offset.x][clipmap_offset.y][region]);
-    glDrawElements(GL_TRIANGLES, render_region_sizes_[clipmap_offset.x][clipmap_offset.y][region], GL_UNSIGNED_INT, (void*) 0);
+  for (int region = 0 ; region < 5; region++) {
+    if (!center && region == 4) continue;
+    // subregions_[region].Draw(clipmap_offset);
   }
 } 
+
+void Clipmap::Clear() {
+  num_invalid_ = 0;
+  for (int z = 0; z < CLIPMAP_SIZE+1; z++) {
+    for (int x = 0; x < CLIPMAP_SIZE+1; x++) {
+      height_buffer_.valid[z * (CLIPMAP_SIZE+1) + x] = 0;
+      num_invalid_++;
+    }
+  }
+}
 
 
 

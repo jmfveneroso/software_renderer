@@ -19,26 +19,12 @@
 #include "player.hpp"
 #include "height_map.hpp"
 #include "entity.hpp"
+#include "subregion.hpp"
 #include "config.h"
 
-#define CLIPMAP_LEVELS 7
-#define CLIPMAP_SIZE 258
-#define CLIPMAP_OFFSET ((CLIPMAP_SIZE - 2) / 2)
-
-#define LEFT_BORDERS 14
-#define TOP_BORDERS 4
-#define BOTTOM_BORDERS 2
-#define RIGHT_BORDERS 7
-#define CENTER_BORDERS 15
+#define CLIPMAP_LEVELS 6
 
 namespace Sibyl {
-
-enum RenderRegion {
-  RR_LEFT = 0,
-  RR_TOP,
-  RR_BOTTOM,
-  RR_RIGHT
-};
 
 struct HeightBuffer {
   glm::ivec2 top_left = glm::ivec2(1, 1);
@@ -48,33 +34,24 @@ struct HeightBuffer {
 };
 
 class Clipmap {
-  static std::vector<glm::ivec2> feature_points;
   std::shared_ptr<Player> player_;
   std::shared_ptr<HeightMap> height_map_;
 
   unsigned int level_;
-  SimplexNoise noise_;
   HeightBuffer height_buffer_;
 
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
-  GLuint barycentric_buffer_;
   GLuint element_buffer_;
 
-  int active_texture_ = 0;
-  GLuint height_texture_[2];
-  GLuint normals_texture_[2];
+  GLuint height_texture_;
+  GLuint normals_texture_;
 
   glm::ivec2 top_left_;
   int num_invalid_ = (CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1);
   glm::vec3 vertices_[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
 
-  GLuint center_region_buffer_;
-  int center_region_size_;
-  GLuint render_region_buffers_[2][2][4];
-  int render_region_sizes_[2][2][4];
-  glm::ivec2 render_region_top_left_[2][2][4];
-  glm::ivec2 render_region_clip_size_[2][2][4];
+  Subregion subregions_[5];
 
   int GetTileSize();
   glm::ivec2 WorldToGridCoordinates(glm::vec3);
@@ -85,9 +62,6 @@ class Clipmap {
   void InvalidateOuterBuffer(glm::ivec2);
   bool IsInsideFrustum(glm::vec2 lft, glm::vec2 rgt, glm::vec2 p);
   bool IsSubregionVisible(glm::vec2 top_left, glm::vec2 bottom_right);
-
-  int CreateSubRegion(glm::ivec2, glm::ivec2, short);
-  void CreateSubRegions();
 
  public:
   Clipmap();

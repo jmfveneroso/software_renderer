@@ -5,6 +5,8 @@ namespace Sibyl {
 Window::Window() 
   : window_width_(WINDOW_WIDTH), window_height_(WINDOW_HEIGHT) {
   CreateWindow();
+
+  // Disable vsync.
   glfwSwapInterval(0);
 }
 

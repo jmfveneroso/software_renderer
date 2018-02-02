@@ -11,9 +11,16 @@
 
 namespace Sibyl {
 
-#define PLAYER_SPEED 300.0f
+#define PLAYER_SPEED 3000.0f
 // #define PLAYER_SPEED 1500.0f
 // #define PLAYER_SPEED 100.0f
+
+enum FrustumPlanes {
+  FRUSTUM_PLANE_UP,
+  FRUSTUM_PLANE_LEFT,
+  FRUSTUM_PLANE_RIGHT,
+  FRUSTUM_PLANE_DOWN
+};
 
 enum Direction {
   FORWARD,
@@ -40,6 +47,7 @@ class Player {
   void Jump();
   void ApplyForce(glm::vec3 force) { speed_ += force; }
   void Update() { position_ += speed_; }
+  glm::vec3 GetFrustumPlane(FrustumPlanes);
 
   glm::vec3 position() { return position_; }
   glm::vec3 last_position() { return last_position_; }

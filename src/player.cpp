@@ -63,4 +63,42 @@ void Player::Jump() {
   // }
 }
 
+glm::vec3 Player::GetFrustumPlane(FrustumPlanes plane) {
+  glm::vec4 view_direction(
+    cos(vertical_angle_) * sin(horizontal_angle_),
+    sin(vertical_angle_),
+    cos(vertical_angle_) * cos(horizontal_angle_),
+    1
+  );
+
+  glm::vec3 vertical_axis = glm::vec3(0, 1, 0);
+
+  glm::vec3 horizontal_axis = glm::vec3(
+    sin(horizontal_angle_ - 3.14f / 2.0f),
+    0,
+    cos(horizontal_angle_ - 3.14f / 2.0f)
+  );
+
+  float vertical_fov = glm::radians(0.75f * fov_);
+
+  glm::mat4 rotation_matrix;
+  switch (plane) {
+    case FRUSTUM_PLANE_UP:
+      rotation_matrix = glm::rotate(glm::mat4(1.0f), vertical_fov - (3.14f / 2.0f), horizontal_axis);
+      break;
+    case FRUSTUM_PLANE_DOWN:
+      rotation_matrix = glm::rotate(glm::mat4(1.0f), (3.14f / 2.0f) - vertical_fov, horizontal_axis);
+      break;
+    case FRUSTUM_PLANE_LEFT:
+      rotation_matrix = glm::rotate(glm::mat4(1.0f), -glm::radians(fov_), vertical_axis);
+      break;
+    case FRUSTUM_PLANE_RIGHT:
+      rotation_matrix = glm::rotate(glm::mat4(1.0f), glm::radians(fov_), vertical_axis);
+      break;
+    default: throw;
+  }
+
+  return glm::normalize(glm::vec3(rotation_matrix * view_direction));
+}
+
 } // End of namespace.
