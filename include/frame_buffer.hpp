@@ -14,27 +14,22 @@
 namespace Sibyl {
 
 class FrameBuffer {
-  GLuint FramebufferName;
-  GLuint depthrenderbuffer;
-  GLuint renderedTexture;
-  GLuint depthTexture;
-  GLuint texID;
-  GLuint quad_programID;
-  GLuint quad_vertexbuffer;
-  GLuint topleftID;
-  GLuint DepthMapID_;
-  glm::vec2 topleft;
-  int windowWidth, windowHeight;
+  GLuint framebuffer_id_;
+  GLuint depth_buffer_;
+  GLuint rendered_texture_;
+  GLuint depth_texture_;
+  GLuint vertex_buffer_;
+  int width_, height_;
+  Shader shader_;
 
  public:
-  FrameBuffer() {}
-  FrameBuffer(int windowWidth, int windowHeight, glm::vec2 topleft);
+  FrameBuffer(Shader, int, int);
 
-  void Initialize();
+  void Init();
   void Draw();
-  GLuint GetTexture() { return renderedTexture; }
-  GLuint GetDepthTexture() { return depthTexture; }
-  GLuint GetFramebuffer() { return FramebufferName; }
+  GLuint GetTexture() { return rendered_texture_; }
+  GLuint GetDepthTexture() { return depth_texture_; }
+  GLuint GetFramebuffer() { return framebuffer_id_; }
 };
 
 } // End of namespace.

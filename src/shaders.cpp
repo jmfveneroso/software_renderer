@@ -224,22 +224,11 @@ void Shader::Load(
   glDeleteShader(GeometryShaderID);
 }
 
-void Shader::CreateUniform(const std::string& name) {
-  auto it = glsl_variables_.find(name);
-  if (it != glsl_variables_.end()) {
-    std::cout << name << std::endl;
-    throw "Uniform already exists";
-  }
-
-  GLuint id = glGetUniformLocation(program_id_, name.c_str());
-  glsl_variables_.insert(std::make_pair(name, id));
-}
-
 GLuint Shader::GetUniformId(const std::string& name) {
   auto it = glsl_variables_.find(name);
   if (it == glsl_variables_.end()) {
-    std::cout << name << std::endl;
-    throw "Uniform does not exist";
+    GLuint id = glGetUniformLocation(program_id_, name.c_str());
+    glsl_variables_.insert(std::make_pair(name, id));
   }
   return it->second; 
 }

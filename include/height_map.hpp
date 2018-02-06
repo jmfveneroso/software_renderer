@@ -15,7 +15,7 @@
 #include "simplex_noise.hpp"
 #include "config.h"
 
-#define MAX_HEIGHT 256000
+#define MAX_HEIGHT 25600
 #define TILE_SIZE 128
 #define HEIGHT_MAP_SIZE 5000
 #define NUM_FEATURE_POINTS 12

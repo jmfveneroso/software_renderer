@@ -5,15 +5,30 @@ in FragData {
   vec2 UV;
   vec4 clipspace;
   vec3 barycentric;
+  float depth;
 } in_data;
 
 // Output data
 layout(location = 0) out vec3 color;
 
+uniform sampler2D DepthMap;
+
 void main(){
-  if (any(lessThan(in_data.barycentric, vec3(0.02)))){
-    color = vec3(0.0, 0.0, 0.0);
-  } else{
-    color = vec3(0.5, 0.5, 0.5);
-  }
+  vec2 ndc = ((in_data.clipspace.xy / in_data.clipspace.w) / 2.0) + 0.5;
+  vec2 tex_coords = vec2(ndc.x, ndc.y);
+
+  float near = 20.0;
+  float far = 2000000.0;
+  float depth = texture(DepthMap, tex_coords).r;
+  // depth = 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
+  // float distance = 2.0 * near * far / (far + near - (2.0 * in_data.clipspace.z - 1.0) * (far - near));
+  // if (distance > depth) discard;
+  color = vec3(depth);
+  // color = vec3(0.5);
+
+  // if (any(lessThan(in_data.barycentric, vec3(0.02)))){
+  //   color = vec3(0.0, 0.0, 0.0);
+  // } else{
+  //   color = vec3(0.5, 0.5, 0.5);
+  // }
 }

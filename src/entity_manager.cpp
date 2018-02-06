@@ -17,23 +17,6 @@ GLuint EntityManager::LoadTexture(
   return texture.texture_id();
 }
 
-void EntityManager::CreateFrameBuffer(
-  const std::string& name, int width, 
-  int height, glm::vec2 top_left
-) {
-  std::shared_ptr<FrameBuffer> fb = std::make_shared<FrameBuffer>(width, height, top_left);
-  frame_buffers_.insert(std::make_pair(name, fb));
-}
-
-void EntityManager::LoadShader(
-  const std::string& name,  
-  const std::string& vertex_file_path, 
-  const std::string& fragment_file_path
-) {
-  Shader shader = Shader(name, vertex_file_path, fragment_file_path);
-  shaders_.insert(std::make_pair(name, shader));
-}
-
 void EntityManager::LoadSolid(
   const std::string& name, 
   const std::string& obj_file_path,
@@ -62,92 +45,27 @@ void EntityManager::LoadSolid(
 }
 
 void EntityManager::Initialize() {
-  CreateFrameBuffer("reflection", 1000, 750, glm::vec2( 0.0f,  0.0f));
-  CreateFrameBuffer("refraction", 1000, 750, glm::vec2(-1.0f,  0.0f));
-  CreateFrameBuffer("screen",     1000, 750, glm::vec2(-1.0f, -1.0f));
+  // Create and compile our GLSL programs from the shaders.
+  shaders_.insert(std::make_pair("default", Shader("default", "shaders/vshade_normals", "shaders/fshade_normals")));
+  shaders_.insert(std::make_pair("terrain", Shader("terrain", "shaders/vshade_terrain", "shaders/fshade_terrain", "shaders/gshade_terrain")));
+  shaders_.insert(std::make_pair("sky", Shader("sky", "shaders/vshade_sky", "shaders/fshade_sky")));
+  shaders_.insert(std::make_pair("water", Shader("water", "shaders/vshade_water", "shaders/fshade_water")));
+  shaders_.insert(std::make_pair("test", Shader("test", "shaders/vshade_test", "shaders/fshade_test", "shaders/gshade_test")));
+  shaders_.insert(std::make_pair("static_screen", Shader("test", "shaders/vshade_static_screen", "shaders/fshade_static_screen")));
 
-  // Create and compile our GLSL program from the shaders.
-  Shader shader = Shader("default", "shaders/vshade_normals", "shaders/fshade_normals");
-  shader.CreateUniform("DiffuseTextureSampler");
-  shader.CreateUniform("NormalTextureSampler");
-  shader.CreateUniform("SpecularTextureSampler");
-  shader.CreateUniform("water_fog");
-  shader.CreateUniform("LightPosition_worldspace");
-  shader.CreateUniform("MVP");
-  shader.CreateUniform("V");
-  shader.CreateUniform("M");
-  shader.CreateUniform("MV3x3");
-  shader.CreateUniform("use_normals");
-  shader.CreateUniform("plane");
-  shaders_.insert(std::make_pair("default", shader));
-
-  shader = Shader("terrain", "shaders/vshade_terrain", "shaders/fshade_terrain", "shaders/gshade_terrain");
-  shader.CreateUniform("DiffuseTextureSampler");
-  shader.CreateUniform("NormalTextureSampler");
-  shader.CreateUniform("SpecularTextureSampler");
-  shader.CreateUniform("RockTextureSampler");
-  shader.CreateUniform("Rock2TextureSampler");
-  shader.CreateUniform("SandTextureSampler");
-  shader.CreateUniform("HeightMapSampler");
-  shader.CreateUniform("NormalsSampler");
-  shader.CreateUniform("ValidSampler");
-  shader.CreateUniform("MVP");
-  shader.CreateUniform("V");
-  shader.CreateUniform("M");
-  shader.CreateUniform("MV3x3");
-  shader.CreateUniform("PlayerPosition");
-  shader.CreateUniform("TILE_SIZE");
-  shader.CreateUniform("PURE_TILE_SIZE");
-  shader.CreateUniform("CLIPMAP_SIZE");
-  shader.CreateUniform("MAX_HEIGHT");
-  shader.CreateUniform("buffer_top_left");
-  shader.CreateUniform("top_left");
-  shader.CreateUniform("plane");
-  shaders_.insert(std::make_pair("terrain", shader));
-
-  shader = Shader("sky", "shaders/vshade_sky", "shaders/fshade_sky");
-  shader.CreateUniform("MVP");
-  shader.CreateUniform("V");
-  shader.CreateUniform("M");
-  shader.CreateUniform("MV3x3");
-  shader.CreateUniform("SkyTextureSampler");
-  shaders_.insert(std::make_pair("sky", shader));
-
-  shader = Shader("water", "shaders/vshade_water", "shaders/fshade_water");
-  shader.CreateUniform("ReflectionTextureSampler");
-  shader.CreateUniform("RefractionTextureSampler");
-  shader.CreateUniform("dudvMap");
-  shader.CreateUniform("normalMap");
-  shader.CreateUniform("depthMap");
-  shader.CreateUniform("LightPosition_worldspace");
-  shader.CreateUniform("moveFactor");
-  shader.CreateUniform("cameraPosition");
-
-  shader.CreateUniform("HeightMapSampler");
-  shader.CreateUniform("MVP");
-  shader.CreateUniform("V");
-  shader.CreateUniform("M");
-  shader.CreateUniform("MV3x3");
-  shader.CreateUniform("PlayerPosition");
-  shader.CreateUniform("TILE_SIZE");
-  shader.CreateUniform("PURE_TILE_SIZE");
-  shader.CreateUniform("CLIPMAP_SIZE");
-  shader.CreateUniform("MAX_HEIGHT");
-  shader.CreateUniform("buffer_top_left");
-  shader.CreateUniform("top_left");
-  shaders_.insert(std::make_pair("water", shader));
-
-  shader = Shader("test", "shaders/vshade_test", "shaders/fshade_test", "shaders/gshade_test");
-  shader.CreateUniform("MVP");
-  shader.CreateUniform("V");
-  shader.CreateUniform("M");
-  shader.CreateUniform("MV3x3");
-  shaders_.insert(std::make_pair("test", shader));
+  frame_buffers_.insert(std::make_pair("reflection", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 600, 400)));
+  frame_buffers_.insert(std::make_pair("refraction", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 600, 400)));
+  frame_buffers_.insert(std::make_pair("screen",     std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 600, 400)));
+  // frame_buffers_.insert(std::make_pair("reflection", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
+  // frame_buffers_.insert(std::make_pair("refraction", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
+  // frame_buffers_.insert(std::make_pair("screen",     std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
 
   // TestCube.
-  entities_.insert(std::make_pair("cube", 
-    std::make_shared<Cube>(shaders_.find("test")->second)
-  ));
+  entities_.insert(std::make_pair("cube", std::make_shared<Cube>(
+    shaders_.find("test")->second,
+    // frame_buffers_["screen"]->GetDepthTexture()
+    frame_buffers_["refraction"]->GetDepthTexture()
+  )));
 
   // Sky.
   sky_dome_ = std::make_shared<SkyDome>(
@@ -182,7 +100,6 @@ void EntityManager::Initialize() {
   if (it == shaders_.end()) 
     throw "Shader does not exist";
 
-  // diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/dirt.bmp");
   diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/wild_grass.bmp");
   normal_texture_id = LoadTexture("normal_terrain", "textures/wild_grass_2.bmp");
   GLuint specular_texture_id = LoadTexture("specular_terrain", "textures/noise.bmp");

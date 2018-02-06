@@ -217,7 +217,6 @@ void Clipmap::RenderWater(
   bool center,
   std::shared_ptr<Water> water
 ) {
-  return;
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(top_left_.x * TILE_SIZE, 0, top_left_.y * TILE_SIZE));
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
   glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
@@ -255,7 +254,7 @@ void Clipmap::RenderWater(
 
   for (int region = 0 ; region < 5; region++) {
     if (!center && region == 4) continue;
-    // subregions_[region].Draw(clipmap_offset);
+    subregions_[region].Draw(clipmap_offset, top_left_);
   }
 } 
 

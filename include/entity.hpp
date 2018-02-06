@@ -82,6 +82,7 @@ class Cube : public IEntity {
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
   GLuint element_buffer_;
+  GLuint depth_map_;
   std::vector<glm::vec3> vertices_;
   std::vector<unsigned int> indices_;
 
@@ -91,7 +92,7 @@ class Cube : public IEntity {
    Shader shader_;
  
   public:
-   Cube(Shader);
+   Cube(Shader, GLuint);
  
    void Draw(glm::mat4, glm::mat4, glm::vec3);
    void Clean();

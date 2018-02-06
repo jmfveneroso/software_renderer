@@ -29,13 +29,11 @@ class EntityManager {
   std::shared_ptr<Water> water_;
   std::shared_ptr<SkyDome> sky_dome_;
 
-  void LoadShader(const std::string&, const std::string&, const std::string&);
   GLuint LoadTexture(const std::string&, const std::string&);
   void LoadSolid(
     const std::string&, const std::string&, const std::string&,
     const std::string&, const std::string&, const std::string&
   );
-  void CreateFrameBuffer(const std::string&, int, int, glm::vec2);
 
  public:
   EntityManager(

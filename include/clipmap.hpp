@@ -22,8 +22,8 @@
 #include "subregion.hpp"
 #include "config.h"
 
-#define CLIPMAP_LEVELS 2
-// #define CLIPMAP_LEVELS 6
+// #define CLIPMAP_LEVELS 2
+#define CLIPMAP_LEVELS 6
 
 namespace Sibyl {
 

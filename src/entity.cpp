@@ -122,9 +122,10 @@ void Water::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 cam
 }
 
 Cube::Cube(
-  Shader shader
+  Shader shader, GLuint depth_map
 ) : shader_(shader),
-    position_(glm::vec3(0.0, 15000.0, 0.0)) {
+    depth_map_(depth_map),
+    position_(glm::vec3(0.0, 6000.0, 0.0)) {
   glGenBuffers(1, &vertex_buffer_);
   glGenBuffers(1, &uv_buffer_);
   glGenBuffers(1, &element_buffer_);
@@ -197,15 +198,15 @@ Cube::Cube(
 
 void Cube::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
   position_ += speed_;
-  if (position_.y < 4000) {
+  if (position_.y < 2000) {
     speed_ = glm::vec3(0, 5, 0);
   }
-  if (position_.y > 8000) {
+  if (position_.y > 3000) {
     speed_ = glm::vec3(0, -5, 0);
   }
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
+  // glEnable(GL_BLEND);
+  // glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_CULL_FACE);
   glUseProgram(shader_.program_id());
@@ -219,6 +220,7 @@ void Cube::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 came
   glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
   glUniformMatrix4fv(shader_.GetUniformId("V"),     1, GL_FALSE, &ViewMatrix[0][0]);
   glUniformMatrix3fv(shader_.GetUniformId("MV3x3"), 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
+  shader_.BindTexture("DepthMap", depth_map_);
 
   shader_.BindBuffer(vertex_buffer_, 0, 3);
   shader_.BindBuffer(uv_buffer_, 1, 2);
@@ -227,7 +229,7 @@ void Cube::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 came
   shader_.Clear();
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
-  glDisable(GL_BLEND);
+  // glDisable(GL_BLEND);
 }
 
 void Cube::Clean() {
