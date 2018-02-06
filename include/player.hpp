@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/norm.hpp>
+#include "geometry.hpp"
 
 namespace Sibyl {
 
@@ -15,10 +16,10 @@ namespace Sibyl {
 // #define PLAYER_SPEED 1500.0f
 // #define PLAYER_SPEED 100.0f
 
-enum FrustumPlanes {
-  FRUSTUM_PLANE_UP,
-  FRUSTUM_PLANE_LEFT,
+enum FrustumPlane {
+  FRUSTUM_PLANE_LEFT = 0,
   FRUSTUM_PLANE_RIGHT,
+  FRUSTUM_PLANE_UP,
   FRUSTUM_PLANE_DOWN
 };
 
@@ -47,7 +48,7 @@ class Player {
   void Jump();
   void ApplyForce(glm::vec3 force) { speed_ += force; }
   void Update() { position_ += speed_; }
-  glm::vec3 GetFrustumPlane(FrustumPlanes);
+  Plane GetFrustumPlane(FrustumPlane);
 
   glm::vec3 position() { return position_; }
   glm::vec3 last_position() { return last_position_; }
@@ -60,6 +61,8 @@ class Player {
   void set_position(glm::vec3 position) { position_ = position; }
   void set_speed(glm::vec3 speed) { speed_ = speed; }
   void set_last_position(glm::vec3 position) { last_position_ = position; }
+  void set_horizontal_angle(float angle) { horizontal_angle_ = angle; }
+  void set_vertical_angle(float angle) { vertical_angle_ = angle; }
 };
 
 } // End of namespace.

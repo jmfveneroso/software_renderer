@@ -56,8 +56,10 @@ class Subregion {
   void CreateBuffer(glm::ivec2);
   void CreateTile(std::vector<unsigned int>&, int, int);
 
-  bool IsInsideFrustum(glm::vec2, glm::vec2, glm::vec2);
-  bool IsSubregionVisible(glm::ivec2, glm::vec2, glm::vec2);
+  void DrawElements(glm::ivec2, glm::vec2, glm::vec2, glm::vec2);
+  Segment ClipSubregion(glm::ivec2, glm::vec2, glm::vec2, float);
+  Segment ClipSegToFrustum(Segment);
+  Segment GetEnclosingSegment(Segment, Segment, bool);
 
  public:
   Subregion() {}

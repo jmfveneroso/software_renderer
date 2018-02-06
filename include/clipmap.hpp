@@ -22,7 +22,8 @@
 #include "subregion.hpp"
 #include "config.h"
 
-#define CLIPMAP_LEVELS 6
+#define CLIPMAP_LEVELS 2
+// #define CLIPMAP_LEVELS 6
 
 namespace Sibyl {
 
@@ -60,8 +61,6 @@ class Clipmap {
   glm::ivec2 GridToBufferCoordinates(glm::ivec2);
   glm::ivec2 BufferToGridCoordinates(glm::ivec2);
   void InvalidateOuterBuffer(glm::ivec2);
-  bool IsInsideFrustum(glm::vec2 lft, glm::vec2 rgt, glm::vec2 p);
-  bool IsSubregionVisible(glm::vec2 top_left, glm::vec2 bottom_right);
 
  public:
   Clipmap();

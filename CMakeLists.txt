@@ -30,6 +30,7 @@ endif()
 set(
   SRC
   src/main.cpp 
+  src/geometry.cpp 
   src/window.cpp 
   src/input.cpp 
   src/player.cpp 

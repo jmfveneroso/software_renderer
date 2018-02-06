@@ -1,0 +1,19 @@
+#version 330 core
+
+in FragData {
+  vec3 position;
+  vec2 UV;
+  vec4 clipspace;
+  vec3 barycentric;
+} in_data;
+
+// Output data
+layout(location = 0) out vec3 color;
+
+void main(){
+  if (any(lessThan(in_data.barycentric, vec3(0.02)))){
+    color = vec3(0.0, 0.0, 0.0);
+  } else{
+    color = vec3(0.5, 0.5, 0.5);
+  }
+}

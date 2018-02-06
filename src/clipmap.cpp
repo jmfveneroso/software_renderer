@@ -162,33 +162,6 @@ void Clipmap::Update(glm::vec3 player_pos) {
   glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.normals[0]);
 }
 
-bool Clipmap::IsInsideFrustum(glm::vec2 lft, glm::vec2 rgt, glm::vec2 p) {
-  double denominator = glm::determinant(glm::mat2(lft, rgt));
-  double alpha = glm::determinant(glm::mat2(p, rgt)) / denominator;
-  double beta  = glm::determinant(glm::mat2(lft, p)) / denominator;
-  return alpha >= 0 && beta >= 0;
-}
-
-bool Clipmap::IsSubregionVisible(glm::vec2 top_left, glm::vec2 bottom_right) {
-  glm::vec2 view_direction = glm::vec2(
-    sin(player_->horizontal_angle()),
-    cos(player_->horizontal_angle())
-  );
-
-  glm::vec2 pos = glm::vec2(player_->position().x, player_->position().z);
-  top_left -= pos;
-  bottom_right -= pos;
-
-  glm::vec2 lft = glm::rotate(view_direction, glm::radians(player_->fov()));
-  glm::vec2 rgt = glm::rotate(view_direction, -glm::radians(player_->fov()));
-
-  if (IsInsideFrustum(lft, rgt, top_left)    ) return true;
-  if (IsInsideFrustum(lft, rgt, bottom_right)) return true;
-  if (IsInsideFrustum(lft, rgt, glm::vec2(top_left.x, bottom_right.y))) return true;
-  if (IsInsideFrustum(lft, rgt, glm::vec2(bottom_right.x, top_left.y))) return true;
-  return false;
-}
-
 void Clipmap::Render(
   glm::vec3 player_pos, 
   Shader* shader, 
@@ -295,24 +268,5 @@ void Clipmap::Clear() {
     }
   }
 }
-
-
-
-
-// DEPRECATED.
-
-// When i need to offset look here.
-// glDrawElements(GL_TRIANGLE_STRIP, 54, GL_UNSIGNED_INT, (void*) (44 * sizeof(unsigned int)));
-
-// bool Clipmap::LineIntersection(glm::vec2 a[2], glm::vec2 b[2], glm::vec2* intersection) {
-//   double numerator   = glm::determinant(glm::mat2(a[1] - a[0], b[1] - b[0]));
-//   double denominator = glm::determinant(glm::mat2(a[1] - a[0], b[1] - b[0]));
-// 
-//   double delta = (numerator / denominator);
-//   if (delta < 0) return false;
-// 
-//   *intersection = b[0] + b[1] * delta;
-//   return true;
-// }
 
 } // End of namespace.

@@ -101,10 +101,11 @@ void Renderer::Render() {
 
   PushRenderEntity("pro_terrain");
   // entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, -1, 0, 100.0f + 1.0f));
-  // entity_manager_->GetTerrain()->DrawWater(false);
+  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 100.0f));
+  entity_manager_->GetTerrain()->DrawWater(false);
 
   ComputeMatrices();
-  // DrawScene(1000, 750, "refraction");
+  DrawScene(1000, 750, "refraction");
 
   PushRenderEntity("cube");
 

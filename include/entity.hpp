@@ -78,23 +78,26 @@ class Water : public Solid {
   void Draw(glm::mat4, glm::mat4, glm::vec3);
 };
 
-class TextureScreen : public IEntity {
- protected:
-  glm::vec3 position_;
-  Shader shader_;
-  GLuint texture_id_;
+class Cube : public IEntity {
+  GLuint vertex_buffer_;
+  GLuint uv_buffer_;
+  GLuint element_buffer_;
+  std::vector<glm::vec3> vertices_;
+  std::vector<unsigned int> indices_;
 
- public:
-  TextureScreen(
-    Shader shader,
-    GLuint texture_id
-  );
-
-  void Draw(glm::mat4, glm::mat4, glm::vec3);
-  void Clean();
-
-  std::vector<glm::vec3> vertices() { return std::vector<glm::vec3>(); }
-  void set_position(glm::vec3 position) { position_ = position; }
+  protected:
+   glm::vec3 speed_ = glm::vec3(0, 5, 0);
+   glm::vec3 position_;
+   Shader shader_;
+ 
+  public:
+   Cube(Shader);
+ 
+   void Draw(glm::mat4, glm::mat4, glm::vec3);
+   void Clean();
+ 
+   std::vector<glm::vec3> vertices() { return vertices_; }
+   void set_position(glm::vec3 position) { position_ = position; }
 };
 
 } // End of namespace.

@@ -137,6 +137,18 @@ void EntityManager::Initialize() {
   shader.CreateUniform("top_left");
   shaders_.insert(std::make_pair("water", shader));
 
+  shader = Shader("test", "shaders/vshade_test", "shaders/fshade_test", "shaders/gshade_test");
+  shader.CreateUniform("MVP");
+  shader.CreateUniform("V");
+  shader.CreateUniform("M");
+  shader.CreateUniform("MV3x3");
+  shaders_.insert(std::make_pair("test", shader));
+
+  // TestCube.
+  entities_.insert(std::make_pair("cube", 
+    std::make_shared<Cube>(shaders_.find("test")->second)
+  ));
+
   // Sky.
   sky_dome_ = std::make_shared<SkyDome>(
     player_,
