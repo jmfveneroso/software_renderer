@@ -90,6 +90,8 @@ class Cube : public IEntity {
    glm::vec3 speed_ = glm::vec3(0, 5, 0);
    glm::vec3 position_;
    Shader shader_;
+   float v_angle_ = 0.0;
+   float h_angle_ = 0.0;
  
   public:
    Cube(Shader, GLuint);

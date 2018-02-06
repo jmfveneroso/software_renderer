@@ -12,6 +12,7 @@ if (APPLE)
     glfw
     glew
   )
+  add_definitions(-DAPPLE)
 else()
   link_directories(/usr/X11/lib /usr/local/lib)
   set(ALL_LIBS

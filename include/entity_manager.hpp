@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include "shaders.h"
+#include "window.h"
 #include "entity.hpp"
 #include "terrain.hpp"
 #include "texture.hpp"
@@ -20,6 +21,7 @@ typedef std::map<std::string, GLuint> TextureMap;
 typedef std::map<std::string, Shader> ShaderMap;
 
 class EntityManager {
+  std::shared_ptr<Window> window_;
   std::shared_ptr<Player> player_;
   TextureMap textures_;
   ShaderMap shaders_;
@@ -37,6 +39,7 @@ class EntityManager {
 
  public:
   EntityManager(
+    std::shared_ptr<Window> window,
     std::shared_ptr<Player> player
   );
 

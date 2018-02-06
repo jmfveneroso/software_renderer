@@ -125,12 +125,12 @@ Cube::Cube(
   Shader shader, GLuint depth_map
 ) : shader_(shader),
     depth_map_(depth_map),
-    position_(glm::vec3(0.0, 6000.0, 0.0)) {
+    position_(glm::vec3(0.0, 8000.0, 0.0)) {
   glGenBuffers(1, &vertex_buffer_);
   glGenBuffers(1, &uv_buffer_);
   glGenBuffers(1, &element_buffer_);
  
-  float s = 2000.0f;
+  float s = 500.0f;
   std::vector<glm::vec2> uvs;
 
   // Top face.
@@ -197,21 +197,25 @@ Cube::Cube(
 }
 
 void Cube::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
+  v_angle_ += 3.14f / 512;
+  h_angle_ += 3.14f / 256;
   position_ += speed_;
-  if (position_.y < 2000) {
+  if (position_.y < 8000) {
     speed_ = glm::vec3(0, 5, 0);
   }
-  if (position_.y > 3000) {
+  if (position_.y > 12000) {
     speed_ = glm::vec3(0, -5, 0);
   }
 
-  // glEnable(GL_BLEND);
-  // glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_CULL_FACE);
   glUseProgram(shader_.program_id());
 
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
+  ModelMatrix *= glm::rotate(glm::mat4(1.0f), v_angle_, glm::vec3(1.0, 0.0, 0.0));
+  ModelMatrix *= glm::rotate(glm::mat4(1.0f), h_angle_, glm::vec3(0.0, 1.0, 0.0));
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
   glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
   glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
@@ -229,7 +233,7 @@ void Cube::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 came
   shader_.Clear();
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
-  // glDisable(GL_BLEND);
+  glDisable(GL_BLEND);
 }
 
 void Cube::Clean() {

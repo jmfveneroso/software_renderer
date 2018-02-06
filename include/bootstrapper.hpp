@@ -18,7 +18,7 @@ class Bootstrapper {
     static IoC::Container& container = IoC::Container::Get();
     container.RegisterInstance<Window, Window>();
     container.RegisterInstance<Player, Player>();
-    container.RegisterInstance<EntityManager, EntityManager, Player>();
+    container.RegisterInstance<EntityManager, EntityManager, Window, Player>();
     container.RegisterInstance<Input, Input, Window, Player, EntityManager>();
     container.RegisterInstance<Physics, Physics, EntityManager, Player>();
     container.RegisterInstance<Renderer, Renderer, Window, EntityManager, Player>();

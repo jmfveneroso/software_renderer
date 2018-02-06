@@ -7,7 +7,6 @@ layout(location = 1) in vec2 vertexUV;
 out VertexData {
   vec3 position;
   vec4 clipspace;
-  float depth;
   vec2 UV;
 } out_data;
 
@@ -20,7 +19,6 @@ uniform mat3 MV3x3;
 void main(){
   out_data.UV = vertexUV;
   out_data.position = (M * vec4(vertexPosition_modelspace, 1)).xyz;
-  out_data.clipspace = MVP * vec4(out_data.position, 1);
-  out_data.depth = out_data.clipspace.z / out_data.clipspace.w;
-  gl_Position = out_data.clipspace;
+  out_data.clipspace = MVP * vec4(vertexPosition_modelspace, 1);
+  gl_Position = MVP * vec4(vertexPosition_modelspace, 1);
 }

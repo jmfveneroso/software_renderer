@@ -9,5 +9,5 @@ uniform sampler2D DepthSampler;
 
 void main(){
   color = texture(RenderedTextureSampler, UV).xyz;
-  // color = vec3(texture(DepthSampler, UV).x);
+  // color = vec3((texture(DepthSampler, UV).x - 0.9) * 10);
 }

@@ -3,8 +3,9 @@
 namespace Sibyl {
 
 EntityManager::EntityManager(
+  std::shared_ptr<Window> window,
   std::shared_ptr<Player> player
-) : player_(player) {
+) : window_(window), player_(player) {
   Initialize();
 }
 
@@ -53,18 +54,14 @@ void EntityManager::Initialize() {
   shaders_.insert(std::make_pair("test", Shader("test", "shaders/vshade_test", "shaders/fshade_test", "shaders/gshade_test")));
   shaders_.insert(std::make_pair("static_screen", Shader("test", "shaders/vshade_static_screen", "shaders/fshade_static_screen")));
 
-  frame_buffers_.insert(std::make_pair("reflection", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 600, 400)));
-  frame_buffers_.insert(std::make_pair("refraction", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 600, 400)));
-  frame_buffers_.insert(std::make_pair("screen",     std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 600, 400)));
-  // frame_buffers_.insert(std::make_pair("reflection", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
-  // frame_buffers_.insert(std::make_pair("refraction", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
-  // frame_buffers_.insert(std::make_pair("screen",     std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
+  frame_buffers_.insert(std::make_pair("reflection", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, WINDOW_WIDTH, WINDOW_HEIGHT)));
+  frame_buffers_.insert(std::make_pair("refraction", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, WINDOW_WIDTH, WINDOW_HEIGHT)));
+  frame_buffers_.insert(std::make_pair("screen",     std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, WINDOW_WIDTH, WINDOW_HEIGHT)));
 
   // TestCube.
   entities_.insert(std::make_pair("cube", std::make_shared<Cube>(
     shaders_.find("test")->second,
-    // frame_buffers_["screen"]->GetDepthTexture()
-    frame_buffers_["refraction"]->GetDepthTexture()
+    frame_buffers_["screen"]->GetDepthTexture()
   )));
 
   // Sky.
