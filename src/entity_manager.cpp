@@ -58,10 +58,23 @@ void EntityManager::Initialize() {
   frame_buffers_.insert(std::make_pair("refraction", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, WINDOW_WIDTH, WINDOW_HEIGHT)));
   frame_buffers_.insert(std::make_pair("screen",     std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, WINDOW_WIDTH, WINDOW_HEIGHT)));
 
-  // TestCube.
+  // Test Cube.
   entities_.insert(std::make_pair("cube", std::make_shared<Cube>(
     shaders_.find("test")->second,
-    frame_buffers_["screen"]->GetDepthTexture()
+    frame_buffers_["screen"]->GetDepthTexture(),
+    glm::vec3(-500, -500, -500), glm::vec3(500, 500, 500)
+  )));
+
+  // Test Plane.
+  std::vector<glm::vec3> points;
+  points.push_back(glm::vec3(-2000, 0, -2000));
+  points.push_back(glm::vec3(-2000, 0, 2000));
+  points.push_back(glm::vec3(2000, 0, 2000));
+  points.push_back(glm::vec3(2000, 0, -2000));
+  entities_.insert(std::make_pair("plane", std::make_shared<TestPlane>(
+    shaders_.find("test")->second,
+    frame_buffers_["screen"]->GetDepthTexture(),
+    points
   )));
 
   // Sky.

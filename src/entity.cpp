@@ -122,78 +122,29 @@ void Water::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 cam
 }
 
 Cube::Cube(
-  Shader shader, GLuint depth_map
+  Shader shader, GLuint depth_map,
+  glm::vec3 p1, glm::vec3 p2
 ) : shader_(shader),
     depth_map_(depth_map),
     position_(glm::vec3(0.0, 8000.0, 0.0)) {
-  glGenBuffers(1, &vertex_buffer_);
-  glGenBuffers(1, &uv_buffer_);
-  glGenBuffers(1, &element_buffer_);
- 
   float s = 500.0f;
-  std::vector<glm::vec2> uvs;
 
-  // Top face.
-  vertices_.push_back(glm::vec3(-s, s, -s)); uvs.push_back(glm::vec2(0, 0)); indices_.push_back(0);
-  vertices_.push_back(glm::vec3(-s, s, s )); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(1);
-  vertices_.push_back(glm::vec3(s , s, -s)); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(2);
-  vertices_.push_back(glm::vec3(s , s, -s)); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(3);
-  vertices_.push_back(glm::vec3(-s, s, s )); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(4);
-  vertices_.push_back(glm::vec3(s , s, s )); uvs.push_back(glm::vec2(1, 1)); indices_.push_back(5);
+  glm::vec3 v[8];
+  v[0] = glm::vec3(-s,  s, -s);
+  v[1] = glm::vec3(-s,  s,  s);
+  v[2] = glm::vec3( s,  s, -s);
+  v[3] = glm::vec3( s,  s,  s);
+  v[4] = glm::vec3(-s, -s, -s);
+  v[5] = glm::vec3(-s, -s,  s);
+  v[6] = glm::vec3( s, -s, -s);
+  v[7] = glm::vec3( s, -s,  s);
 
-  // Front face.
-  vertices_.push_back(glm::vec3(-s, s , s)); uvs.push_back(glm::vec2(0, 0)); indices_.push_back(6);
-  vertices_.push_back(glm::vec3(-s, -s, s)); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(7);
-  vertices_.push_back(glm::vec3(s , s , s)); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(8);
-  vertices_.push_back(glm::vec3(s , s , s)); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(9);
-  vertices_.push_back(glm::vec3(-s, -s, s)); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(10);
-  vertices_.push_back(glm::vec3(s, -s , s)); uvs.push_back(glm::vec2(1, 1)); indices_.push_back(11);
-
-  // Back face.
-  vertices_.push_back(glm::vec3(s , s , -s)); uvs.push_back(glm::vec2(0, 0)); indices_.push_back(12);
-  vertices_.push_back(glm::vec3(s , -s, -s)); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(13);
-  vertices_.push_back(glm::vec3(-s, s , -s)); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(14);
-  vertices_.push_back(glm::vec3(-s, s , -s)); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(15);
-  vertices_.push_back(glm::vec3(s , -s, -s)); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(16);
-  vertices_.push_back(glm::vec3(-s, -s, -s)); uvs.push_back(glm::vec2(1, 1)); indices_.push_back(17);
-
-  // Right face.
-  vertices_.push_back(glm::vec3(s, -s, s )); uvs.push_back(glm::vec2(0, 0)); indices_.push_back(18);
-  vertices_.push_back(glm::vec3(s, -s, -s)); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(19);
-  vertices_.push_back(glm::vec3(s, s , s )); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(20);
-  vertices_.push_back(glm::vec3(s, s , s )); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(21);
-  vertices_.push_back(glm::vec3(s, -s, -s)); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(22);
-  vertices_.push_back(glm::vec3(s, s, -s )); uvs.push_back(glm::vec2(1, 1)); indices_.push_back(23);
-
-  // Left face.
-  vertices_.push_back(glm::vec3(-s, s, -s )); uvs.push_back(glm::vec2(0, 0)); indices_.push_back(24);
-  vertices_.push_back(glm::vec3(-s, -s, -s)); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(25);
-  vertices_.push_back(glm::vec3(-s, s , s )); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(26);
-  vertices_.push_back(glm::vec3(-s, s , s )); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(27);
-  vertices_.push_back(glm::vec3(-s, -s, -s)); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(28);
-  vertices_.push_back(glm::vec3(-s, -s, s )); uvs.push_back(glm::vec2(1, 1)); indices_.push_back(29);
-
-  // Bottom face.
-  vertices_.push_back(glm::vec3(s , -s , -s)); uvs.push_back(glm::vec2(0, 0)); indices_.push_back(30);
-  vertices_.push_back(glm::vec3( s, -s , s )); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(31);
-  vertices_.push_back(glm::vec3(-s , -s, -s)); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(32);
-  vertices_.push_back(glm::vec3(-s , -s, -s)); uvs.push_back(glm::vec2(1, 0)); indices_.push_back(33);
-  vertices_.push_back(glm::vec3(s , -s , s )); uvs.push_back(glm::vec2(0, 1)); indices_.push_back(34);
-  vertices_.push_back(glm::vec3(-s , -s, s )); uvs.push_back(glm::vec2(1, 1)); indices_.push_back(35);
-
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3), &vertices_[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
-  glBufferData(
-    GL_ELEMENT_ARRAY_BUFFER, 
-    indices_.size() * sizeof(unsigned int), 
-    &indices_[0], 
-    GL_STATIC_DRAW
-  );
+  planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[0], v[1], v[3], v[2] })));
+  planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[1], v[5], v[7], v[3] })));
+  planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[2], v[6], v[4], v[0] })));
+  planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[7], v[6], v[2], v[3] })));
+  planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[0], v[4], v[5], v[1] })));
+  planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[6], v[7], v[5], v[4] })));
 }
 
 void Cube::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
@@ -202,41 +153,73 @@ void Cube::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 came
   position_ += speed_;
   if (position_.y < 8000) {
     speed_ = glm::vec3(0, 5, 0);
-  }
-  if (position_.y > 12000) {
+  } else if (position_.y > 12000) {
     speed_ = glm::vec3(0, -5, 0);
   }
 
+  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
+  ModelMatrix *= glm::rotate(glm::mat4(1.0f), v_angle_, glm::vec3(1.0, 0.0, 0.0));
+  ModelMatrix *= glm::rotate(glm::mat4(1.0f), h_angle_, glm::vec3(0.0, 1.0, 0.0));
+  for (auto& plane : planes_) {
+    plane.set_model_matrix(ModelMatrix);
+    plane.Draw(ProjectionMatrix, ViewMatrix, camera);
+  }
+}
+
+TestPlane::TestPlane(
+  Shader shader, GLuint depth_map,
+  std::vector<glm::vec3> points
+) : shader_(shader),
+    depth_map_(depth_map),
+    position_(glm::vec3(0.0, 10000.0, 0.0)) {
+  glGenBuffers(1, &vertex_buffer_);
+  glGenBuffers(1, &element_buffer_);
+ 
+  vertices_ = points;
+  for (int i = 1; i < vertices_.size() - 1; i++) {
+    indices_.push_back(0);
+    indices_.push_back(i);
+    indices_.push_back(i + 1);
+  }
+
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3), &vertices_[0], GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
+  glBufferData(
+    GL_ELEMENT_ARRAY_BUFFER, 
+    indices_.size() * sizeof(unsigned int), 
+    &indices_[0], 
+    GL_STATIC_DRAW
+  );
+
+  model_matrix_ = glm::translate(glm::mat4(1.0), position_);
+}
+
+void TestPlane::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_CULL_FACE);
   glUseProgram(shader_.program_id());
 
-  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
-  ModelMatrix *= glm::rotate(glm::mat4(1.0f), v_angle_, glm::vec3(1.0, 0.0, 0.0));
-  ModelMatrix *= glm::rotate(glm::mat4(1.0f), h_angle_, glm::vec3(0.0, 1.0, 0.0));
-  glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
+  glm::mat4 ModelViewMatrix = ViewMatrix * model_matrix_;
   glm::mat3 ModelView3x3Matrix = glm::mat3(ModelViewMatrix);
-  glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+  glm::mat4 MVP = ProjectionMatrix * ViewMatrix * model_matrix_;
 
   glUniformMatrix4fv(shader_.GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
-  glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
+  glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &model_matrix_[0][0]);
   glUniformMatrix4fv(shader_.GetUniformId("V"),     1, GL_FALSE, &ViewMatrix[0][0]);
   glUniformMatrix3fv(shader_.GetUniformId("MV3x3"), 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
   shader_.BindTexture("DepthMap", depth_map_);
 
   shader_.BindBuffer(vertex_buffer_, 0, 3);
-  shader_.BindBuffer(uv_buffer_, 1, 2);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
   glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
   shader_.Clear();
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
   glDisable(GL_BLEND);
-}
-
-void Cube::Clean() {
 }
 
 } // End of namespace.

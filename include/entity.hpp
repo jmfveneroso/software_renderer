@@ -78,29 +78,46 @@ class Water : public Solid {
   void Draw(glm::mat4, glm::mat4, glm::vec3);
 };
 
-class Cube : public IEntity {
-  GLuint vertex_buffer_;
-  GLuint uv_buffer_;
-  GLuint element_buffer_;
-  GLuint depth_map_;
-  std::vector<glm::vec3> vertices_;
-  std::vector<unsigned int> indices_;
+class TestPlane : public IEntity {
+ GLuint vertex_buffer_;
+ GLuint element_buffer_;
+ GLuint depth_map_;
+ std::vector<glm::vec3> vertices_;
+ std::vector<unsigned int> indices_;
+ glm::mat4 model_matrix_;
 
-  protected:
-   glm::vec3 speed_ = glm::vec3(0, 5, 0);
-   glm::vec3 position_;
-   Shader shader_;
-   float v_angle_ = 0.0;
-   float h_angle_ = 0.0;
+ protected:
+  glm::vec3 position_;
+  Shader shader_;
  
-  public:
-   Cube(Shader, GLuint);
+ public:
+  TestPlane(Shader, GLuint, std::vector<glm::vec3>);
  
-   void Draw(glm::mat4, glm::mat4, glm::vec3);
-   void Clean();
+  void Draw(glm::mat4, glm::mat4, glm::vec3);
+  void Clean() {}
  
-   std::vector<glm::vec3> vertices() { return vertices_; }
-   void set_position(glm::vec3 position) { position_ = position; }
+  std::vector<glm::vec3> vertices() { return vertices_; }
+  void set_position(glm::vec3 position) { position_ = position; }
+  void set_model_matrix(glm::mat4 model_matrix) { model_matrix_ = model_matrix; }
+};
+
+class Cube : public IEntity {
+  float v_angle_ = 0.0;
+  float h_angle_ = 0.0;
+  std::vector<TestPlane> planes_;
+  glm::vec3 speed_ = glm::vec3(0, 5, 0);
+  glm::vec3 position_;
+  Shader shader_;
+  GLuint depth_map_;
+
+ public:
+  Cube(Shader, GLuint, glm::vec3, glm::vec3);
+ 
+  void Draw(glm::mat4, glm::mat4, glm::vec3);
+  void Clean() {}
+ 
+  std::vector<glm::vec3> vertices() { return std::vector<glm::vec3>(); }
+  void set_position(glm::vec3 position) { position_ = position; }
 };
 
 } // End of namespace.

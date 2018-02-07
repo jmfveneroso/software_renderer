@@ -2,7 +2,6 @@
 
 in FragData {
   vec3 position;
-  vec2 UV;
   vec4 clipspace;
   vec3 barycentric;
 } in_data;

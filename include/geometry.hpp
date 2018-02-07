@@ -37,6 +37,8 @@ class Geometry {
  public:
   Geometry() {}
 
+  // static Line ClipPlane(Plane&, const Plane&);
+  // static void ClipCube(Cube&, const Plane&);
   static glm::vec3 GetSegPlaneIntersection(Segment seg, Plane plane);
   static PosRelativeToPlane GetPosRelativeToPlane(const Plane&, const glm::vec3&);
   static PosRelativeToPlane GetPosRelativeToPlane(const Plane&, const Segment&);

@@ -106,6 +106,7 @@ void Renderer::Render() {
   DrawScene(600, 400, "refraction");
 
   PushRenderEntity("cube");
+  PushRenderEntity("plane");
 
   entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 100.0f));
   entity_manager_->GetTerrain()->DrawWater(true);
@@ -116,6 +117,7 @@ void Renderer::Render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   entity_manager_->GetFrameBuffer("screen")->Draw();
 
+  PopRenderEntity();
   PopRenderEntity();
   PopRenderEntity();
   PopRenderEntity();
