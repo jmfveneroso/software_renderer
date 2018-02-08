@@ -56,17 +56,17 @@ class Subregion {
   void CreateBuffer(glm::ivec2);
   void CreateTile(std::vector<unsigned int>&, int, int);
 
-  void DrawElements(glm::ivec2, glm::vec2, glm::vec2, glm::vec2);
-  Segment ClipSubregion(glm::ivec2, glm::vec2, glm::vec2, float);
-  Segment ClipSegToFrustum(Segment);
-  Segment GetEnclosingSegment(Segment, Segment, bool);
+  std::vector<glm::vec3> GetEnclosingCubePlane(glm::ivec2, glm::ivec2, float, float, int);
+  std::vector<glm::vec3> GetClippedEnclosingCube(glm::ivec2, glm::ivec2, float, float);
+
+  void DrawElements(glm::ivec2, glm::ivec2, glm::ivec2, glm::ivec2);
 
  public:
   Subregion() {}
   Subregion(std::shared_ptr<Player>, SubregionLabel, int);
 
-  void Draw(glm::ivec2, glm::vec2);
-  void UpdateHeight(int, int, float);
+  void Draw(glm::ivec2, glm::ivec2, bool);
+  void UpdateHeight(glm::ivec2, int, int, float);
   void Clear();
 };
 

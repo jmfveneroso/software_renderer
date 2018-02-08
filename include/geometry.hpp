@@ -1,6 +1,8 @@
 #ifndef _GEOMETRY_HPP_
 #define _GEOMETRY_HPP_
 
+#include <iostream>
+#include <vector>
 #include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -23,6 +25,16 @@ struct Plane {
   glm::vec3 vec1;
   glm::vec3 vec2;
   glm::vec3 normal;
+  
+  Plane() {}
+  Plane(
+    glm::vec3 point,
+    glm::vec3 vec1,
+    glm::vec3 vec2,
+    glm::vec3 normal
+  ) : point(point), vec1(vec1), 
+      vec2(vec2), normal(normal) {
+  }
 };
 
 struct Segment {
@@ -37,11 +49,13 @@ class Geometry {
  public:
   Geometry() {}
 
-  // static Line ClipPlane(Plane&, const Plane&);
+  static std::vector<glm::vec3> ClipPlane(const std::vector<glm::vec3>&, const Plane&);
+
   // static void ClipCube(Cube&, const Plane&);
-  static glm::vec3 GetSegPlaneIntersection(Segment seg, Plane plane);
-  static PosRelativeToPlane GetPosRelativeToPlane(const Plane&, const glm::vec3&);
-  static PosRelativeToPlane GetPosRelativeToPlane(const Plane&, const Segment&);
+
+  // static glm::vec3 GetSegPlaneIntersection(Segment seg, Plane plane);
+  // static PosRelativeToPlane GetPosRelativeToPlane(const Plane&, const glm::vec3&);
+  // static PosRelativeToPlane GetPosRelativeToPlane(const Plane&, const Segment&);
 };
 
 } // End of namespace.

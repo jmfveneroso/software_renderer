@@ -30,6 +30,7 @@ class EntityManager {
   std::shared_ptr<Terrain> terrain_;
   std::shared_ptr<Water> water_;
   std::shared_ptr<SkyDome> sky_dome_;
+  std::shared_ptr<Cube> cube_;
 
   GLuint LoadTexture(const std::string&, const std::string&);
   void LoadSolid(
@@ -47,6 +48,7 @@ class EntityManager {
   void Initialize();
   std::shared_ptr<Terrain> GetTerrain() { return terrain_; }
   std::shared_ptr<Water> GetWater() { return water_; }
+  std::shared_ptr<Cube> GetCube() { return cube_; }
   std::shared_ptr<IEntity> GetEntity(const std::string&);
   std::shared_ptr<FrameBuffer> GetFrameBuffer(const std::string&);
   void Clean();

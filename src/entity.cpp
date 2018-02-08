@@ -122,9 +122,11 @@ void Water::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 cam
 }
 
 Cube::Cube(
+  std::shared_ptr<Player> player,
   Shader shader, GLuint depth_map,
   glm::vec3 p1, glm::vec3 p2
 ) : shader_(shader),
+    player_(player),
     depth_map_(depth_map),
     position_(glm::vec3(0.0, 8000.0, 0.0)) {
   float s = 500.0f;
@@ -145,9 +147,18 @@ Cube::Cube(
   planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[7], v[6], v[2], v[3] })));
   planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[0], v[4], v[5], v[1] })));
   planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[6], v[7], v[5], v[4] })));
+  clipped_planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[0], v[1], v[3], v[2] })));
+  clipped_planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[1], v[5], v[7], v[3] })));
+  clipped_planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[2], v[6], v[4], v[0] })));
+  clipped_planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[7], v[6], v[2], v[3] })));
+  clipped_planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[0], v[4], v[5], v[1] })));
+  clipped_planes_.push_back(TestPlane(shader, depth_map, std::vector<glm::vec3>({ v[6], v[7], v[5], v[4] })));
 }
 
 void Cube::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
+  // v_angle_ = 3.14f / 4;
+  // h_angle_ = 3.14f / 8;
+  // position_ = glm::vec3(0, 10000.0f, 0);
   v_angle_ += 3.14f / 512;
   h_angle_ += 3.14f / 256;
   position_ += speed_;
@@ -157,12 +168,52 @@ void Cube::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 came
     speed_ = glm::vec3(0, -5, 0);
   }
 
-  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
-  ModelMatrix *= glm::rotate(glm::mat4(1.0f), v_angle_, glm::vec3(1.0, 0.0, 0.0));
-  ModelMatrix *= glm::rotate(glm::mat4(1.0f), h_angle_, glm::vec3(0.0, 1.0, 0.0));
+  model_matrix_ = glm::translate(glm::mat4(1.0), position_);
+  model_matrix_ *= glm::rotate(glm::mat4(1.0f), v_angle_, glm::vec3(1.0, 0.0, 0.0));
+  model_matrix_ *= glm::rotate(glm::mat4(1.0f), h_angle_, glm::vec3(0.0, 1.0, 0.0));
   for (auto& plane : planes_) {
-    plane.set_model_matrix(ModelMatrix);
+    plane.set_model_matrix(model_matrix_);
+  }
+
+  for (auto& plane : clipped_planes_) {
+    plane.set_model_matrix(model_matrix_);
+  }
+
+  Clip();
+
+  for (auto& plane : clipped_planes_) {
     plane.Draw(ProjectionMatrix, ViewMatrix, camera);
+  }
+}
+
+void Cube::DrawFrustum() {}
+
+void Cube::Clip() {
+  Plane clipping_plane = player_->GetFrustumPlane(static_cast<FrustumPlane>(FRUSTUM_PLANE_RIGHT));
+
+  // Plane clipping_plane(
+  //   glm::vec3(0.0, 10000.0, 0.0),
+  //   glm::vec3(0, 1, 0),
+  //   glm::vec3(0, 0, 1),
+  //   glm::vec3(1, 0, 0)
+  // );
+
+  for (int i = 0; i < planes_.size(); i++) {
+    TestPlane& p = planes_[i];
+
+    std::vector<glm::vec3> vertices = p.vertices();
+    for (int j = 0; j < vertices.size(); j++) {
+      vertices[j] = glm::vec3(model_matrix_ * glm::vec4(vertices[j], 1.0));
+    }
+ 
+    vertices = Geometry::ClipPlane(vertices, clipping_plane);
+
+    glm::mat4 inv_model_matrix = glm::inverse(model_matrix_);
+    for (int j = 0; j < vertices.size(); j++) {
+      vertices[j] = glm::vec3(inv_model_matrix * glm::vec4(vertices[j], 1.0));
+    }
+
+    clipped_planes_[i].SetVertices(vertices);
   }
 }
 
@@ -174,8 +225,16 @@ TestPlane::TestPlane(
     position_(glm::vec3(0.0, 10000.0, 0.0)) {
   glGenBuffers(1, &vertex_buffer_);
   glGenBuffers(1, &element_buffer_);
- 
   vertices_ = points;
+
+  model_matrix_ = glm::translate(glm::mat4(1.0), position_);
+  Init();
+}
+
+void TestPlane::Init() {
+  if (vertices_.size() < 3) return;
+
+  indices_.clear();
   for (int i = 1; i < vertices_.size() - 1; i++) {
     indices_.push_back(0);
     indices_.push_back(i);
@@ -192,11 +251,16 @@ TestPlane::TestPlane(
     &indices_[0], 
     GL_STATIC_DRAW
   );
+}
 
-  model_matrix_ = glm::translate(glm::mat4(1.0), position_);
+void TestPlane::SetVertices(std::vector<glm::vec3> vertices) {
+  vertices_ = vertices;
+  Init();
 }
 
 void TestPlane::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
+  if (vertices_.size() < 3) return;
+
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
   glDisable(GL_DEPTH_TEST);

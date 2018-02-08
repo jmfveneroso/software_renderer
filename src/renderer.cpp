@@ -22,15 +22,15 @@ void Renderer::ComputeMatrices() {
   );
   
   glm::vec3 right = glm::vec3(
-    sin(h_angle - 3.14f/2.0f) * 2, 
+    sin(h_angle - 3.14f/2.0f), 
     0,
-    cos(h_angle - 3.14f/2.0f) * 2
+    cos(h_angle - 3.14f/2.0f)
   );
 
   glm::vec3 front = glm::vec3(
-    cos(v_angle) * sin(h_angle) * 2, 
+    cos(v_angle) * sin(h_angle), 
     0,
-    cos(v_angle) * cos(h_angle) * 2
+    cos(v_angle) * cos(h_angle)
   );
   
   glm::vec3 up = glm::cross(right, direction);
@@ -40,7 +40,11 @@ void Renderer::ComputeMatrices() {
   camera.up = up;
 
   // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 2000 units
-  ProjectionMatrix = glm::perspective(glm::radians(player_->fov()), 4.0f / 3.0f, 20.0f, 2000000.0f);
+  if (player_->position().y > 20000.0f) {
+    ProjectionMatrix = glm::perspective(glm::radians(player_->fov()), 4.0f / 3.0f, 2000.0f, 2000000.0f);
+  } else {
+    ProjectionMatrix = glm::perspective(glm::radians(player_->fov()), 4.0f / 3.0f, 20.0f, 2000000.0f);
+  }
 
   // Camera matrix
   ViewMatrix = glm::lookAt(
@@ -91,24 +95,34 @@ void Renderer::Render() {
   entity_manager_->GetEntity("sky")->set_position(sky_position);
 
   PushRenderEntity("pro_terrain");
-  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 100.0f));
+  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 50.0f));
   entity_manager_->GetTerrain()->DrawWater(false);
 
+  player_->EnableMouse(false);
   Camera old_camera = camera;
-  SetReflectionCamera(-100);
+  SetReflectionCamera(-50);
+#if APPLE
+  DrawScene(1000, 750, "reflection");
+#else
   DrawScene(600, 400, "reflection");
+#endif
   camera = old_camera;
 
-  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, -1, 0, 100.0f + 1.0f));
+  ComputeMatrices();
+
+  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, -1, 0, 50.0f + 1.0f));
   entity_manager_->GetTerrain()->DrawWater(false);
 
-  ComputeMatrices();
+#if APPLE
+  DrawScene(1000, 750, "refraction");
+#else
   DrawScene(600, 400, "refraction");
+#endif
 
-  PushRenderEntity("cube");
-  PushRenderEntity("plane");
+  // PushRenderEntity("cube");
+  // PushRenderEntity("plane");
 
-  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 100.0f));
+  entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 50.0f));
   entity_manager_->GetTerrain()->DrawWater(true);
   DrawScene(window_->width(), window_->height(), "screen");
 
@@ -119,8 +133,9 @@ void Renderer::Render() {
 
   PopRenderEntity();
   PopRenderEntity();
-  PopRenderEntity();
-  PopRenderEntity();
+  player_->EnableMouse(true);
+  // PopRenderEntity();
+  // PopRenderEntity();
 }
 
 void Renderer::Clean() {

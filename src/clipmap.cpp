@@ -45,6 +45,14 @@ void Clipmap::Init() {
   glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
   glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.normals);
 
+  glGenTextures(1, &tangents_texture_);
+  glBindTexture(GL_TEXTURE_RECTANGLE, tangents_texture_);
+  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.tangents);
+
+  glGenTextures(1, &bitangents_texture_);
+  glBindTexture(GL_TEXTURE_RECTANGLE, bitangents_texture_);
+  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.bitangents);
+
   // Create subregions.
   for (int region = 0; region < 5; region++) {
     subregions_[region] = Subregion(player_, static_cast<SubregionLabel>(region), level_);
@@ -129,9 +137,9 @@ void Clipmap::Update(glm::vec3 player_pos) {
   if (top_left_ == new_top_left && num_invalid_ == 0) return;
   top_left_ = new_top_left;
 
-  for (int region = 0 ; region < 5; region++) {
-    subregions_[region].Clear();
-  }
+  // for (int region = 0 ; region < 5; region++) {
+  //   subregions_[region].Clear();
+  // }
 
   for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
     for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
@@ -142,7 +150,7 @@ void Clipmap::Update(glm::vec3 player_pos) {
 
       float height = float(1 + height_map_->GetGridHeight(world_coords.x, world_coords.z)) / 2;
       for (int region = 0 ; region < 5; region++) {
-        subregions_[region].UpdateHeight(x, y, height);
+        subregions_[region].UpdateHeight(top_left_, grid_coords.x, grid_coords.y, height);
       }
       height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = height;
       height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x] = 1;
@@ -151,7 +159,11 @@ void Clipmap::Update(glm::vec3 player_pos) {
       glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z        )) / 2), 0);
       glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
       glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z + step )) / 2), step);
-      height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x] = (normalize(glm::cross(c - a, b - a)) + 1.0f) / 2.0f;
+      glm::vec3 tangent = b - a;
+      glm::vec3 bitangent = c - a;
+      height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x] = (normalize(glm::cross(bitangent, tangent)) + 1.0f) / 2.0f;
+      height_buffer_.tangents[y * (CLIPMAP_SIZE+1) + x] = tangent;
+      height_buffer_.bitangents[y * (CLIPMAP_SIZE+1) + x] = bitangent;
       num_invalid_--;
     }
   }
@@ -160,6 +172,10 @@ void Clipmap::Update(glm::vec3 player_pos) {
   glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RED, GL_FLOAT, &height_buffer_.height[0]);
   glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
   glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.normals[0]);
+  glBindTexture(GL_TEXTURE_RECTANGLE, tangents_texture_);
+  glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.tangents[0]);
+  glBindTexture(GL_TEXTURE_RECTANGLE, bitangents_texture_);
+  glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.bitangents[0]);
 }
 
 void Clipmap::Render(
@@ -187,12 +203,20 @@ void Clipmap::Render(
   shader->BindBuffer(uv_buffer_, 1, 2);
 
   glActiveTexture(GL_TEXTURE7);
-  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
-  glUniform1i(shader->GetUniformId("NormalsSampler"), 7);
-
-  glActiveTexture(GL_TEXTURE6);
   glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
-  glUniform1i(shader->GetUniformId("HeightMapSampler"), 6);
+  glUniform1i(shader->GetUniformId("HeightMapSampler"), 7);
+
+  glActiveTexture(GL_TEXTURE8);
+  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
+  glUniform1i(shader->GetUniformId("NormalsSampler"), 8);
+
+  glActiveTexture(GL_TEXTURE9);
+  glBindTexture(GL_TEXTURE_RECTANGLE, tangents_texture_);
+  glUniform1i(shader->GetUniformId("TangentSampler"), 9);
+
+  glActiveTexture(GL_TEXTURE10);
+  glBindTexture(GL_TEXTURE_RECTANGLE, bitangents_texture_);
+  glUniform1i(shader->GetUniformId("BitangentSampler"), 10);
 
   glm::ivec2 clipmap_offset = glm::ivec2(0, 0);
   if (!center) {
@@ -204,7 +228,7 @@ void Clipmap::Render(
 
   for (int region = 0 ; region < 5; region++) {
     if (!center && region == 4) continue;
-    subregions_[region].Draw(clipmap_offset, top_left_);
+    subregions_[region].Draw(clipmap_offset, top_left_, false);
   }
 } 
 
@@ -254,7 +278,7 @@ void Clipmap::RenderWater(
 
   for (int region = 0 ; region < 5; region++) {
     if (!center && region == 4) continue;
-    subregions_[region].Draw(clipmap_offset, top_left_);
+    subregions_[region].Draw(clipmap_offset, top_left_, true);
   }
 } 
 

@@ -39,10 +39,12 @@ class Player {
   float fov_;
   float mouse_speed_;
   bool over_ground_;
+  bool mouse_enabled_ = true;
 
  public:
   Player();
 
+  void EnableMouse(bool flag) { mouse_enabled_ = flag; }
   void Move(Direction, float);
   void ChangeOrientation(double, double);
   void Jump();

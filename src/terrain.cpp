@@ -12,6 +12,7 @@ Terrain::Terrain(
   GLuint rock_texture_id,
   GLuint rock_2_texture_id,
   GLuint sand_texture_id,
+  GLuint grass_normal_texture_id,
   std::shared_ptr<Water> water
 ) : player_(player),
     height_map_(std::make_shared<HeightMap>()),
@@ -23,6 +24,7 @@ Terrain::Terrain(
     rock_texture_id_(rock_texture_id),
     rock_2_texture_id_(rock_2_texture_id),
     sand_texture_id_(sand_texture_id),
+    grass_normal_texture_id_(grass_normal_texture_id),
     water_(water) {
 
   for (int i = 0; i < CLIPMAP_LEVELS; i++) {
@@ -40,6 +42,7 @@ void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
   shader_.BindTexture("RockTextureSampler", rock_texture_id_);
   shader_.BindTexture("Rock2TextureSampler", rock_2_texture_id_);
   shader_.BindTexture("SandTextureSampler", sand_texture_id_);
+  shader_.BindTexture("GrassNormalTextureSampler", grass_normal_texture_id_);
   glUniform4fv(shader_.GetUniformId("plane"), 1, (float*) &clip_plane_);
 
   // Clipmap.

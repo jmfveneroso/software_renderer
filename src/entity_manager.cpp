@@ -54,16 +54,25 @@ void EntityManager::Initialize() {
   shaders_.insert(std::make_pair("test", Shader("test", "shaders/vshade_test", "shaders/fshade_test", "shaders/gshade_test")));
   shaders_.insert(std::make_pair("static_screen", Shader("test", "shaders/vshade_static_screen", "shaders/fshade_static_screen")));
 
+#if APPLE
+  frame_buffers_.insert(std::make_pair("reflection", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
+  frame_buffers_.insert(std::make_pair("refraction", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
+  frame_buffers_.insert(std::make_pair("screen",     std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, window_->width(), window_->height())));
+#else
   frame_buffers_.insert(std::make_pair("reflection", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, WINDOW_WIDTH, WINDOW_HEIGHT)));
   frame_buffers_.insert(std::make_pair("refraction", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, WINDOW_WIDTH, WINDOW_HEIGHT)));
   frame_buffers_.insert(std::make_pair("screen",     std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, WINDOW_WIDTH, WINDOW_HEIGHT)));
+#endif
 
   // Test Cube.
-  entities_.insert(std::make_pair("cube", std::make_shared<Cube>(
+  cube_ = std::make_shared<Cube>(
+    player_,
     shaders_.find("test")->second,
     frame_buffers_["screen"]->GetDepthTexture(),
     glm::vec3(-500, -500, -500), glm::vec3(500, 500, 500)
-  )));
+  );
+
+  entities_.insert(std::make_pair("cube", cube_));
 
   // Test Plane.
   std::vector<glm::vec3> points;
@@ -116,6 +125,8 @@ void EntityManager::Initialize() {
   GLuint rock_texture_id = LoadTexture("rock_terrain", "textures/rock_3.bmp");
   GLuint rock_2_texture_id = LoadTexture("rock_2_terrain", "textures/rock.bmp");
   GLuint sand_texture_id = LoadTexture("sand_terrain", "textures/sand.bmp");
+  // GLuint grass_normal_texture_id = LoadTexture("normal_grass", "textures/wild_grass_normal.bmp");
+  GLuint grass_normal_texture_id = LoadTexture("normal_grass", "textures/rock_normal.bmp");
 
   terrain_ = std::make_shared<Terrain>(
     player_,
@@ -127,6 +138,7 @@ void EntityManager::Initialize() {
     rock_texture_id,
     rock_2_texture_id,
     sand_texture_id,
+    grass_normal_texture_id,
     water_
   );
   entities_.insert(std::make_pair("pro_terrain", terrain_));

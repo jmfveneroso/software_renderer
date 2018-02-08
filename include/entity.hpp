@@ -12,8 +12,10 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/norm.hpp>
 #include "shaders.h"
+#include "geometry.hpp"
 #include "mesh.hpp"
 #include "simplex_noise.hpp"
+#include "player.hpp"
 #include "config.h"
 
 namespace Sibyl {
@@ -95,7 +97,10 @@ class TestPlane : public IEntity {
  
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Clean() {}
- 
+  Plane GetPlane();
+  void Init();
+  void SetVertices(std::vector<glm::vec3>);
+
   std::vector<glm::vec3> vertices() { return vertices_; }
   void set_position(glm::vec3 position) { position_ = position; }
   void set_model_matrix(glm::mat4 model_matrix) { model_matrix_ = model_matrix; }
@@ -104,17 +109,22 @@ class TestPlane : public IEntity {
 class Cube : public IEntity {
   float v_angle_ = 0.0;
   float h_angle_ = 0.0;
+  std::shared_ptr<Player> player_;
   std::vector<TestPlane> planes_;
+  std::vector<TestPlane> clipped_planes_;
   glm::vec3 speed_ = glm::vec3(0, 5, 0);
   glm::vec3 position_;
   Shader shader_;
   GLuint depth_map_;
+  glm::mat4 model_matrix_;
 
  public:
-  Cube(Shader, GLuint, glm::vec3, glm::vec3);
+  Cube(std::shared_ptr<Player>, Shader, GLuint, glm::vec3, glm::vec3);
  
+  void DrawFrustum();
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Clean() {}
+  void Clip();
  
   std::vector<glm::vec3> vertices() { return std::vector<glm::vec3>(); }
   void set_position(glm::vec3 position) { position_ = position; }

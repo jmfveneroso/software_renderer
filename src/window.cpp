@@ -7,7 +7,7 @@ Window::Window()
   CreateWindow();
 
   // Disable vsync.
-  glfwSwapInterval(0);
+  // glfwSwapInterval(0);
 }
 
 void Window::CreateWindow() {

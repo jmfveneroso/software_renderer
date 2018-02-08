@@ -33,7 +33,8 @@ void Input::ProcessInput(){
     player_->Move(LEFT, delta_time);
 
   if (glfwGetKey(window_->window(), GLFW_KEY_Q) == GLFW_PRESS) {
-    entity_manager_->GetTerrain()->Erode();
+    // entity_manager_->GetTerrain()->Erode();
+    entity_manager_->GetCube()->DrawFrustum();
   }
 
   if (glfwGetKey(window_->window(), GLFW_KEY_SPACE) == GLFW_PRESS)

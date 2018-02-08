@@ -8,6 +8,8 @@ in FragData {
   vec3 normal_cameraspace;
   float visibility;
   float steepness;
+  vec3 position_cameraspace;
+  mat3 TBN;
 } in_data;
 
 // Output data
@@ -20,12 +22,14 @@ uniform sampler2D SpecularTextureSampler;
 uniform sampler2D RockTextureSampler;
 uniform sampler2D Rock2TextureSampler;
 uniform sampler2D SandTextureSampler;
+uniform sampler2D GrassNormalTextureSampler;
 uniform mat4 MVP;
 uniform mat4 V;
 uniform mat4 M;
 uniform mat3 MV3x3;
 
 void main(){
+  // Barycentric.
   // if (any(lessThan(in_data.barycentric, vec3(0.02)))){
   //   color = vec3(0.0, 0.0, 0.0);
   // } else{
@@ -33,7 +37,7 @@ void main(){
   //   color = in_data.color_magna;
   // }
 
-  // Material properties
+  // Material properties.
   vec3 diffuse_color = texture(DiffuseTextureSampler, in_data.UV).rgb;
 
   vec2 noise_uv = vec2(float(int(in_data.position.x) % 10001) / 10000, float(int(in_data.position.z) % 10001) / 10000);
@@ -41,15 +45,28 @@ void main(){
 
   diffuse_color = mix(diffuse_color, texture(NormalTextureSampler, in_data.UV).rgb, noise);
 
+  // Rock.
   vec3 rock = mix(texture(Rock2TextureSampler, in_data.UV).rgb, texture(RockTextureSampler, in_data.UV).rgb, noise);
-  diffuse_color = mix(diffuse_color, rock, in_data.steepness);
+  float limit = 0.6 + 0.05 * noise;
+  float steepness = float(clamp(in_data.steepness, limit, 1.0) - limit) / (1.0 - limit);
+  diffuse_color = mix(diffuse_color, rock, steepness);
 
-  float limit = 1000 * noise;
+  // Local normals.
+  // vec3 light_tangentspace = in_data.TBN * light_cameraspace;
+  // vec3 n_ = noise * normalize(texture(GrassNormalTextureSampler, 0.02 * in_data.UV).rgb * 2.0 - 1.0);
+  // n_.y *= 3;
+  // n_ *= 0.3;
+  // vec3 l_ = normalize(light_tangentspace);
+  // float cos_theta_ = clamp(dot(n_, l_), 0, 1);
+  // rock = mix(vec3(0.5) * light_color * light_power * cos_theta_, rock, 0.1);
+
+  // Sand.
+  limit = 1000 * noise;
   float height = float(clamp(in_data.position.y, 0, limit)) / limit;
   diffuse_color = mix(texture(SandTextureSampler, in_data.UV).rgb, diffuse_color, height);
 
-  vec3 ambient_color = vec3(0.3, 0.3, 0.3) * diffuse_color;
-  // vec3 MaterialSpecularColor = texture(SpecularTextureSampler, in_data.UV).rgb * 0.3;
+  // Light.
+  vec3 ambient_color = vec3(0.5, 0.5, 0.5) * diffuse_color;
   
   vec3 light_color = vec3(1, 1, 1);
   float light_power = 1.0;
@@ -57,14 +74,11 @@ void main(){
   vec4 light_direction = vec4(1, 1, 0, 0);
   vec3 light_cameraspace = (V * M * light_direction).xyz;
 
+  // Normal.
   vec3 n = normalize(in_data.normal_cameraspace);
   vec3 l = normalize(light_cameraspace);
   float cos_theta = clamp(dot(n, l), 0, 1);
-  // color = ambient_color + diffuse_color * light_color * light_power * cos_theta;
   color = ambient_color + diffuse_color * light_color * light_power * cos_theta;
-
-  // // Increase contrast.
-  // // color = ambient_color + diffuse_color * light_color * (cos_theta - 0.5) * 2;
 
   color = mix(color, vec3(0.274509804, 0.509803922, 0.705882353), in_data.visibility);
 }

@@ -23,7 +23,7 @@
 #include "config.h"
 
 // #define CLIPMAP_LEVELS 2
-#define CLIPMAP_LEVELS 6
+#define CLIPMAP_LEVELS 7
 
 namespace Sibyl {
 
@@ -31,6 +31,8 @@ struct HeightBuffer {
   glm::ivec2 top_left = glm::ivec2(1, 1);
   float height[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
   glm::vec3 normals[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+  glm::vec3 tangents[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+  glm::vec3 bitangents[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
   float valid[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
 };
 
@@ -47,6 +49,8 @@ class Clipmap {
 
   GLuint height_texture_;
   GLuint normals_texture_;
+  GLuint tangents_texture_;
+  GLuint bitangents_texture_;
 
   glm::ivec2 top_left_;
   int num_invalid_ = (CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1);
