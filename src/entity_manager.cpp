@@ -125,8 +125,6 @@ void EntityManager::Initialize() {
   GLuint rock_texture_id = LoadTexture("rock_terrain", "textures/rock_3.bmp");
   GLuint rock_2_texture_id = LoadTexture("rock_2_terrain", "textures/rock.bmp");
   GLuint sand_texture_id = LoadTexture("sand_terrain", "textures/sand.bmp");
-  // GLuint grass_normal_texture_id = LoadTexture("normal_grass", "textures/wild_grass_normal.bmp");
-  GLuint grass_normal_texture_id = LoadTexture("normal_grass", "textures/rock_normal.bmp");
 
   terrain_ = std::make_shared<Terrain>(
     player_,
@@ -138,7 +136,6 @@ void EntityManager::Initialize() {
     rock_texture_id,
     rock_2_texture_id,
     sand_texture_id,
-    grass_normal_texture_id,
     water_
   );
   entities_.insert(std::make_pair("pro_terrain", terrain_));

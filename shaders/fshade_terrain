@@ -4,12 +4,10 @@ in FragData {
   vec3 position;
   vec2 UV;
   vec3 barycentric;
-  vec3 color_magna;
   vec3 normal_cameraspace;
   float visibility;
   float steepness;
   vec3 position_cameraspace;
-  mat3 TBN;
 } in_data;
 
 // Output data
@@ -33,8 +31,7 @@ void main(){
   // if (any(lessThan(in_data.barycentric, vec3(0.02)))){
   //   color = vec3(0.0, 0.0, 0.0);
   // } else{
-  //   // color = in_data.barycentric;
-  //   color = in_data.color_magna;
+  //   color = in_data.barycentric;
   // }
 
   // Material properties.
@@ -50,15 +47,6 @@ void main(){
   float limit = 0.6 + 0.05 * noise;
   float steepness = float(clamp(in_data.steepness, limit, 1.0) - limit) / (1.0 - limit);
   diffuse_color = mix(diffuse_color, rock, steepness);
-
-  // Local normals.
-  // vec3 light_tangentspace = in_data.TBN * light_cameraspace;
-  // vec3 n_ = noise * normalize(texture(GrassNormalTextureSampler, 0.02 * in_data.UV).rgb * 2.0 - 1.0);
-  // n_.y *= 3;
-  // n_ *= 0.3;
-  // vec3 l_ = normalize(light_tangentspace);
-  // float cos_theta_ = clamp(dot(n_, l_), 0, 1);
-  // rock = mix(vec3(0.5) * light_color * light_power * cos_theta_, rock, 0.1);
 
   // Sand.
   limit = 1000 * noise;
@@ -82,3 +70,12 @@ void main(){
 
   color = mix(color, vec3(0.274509804, 0.509803922, 0.705882353), in_data.visibility);
 }
+
+// Local normals.
+// vec3 light_tangentspace = in_data.TBN * light_cameraspace;
+// vec3 n_ = noise * normalize(texture(GrassNormalTextureSampler, 0.02 * in_data.UV).rgb * 2.0 - 1.0);
+// n_.y *= 3;
+// n_ *= 0.3;
+// vec3 l_ = normalize(light_tangentspace);
+// float cos_theta_ = clamp(dot(n_, l_), 0, 1);
+// rock = mix(vec3(0.5) * light_color * light_power * cos_theta_, rock, 0.1);

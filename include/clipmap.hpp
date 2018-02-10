@@ -29,11 +29,14 @@ namespace Sibyl {
 
 struct HeightBuffer {
   glm::ivec2 top_left = glm::ivec2(1, 1);
-  float height[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
-  glm::vec3 normals[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
-  glm::vec3 tangents[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
-  glm::vec3 bitangents[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
-  float valid[(CLIPMAP_SIZE+1) * (CLIPMAP_SIZE+1)];
+
+  float row_heights[CLIPMAP_SIZE + 1][CLIPMAP_SIZE + 1];
+  float column_heights[CLIPMAP_SIZE + 1][CLIPMAP_SIZE + 1];
+  glm::vec3 row_normals[CLIPMAP_SIZE + 1][CLIPMAP_SIZE + 1];
+  glm::vec3 column_normals[CLIPMAP_SIZE + 1][CLIPMAP_SIZE + 1];
+
+  float valid_rows[CLIPMAP_SIZE + 1];
+  float valid_columns[CLIPMAP_SIZE + 1];
 };
 
 class Clipmap {
@@ -74,6 +77,7 @@ class Clipmap {
   void RenderWater(glm::vec3, Shader*, glm::mat4, glm::mat4, glm::vec3, bool, std::shared_ptr<Water>);
   void Init();
   void Update(glm::vec3);
+  void UpdatePoint(int, int, float*, glm::vec3*);
   void Clear();
 };
 

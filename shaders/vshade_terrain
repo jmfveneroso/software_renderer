@@ -7,12 +7,10 @@ layout(location = 1) in vec2 vertexUV;
 out VertexData {
   vec3 position;
   vec2 UV;
-  vec3 color_magna;
   vec3 normal_cameraspace;
   float visibility;
   float steepness;
   vec3 position_cameraspace;
-  mat3 TBN;
 } out_data;
 
 // Values that stay constant for the whole mesh.
@@ -22,17 +20,11 @@ uniform mat4 M;
 uniform mat3 MV3x3;
 uniform sampler2DRect NormalsSampler;
 uniform sampler2DRect HeightMapSampler;
-uniform sampler2DRect TangentSampler;
-uniform sampler2DRect BitangentSampler;
 uniform ivec2 PlayerPosition;
 uniform ivec2 buffer_top_left;
 uniform int TILE_SIZE;
 uniform int CLIPMAP_SIZE;
 uniform int MAX_HEIGHT;
-uniform vec4 plane;
-
-const float density = 0.003;
-const float gradient = 0.15;
 
 void main(){
   out_data.position = vertexPosition_modelspace;
@@ -41,21 +33,16 @@ void main(){
   ivec2 buffer_coords = (toroidal_coords + buffer_top_left + CLIPMAP_SIZE + 1) % (CLIPMAP_SIZE + 1);
   float height = -(MAX_HEIGHT / 2) + MAX_HEIGHT * texelFetch(HeightMapSampler, buffer_coords).r;
   vec3 normal = texelFetch(NormalsSampler, buffer_coords).rgb * 2 - 1;
-  vec3 tangent = texelFetch(TangentSampler, buffer_coords).rgb * 2 - 1;
-  vec3 bitangent = texelFetch(BitangentSampler, buffer_coords).rgb * 2 - 1;
 
   out_data.position.x *= TILE_SIZE;
   out_data.position.z *= TILE_SIZE;
   out_data.position.y = height;
 
   vec3 position_worldspace = (M * vec4(out_data.position, 1)).xyz;
-  gl_ClipDistance[0] = dot(vec4(position_worldspace, 1.0), vec4(0, -1, 0, 1));
 
   gl_Position = MVP * vec4(out_data.position, 1);
   
-  // UV of the vertex. No special space for this one.
   out_data.UV = vertexUV; 
-  out_data.color_magna = vec3(texelFetch(HeightMapSampler, buffer_coords).r, 0, 0);
   out_data.normal_cameraspace = (V * M * vec4(normal, 0)).xyz; 
 
   out_data.position_cameraspace = (V * M * vec4(out_data.position, 1)).xyz;
@@ -63,18 +50,17 @@ void main(){
   out_data.visibility = clamp(distance / 1000000, 0.0, 1.0);
 
   out_data.position = (M * vec4(out_data.position, 1)).xyz;
-  out_data.steepness = 1 - normal.y;
-  out_data.steepness = (clamp(out_data.steepness, 0, 0.3) - 0.0) / 0.3;
+  out_data.steepness = (clamp(1 - normal.y, 0, 0.3)) / 0.3;
 
-
-
-  vec3 tangent_cameraspace = MV3x3 * tangent;
-  vec3 bitangent_cameraspace = MV3x3 * bitangent;
-  vec3 normal_cameraspace = MV3x3 * normal;
-  
-  out_data.TBN = transpose(mat3(
-    tangent_cameraspace,
-    bitangent_cameraspace,
-    normal_cameraspace	
-  ));
+  // vec3 tangent = texelFetch(TangentSampler, buffer_coords).rgb * 2 - 1;
+  // vec3 bitangent = texelFetch(BitangentSampler, buffer_coords).rgb * 2 - 1;
+  // vec3 tangent_cameraspace = MV3x3 * tangent;
+  // vec3 bitangent_cameraspace = MV3x3 * bitangent;
+  // vec3 normal_cameraspace = MV3x3 * normal;
+  // 
+  // out_data.TBN = transpose(mat3(
+  //   tangent_cameraspace,
+  //   bitangent_cameraspace,
+  //   normal_cameraspace	
+  // ));
 }

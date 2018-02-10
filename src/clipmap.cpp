@@ -32,26 +32,17 @@ void Clipmap::Init() {
   glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
 
   for (int z = 0; z < CLIPMAP_SIZE+1; z++) {
-    for (int x = 0; x < CLIPMAP_SIZE+1; x++) {
-      height_buffer_.valid[z * (CLIPMAP_SIZE+1) + x] = 0;
-    }
+    height_buffer_.valid_rows[z] = 0;
+    height_buffer_.valid_columns[z] = 0;
   }
 
   glGenTextures(1, &height_texture_);
   glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RED, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RED, GL_FLOAT, height_buffer_.height);
+  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RED, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RED, GL_FLOAT, NULL);
 
   glGenTextures(1, &normals_texture_);
   glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.normals);
-
-  glGenTextures(1, &tangents_texture_);
-  glBindTexture(GL_TEXTURE_RECTANGLE, tangents_texture_);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.tangents);
-
-  glGenTextures(1, &bitangents_texture_);
-  glBindTexture(GL_TEXTURE_RECTANGLE, bitangents_texture_);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, height_buffer_.bitangents);
+  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RGB, GL_FLOAT, NULL);
 
   // Create subregions.
   for (int region = 0; region < 5; region++) {
@@ -103,12 +94,7 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
     glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, 0));
     if (grid_coords.x < new_top_left.x || grid_coords.x > new_bottom_right.x) {
       // Invalidate column.
-      for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
-        if (height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x]) {
-          height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x] = 0;
-          num_invalid_++;
-        }
-      }
+      height_buffer_.valid_columns[x] = 0;
     }
   }
 
@@ -117,16 +103,33 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
     glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(0, y));
     if (grid_coords.y < new_top_left.y || grid_coords.y > new_bottom_right.y) {
       // Invalidate row.
-      for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
-        if (height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x]) {
-          height_buffer_.valid[y * (CLIPMAP_SIZE + 1) + x] = 0;
-          num_invalid_++;
-        }
-      }
+      height_buffer_.valid_rows[y] = 0;
     }
   }
   
   height_buffer_.top_left = GridToBufferCoordinates(new_top_left);
+}
+
+void Clipmap::UpdatePoint(int x, int y, float* p_height, glm::vec3* p_normal) {
+  glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, y));
+  glm::vec3 world_coords = GridToWorldCoordinates(grid_coords);
+
+  float height = float(1 + height_map_->GetGridHeight(world_coords.x, world_coords.z)) / 2;
+  for (int region = 0 ; region < 5; region++) {
+    subregions_[region].UpdateHeight(top_left_, grid_coords.x, grid_coords.y, height);
+  }
+
+  float step = GetTileSize() * TILE_SIZE;
+  glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z        )) / 2), 0);
+  glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
+  glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z + step )) / 2), step);
+  glm::vec3 tangent = b - a;
+  glm::vec3 bitangent = c - a;
+  glm::vec3 normal = (normalize(glm::cross(bitangent, tangent)) + 1.0f) / 2.0f;
+  num_invalid_--;
+
+  *p_height = height;
+  *p_normal = normal;
 }
 
 void Clipmap::Update(glm::vec3 player_pos) {
@@ -137,45 +140,37 @@ void Clipmap::Update(glm::vec3 player_pos) {
   if (top_left_ == new_top_left && num_invalid_ == 0) return;
   top_left_ = new_top_left;
 
-  // for (int region = 0 ; region < 5; region++) {
-  //   subregions_[region].Clear();
-  // }
-
+  // Rows.
+  bool updated_all = true;
   for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
-    for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
-      if (height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x]) continue;
-
-      glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, y));
-      glm::vec3 world_coords = GridToWorldCoordinates(grid_coords);
-
-      float height = float(1 + height_map_->GetGridHeight(world_coords.x, world_coords.z)) / 2;
-      for (int region = 0 ; region < 5; region++) {
-        subregions_[region].UpdateHeight(top_left_, grid_coords.x, grid_coords.y, height);
-      }
-      height_buffer_.height[y * (CLIPMAP_SIZE+1) + x] = height;
-      height_buffer_.valid[y * (CLIPMAP_SIZE+1) + x] = 1;
-
-      float step = GetTileSize() * TILE_SIZE;
-      glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z        )) / 2), 0);
-      glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
-      glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z + step )) / 2), step);
-      glm::vec3 tangent = b - a;
-      glm::vec3 bitangent = c - a;
-      height_buffer_.normals[y * (CLIPMAP_SIZE+1) + x] = (normalize(glm::cross(bitangent, tangent)) + 1.0f) / 2.0f;
-      height_buffer_.tangents[y * (CLIPMAP_SIZE+1) + x] = tangent;
-      height_buffer_.bitangents[y * (CLIPMAP_SIZE+1) + x] = bitangent;
-      num_invalid_--;
+    if (height_buffer_.valid_rows[y]) {
+      updated_all = false;
+      continue;
     }
+    for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
+      UpdatePoint(x, y, &height_buffer_.row_heights[y][x], &height_buffer_.row_normals[y][x]);
+    }
+    glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
+    glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, y, CLIPMAP_SIZE + 1, 1, GL_RED, GL_FLOAT, &height_buffer_.row_heights[y][0]);
+    glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
+    glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, y, CLIPMAP_SIZE + 1, 1, GL_RGB, GL_FLOAT, &height_buffer_.row_normals[y][0]);
+    height_buffer_.valid_rows[y] = true;
   }
- 
-  glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
-  glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RED, GL_FLOAT, &height_buffer_.height[0]);
-  glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
-  glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.normals[0]);
-  glBindTexture(GL_TEXTURE_RECTANGLE, tangents_texture_);
-  glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.tangents[0]);
-  glBindTexture(GL_TEXTURE_RECTANGLE, bitangents_texture_);
-  glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, CLIPMAP_SIZE + 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.bitangents[0]);
+
+  if (updated_all) return;
+
+  // Columns.
+  for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
+    if (height_buffer_.valid_columns[x]) continue;
+    for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
+      UpdatePoint(x, y, &height_buffer_.column_heights[x][y], &height_buffer_.column_normals[x][y]);
+    }
+    glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
+    glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, x, 0, 1, CLIPMAP_SIZE + 1, GL_RED, GL_FLOAT, &height_buffer_.column_heights[x][0]);
+    glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
+    glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, x, 0, 1, CLIPMAP_SIZE + 1, GL_RGB, GL_FLOAT, &height_buffer_.column_normals[x][0]);
+    height_buffer_.valid_columns[x] = true;
+  }
 }
 
 void Clipmap::Render(
@@ -286,7 +281,6 @@ void Clipmap::Clear() {
   num_invalid_ = 0;
   for (int z = 0; z < CLIPMAP_SIZE+1; z++) {
     for (int x = 0; x < CLIPMAP_SIZE+1; x++) {
-      height_buffer_.valid[z * (CLIPMAP_SIZE+1) + x] = 0;
       num_invalid_++;
     }
   }

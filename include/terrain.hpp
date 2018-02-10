@@ -37,7 +37,6 @@ class Terrain : public IEntity {
   GLuint rock_texture_id_;
   GLuint rock_2_texture_id_;
   GLuint sand_texture_id_;
-  GLuint grass_normal_texture_id_;
   std::shared_ptr<Water> water_;
   bool draw_water_ = false;
   glm::vec4 clip_plane_;
@@ -53,7 +52,6 @@ class Terrain : public IEntity {
     GLuint rock_texture_id,
     GLuint rock_2_texture_id,
     GLuint sand_texture_id,
-    GLuint grass_normal_texture_id,
     std::shared_ptr<Water>
   );
 
