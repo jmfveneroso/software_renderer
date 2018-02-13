@@ -18,18 +18,41 @@
 #include "mesh.hpp"
 #include "player.hpp"
 #include "entity.hpp"
+#include "rock.hpp"
 #include "config.h"
 #include "clipmap.hpp"
 
 namespace Sibyl {
 
+struct TerrainFeature {
+  int id;
+  glm::vec3 position;
+  glm::vec3 color;
+  glm::vec2 rotation;
+  float scale;
+  TerrainFeature(
+    int id,
+    glm::vec3 position,
+    glm::vec3 color,
+    glm::vec2 rotation,
+    float scale
+  ) : id(id),
+      position(position),
+      color(color),
+      rotation(rotation),
+      scale(scale) {
+  }
+};
+
 class Terrain : public IEntity {
   Clipmap clipmaps_[CLIPMAP_LEVELS]; 
 
+  std::shared_ptr<Rock> rocks_[10];
   std::shared_ptr<Player> player_;
   std::shared_ptr<HeightMap> height_map_;
   SimplexNoise noise_;
   Shader shader_;
+  Shader rock_shader_;
   Shader water_shader_;
   GLuint diffuse_texture_id_;
   GLuint normal_texture_id_;
@@ -40,11 +63,15 @@ class Terrain : public IEntity {
   std::shared_ptr<Water> water_;
   bool draw_water_ = false;
   glm::vec4 clip_plane_;
+  std::vector<TerrainFeature> features_;
+
+  void CreateTerrainFeatures();
 
  public:
   Terrain(
     std::shared_ptr<Player> player,
     Shader shader, 
+    Shader rock_shader, 
     Shader water_shader, 
     GLuint diffuse_texture_id, 
     GLuint normal_texture_id, 
@@ -64,6 +91,7 @@ class Terrain : public IEntity {
   void Erode();
   void DrawWater(bool flag) { draw_water_ = flag; }
   void SetClipPlane(glm::vec4 plane) { clip_plane_ = plane; }
+  std::vector<TerrainFeature> features() { return features_; }
 };
 
 } // End of namespace.

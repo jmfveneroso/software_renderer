@@ -7,6 +7,8 @@ HeightMap::HeightMap() {
   for (int i = 0; i < NUM_FEATURE_POINTS; i++) {
     int x = -HEIGHT_MAP_SIZE/2 * TILE_SIZE + rand() % (HEIGHT_MAP_SIZE * TILE_SIZE);
     int y = -HEIGHT_MAP_SIZE/2 * TILE_SIZE + rand() % (HEIGHT_MAP_SIZE * TILE_SIZE); 
+    // int x = -HEIGHT_MAP_SIZE/4 * TILE_SIZE + rand() % (HEIGHT_MAP_SIZE/2 * TILE_SIZE);
+    // int y = -HEIGHT_MAP_SIZE/4 * TILE_SIZE + rand() % (HEIGHT_MAP_SIZE/2 * TILE_SIZE); 
     feature_points_[i] = glm::ivec2(x, y);
   }
 
@@ -23,6 +25,7 @@ void HeightMap::CreateHeightMap() {
   return;
 
   secondary_height_map_ = new float[HEIGHT_MAP_SIZE * HEIGHT_MAP_SIZE];
+  float max_distance = sqrt(2) * HEIGHT_MAP_SIZE * TILE_SIZE;
   for (int x = 0; x < HEIGHT_MAP_SIZE; x++) {
     for (int y = 0; y < HEIGHT_MAP_SIZE; y++) {
       glm::ivec2 world_coords = glm::ivec2((x - HEIGHT_MAP_SIZE / 2) * TILE_SIZE, (y - HEIGHT_MAP_SIZE / 2) * TILE_SIZE);
@@ -49,22 +52,23 @@ void HeightMap::CreateHeightMap() {
       }
 
       float h = 0;
+      distance_1 /= max_distance;
+      distance_2 /= max_distance;
 
-      float initial_height = 15000;
-      h = 1.5f * (initial_height -distance_1 + distance_2);
-      if (h < initial_height + 5000) {
-        h = initial_height + 5000;
+      float initial_height = 20000.0f;
+      h = initial_height + 2000000.0f * (-distance_1 + distance_2);
+      if (h < initial_height + 15000.0f) {
+        // h = initial_height + 5000.0f;
+        h = initial_height + 15000.0f -18000.0f * log(1 + (initial_height + 15000.0f - h) / 15000.0f);
+      // if (h < initial_height + 40000) {
+      //   h = initial_height + 40000 + -5000 * log(1 + (initial_height + 40000 - h) / 5000);
       }
-
-      // if (h < initial_height + 2000) {
-      //   h = initial_height + 2000 + -100 * log(1 + (initial_height + 2000 - h) / 100);
-      // }
 
       height_map_[y * HEIGHT_MAP_SIZE + x] = h;
     }
   }
  
-  ApplyNoise();
+  // ApplyNoise();
   ApplyPerturbationFilter();
   ApplySmoothing();
   ApplyNoise();
@@ -83,8 +87,8 @@ float HeightMap::GetNoise(float world_x, float world_y, float height) {
   return height + 1.5f * (
     2000 * noise_.noise(world_x * 0.00002, world_y * 0.00002) +
     // 1500 * noise_.noise((1000 + world_x) * 0.00002, (1000 + world_y) * 0.00002) +
-    // 200 * noise_.noise(world_x * 0.0003, world_y * 0.0003) +
-    100 * noise_.noise(world_x * 0.0006, world_y * 0.0006) +
+    200 * noise_.noise(world_x * 0.0003, world_y * 0.0003) +
+    // 100 * noise_.noise(world_x * 0.0006, world_y * 0.0006) +
     0
   );
 }
@@ -92,7 +96,11 @@ float HeightMap::GetNoise(float world_x, float world_y, float height) {
 float HeightMap::GetRadialFilter(float x, float y) {
   float distance = sqrt(pow(x, 2) + pow(y, 2)); 
   float alpha = 1 - (distance / (TILE_SIZE * HEIGHT_MAP_SIZE / 2));
-  return (alpha > 0) ? 0.25 * sin(alpha * PI / 2) : 0;
+  // return (alpha > 0.5) ? 0.5 : alpha;
+  // return 1;
+  // float distance = sqrt(pow(x, 2) + pow(y, 2)); 
+  // float alpha = 1 - (distance / (TILE_SIZE * HEIGHT_MAP_SIZE / 2));
+  return (alpha > 0) ? 0.5 * sin(alpha * PI / 2) : 0;
 }
 
 void HeightMap::ApplyNoise() {
@@ -133,11 +141,11 @@ void HeightMap::ApplyPerturbationFilter() {
       float tex_x = 1.5f * float(x) / HEIGHT_MAP_SIZE;
       float tex_y = 1.5f * float(y) / HEIGHT_MAP_SIZE;
 
-      int perturbed_x = x + 0.25f * noise_.noise(tex_x        , tex_y        ) * HEIGHT_MAP_SIZE;
-      int perturbed_y = y + 0.25f * noise_.noise(tex_x + 1.5f, tex_y + 1.5f) * HEIGHT_MAP_SIZE;
+      int perturbed_x = x + 0.08f * noise_.noise(tex_x        , tex_y        ) * HEIGHT_MAP_SIZE;
+      int perturbed_y = y + 0.08f * noise_.noise(tex_x + 1.5f, tex_y + 1.5f) * HEIGHT_MAP_SIZE;
 
-      perturbed_x = perturbed_x + 0.02f * noise_.noise(10 * tex_x        , 10 * tex_y        ) * HEIGHT_MAP_SIZE;
-      perturbed_y = perturbed_y + 0.02f * noise_.noise(10 * tex_x + 1.5f , 10 * tex_y + 1.5f) * HEIGHT_MAP_SIZE;
+      perturbed_x = perturbed_x + 0.01f * noise_.noise(5 * tex_x        , 5 * tex_y        ) * HEIGHT_MAP_SIZE;
+      perturbed_y = perturbed_y + 0.01f * noise_.noise(5 * tex_x + 1.5f , 5 * tex_y + 1.5f) * HEIGHT_MAP_SIZE;
 
       if (perturbed_x < 0) perturbed_x = -perturbed_x;
       if (perturbed_y < 0) perturbed_y = -perturbed_y;
@@ -260,6 +268,7 @@ float HeightMap::GetGridHeight(float x, float y) {
 }
 
 float HeightMap::GetHeight(float x, float y) {
+  int buffer_x = x / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
   // Clamp to grid.
   glm::ivec2 top_left = (glm::ivec2(x, y) / TILE_SIZE) * TILE_SIZE;
   if (x < 0 && fabs(top_left.x - x) > 0.00001) top_left.x -= TILE_SIZE;

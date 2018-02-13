@@ -5,6 +5,7 @@ namespace Sibyl {
 Terrain::Terrain(
   std::shared_ptr<Player> player,
   Shader shader, 
+  Shader rock_shader, 
   Shader water_shader, 
   GLuint diffuse_texture_id, 
   GLuint normal_texture_id, 
@@ -16,6 +17,7 @@ Terrain::Terrain(
 ) : player_(player),
     height_map_(std::make_shared<HeightMap>()),
     shader_(shader),
+    rock_shader_(rock_shader),
     water_shader_(water_shader),
     diffuse_texture_id_(diffuse_texture_id), 
     normal_texture_id_(normal_texture_id), 
@@ -27,6 +29,33 @@ Terrain::Terrain(
 
   for (int i = 0; i < CLIPMAP_LEVELS; i++) {
     clipmaps_[i] = Clipmap(player_, height_map_, i + 1); 
+  }
+
+  CreateTerrainFeatures();
+}
+
+void Terrain::CreateTerrainFeatures() {
+  for (int i = 0; i < 10; i++) {
+    rocks_[i] = std::make_shared<Rock>(rock_shader_, rock_texture_id_);
+  }
+
+  for (int i = 0; i < 200; i++) {
+    int x = rand() % (HEIGHT_MAP_SIZE * TILE_SIZE) - HEIGHT_MAP_SIZE * TILE_SIZE / 2;
+    int z = rand() % (HEIGHT_MAP_SIZE * TILE_SIZE) - HEIGHT_MAP_SIZE * TILE_SIZE / 2;
+    int y = height_map_->GetHeight(x, z) * MAX_HEIGHT / 2 + 1000.0f;
+    int r = 0.5f + 0.2f * float(rand() % 255) / 255;
+    int g = 0.5f + 0.2f * float(rand() % 255) / 255;
+    int b = 0.5f + 0.2f * float(rand() % 255) / 255;
+    int h_angle = 2 * PI * float(rand() % 100) / 100;
+    int v_angle = 2 * PI * float(rand() % 100) / 100;
+    float scale = 4.0f + 2.0 * float(rand() % 100) / 100;
+    features_.push_back(TerrainFeature(
+      rand() % 10,        // Id.
+      glm::vec3(x, y, z), // Position.
+      glm::vec3(r, g, b), // Color.
+      glm::vec2(h_angle, v_angle), // Rotation.
+      scale // Scale.
+    ));
   }
 }
 
@@ -51,6 +80,17 @@ void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
   for (int i = 0; i < CLIPMAP_LEVELS; i++) {
     clipmaps_[i].Render(player_->position(), &shader_, ProjectionMatrix, ViewMatrix, first);
     first = false;
+  }
+
+  for (auto& f : features_) {
+    glm::mat4 model_matrix = glm::translate(glm::mat4(1.0), f.position) * glm::scale(glm::vec3(f.scale));
+    model_matrix *= glm::rotate(f.rotation.x, glm::vec3(0, 1, 0));
+    model_matrix *= glm::rotate(f.rotation.y, glm::vec3(1, 0, 0));
+
+    float distance = glm::distance(player_->position(), f.position);
+    int lod = int(distance) / 25000;
+    if (lod > 4) lod = 4;
+    rocks_[f.id]->DrawShit(model_matrix, ProjectionMatrix, ViewMatrix, f.color, lod); 
   }
 
   shader_.Clear();

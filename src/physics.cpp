@@ -83,9 +83,10 @@ void Physics::TestCollision(glm::vec3 last_pos, std::shared_ptr<IEntity> entity)
 
 void Physics::TestCollisionTerrain() {
   float height = MAX_HEIGHT / 2 * entity_manager_->GetTerrain()->GetHeight(player_->position().x, player_->position().z);
-  if (player_->position().y - 140.0f < height) {
+  if (player_->position().y - 1000.0f < height) {
     glm::vec3 pos = player_->position();
-    pos.y = height + 140.0f;
+    // pos.y = height + 140.0f;
+    pos.y = height + 1000.0f;
     player_->set_position(pos);
     glm::vec3 speed = player_->speed();
     if (speed.y < 0) speed.y = 0.0f;

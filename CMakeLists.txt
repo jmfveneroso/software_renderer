@@ -51,6 +51,7 @@ set(
   src/clipmap.cpp
   src/terrain.cpp
   src/simplex_noise.cpp
+  src/rock.cpp
 )
 
 add_executable(main ${SRC})

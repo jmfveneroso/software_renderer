@@ -17,9 +17,10 @@
 
 #define MAX_HEIGHT 25600
 #define TILE_SIZE 128
+// #define TILE_SIZE 1024
+// #define HEIGHT_MAP_SIZE 1000
 #define HEIGHT_MAP_SIZE 5000
 #define NUM_FEATURE_POINTS 12
-#define PI 3.14159265359
 
 namespace Sibyl {
 

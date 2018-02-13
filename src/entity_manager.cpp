@@ -53,6 +53,7 @@ void EntityManager::Initialize() {
   shaders_.insert(std::make_pair("water", Shader("water", "shaders/vshade_water", "shaders/fshade_water")));
   shaders_.insert(std::make_pair("test", Shader("test", "shaders/vshade_test", "shaders/fshade_test", "shaders/gshade_test")));
   shaders_.insert(std::make_pair("static_screen", Shader("test", "shaders/vshade_static_screen", "shaders/fshade_static_screen")));
+  shaders_.insert(std::make_pair("rock", Shader("rock", "shaders/vshade_rock", "shaders/fshade_rock", "shaders/gshade_rock")));
 
 #if APPLE
   frame_buffers_.insert(std::make_pair("reflection", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
@@ -93,7 +94,6 @@ void EntityManager::Initialize() {
   );
   entities_.insert(std::make_pair("sky", sky_dome_));
 
-
   // Water.
   GLuint diffuse_texture_id = LoadTexture("textures/water_dudv.bmp", "textures/water_dudv.bmp");
   GLuint normal_texture_id = LoadTexture("textures/water_normal.bmp", "textures/water_normal.bmp");
@@ -113,6 +113,26 @@ void EntityManager::Initialize() {
   );
   entities_.insert(std::make_pair("water", water_));
 
+  GLuint rock_texture_id = LoadTexture("rock_terrain", "textures/rock_3.bmp");
+  for (int i = 0; i < 10; i++) {
+    rocks_[i] = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
+  }
+
+  // std::shared_ptr<Rock> rock = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
+  // rock->set_position(glm::vec3(0, 16000.0f, 0));
+  // entities_.insert(std::make_pair("rock", rock));
+
+  // rock = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
+  // rock->set_position(glm::vec3(3000.0f, 16000.0f, 0));
+  // entities_.insert(std::make_pair("rock2", rock));
+
+  // rock = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
+  // rock->set_position(glm::vec3(-3000.0f, 16000.0f, 0));
+  // entities_.insert(std::make_pair("rock3", rock));
+
+  // rock = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
+  // rock->set_position(glm::vec3(-6000.0f, 16000.0f, 0));
+  // entities_.insert(std::make_pair("rock4", rock));
 
   // Procedural terrain.
   auto it = shaders_.find("terrain");
@@ -122,13 +142,13 @@ void EntityManager::Initialize() {
   diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/wild_grass.bmp");
   normal_texture_id = LoadTexture("normal_terrain", "textures/wild_grass_2.bmp");
   GLuint specular_texture_id = LoadTexture("specular_terrain", "textures/noise.bmp");
-  GLuint rock_texture_id = LoadTexture("rock_terrain", "textures/rock_3.bmp");
   GLuint rock_2_texture_id = LoadTexture("rock_2_terrain", "textures/rock.bmp");
   GLuint sand_texture_id = LoadTexture("sand_terrain", "textures/sand.bmp");
 
   terrain_ = std::make_shared<Terrain>(
     player_,
     it->second,
+    shaders_.find("rock")->second,
     water_it->second,
     diffuse_texture_id, 
     normal_texture_id,
@@ -168,6 +188,14 @@ void EntityManager::Clean() {
 
   for (auto it : entities_)
     it.second->Clean();
+}
+
+void EntityManager::DrawRock(
+  int rock_id, 
+  glm::mat4 ModelMatrix, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, 
+  glm::vec3 color
+) {
+  rocks_[rock_id]->DrawShit(ModelMatrix, ProjectionMatrix, ViewMatrix, color, 0); 
 }
 
 } // End of namespace.

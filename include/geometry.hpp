@@ -50,6 +50,7 @@ class Geometry {
   Geometry() {}
 
   static std::vector<glm::vec3> ClipPlane(const std::vector<glm::vec3>&, const Plane&);
+  static void FlattenPolygon(std::vector<glm::vec3>&, const Plane&);
 
   // static void ClipCube(Cube&, const Plane&);
 

@@ -12,6 +12,7 @@
 #include "texture.hpp"
 #include "sky_dome.hpp"
 #include "frame_buffer.hpp"
+#include "rock.hpp"
 
 namespace Sibyl {
 
@@ -31,6 +32,7 @@ class EntityManager {
   std::shared_ptr<Water> water_;
   std::shared_ptr<SkyDome> sky_dome_;
   std::shared_ptr<Cube> cube_;
+  std::shared_ptr<Rock> rocks_[10];
 
   GLuint LoadTexture(const std::string&, const std::string&);
   void LoadSolid(
@@ -46,6 +48,7 @@ class EntityManager {
 
   EntityMap entities() { return entities_; };
   void Initialize();
+  void DrawRock(int, glm::mat4, glm::mat4, glm::mat4, glm::vec3);
   std::shared_ptr<Terrain> GetTerrain() { return terrain_; }
   std::shared_ptr<Water> GetWater() { return water_; }
   std::shared_ptr<Cube> GetCube() { return cube_; }

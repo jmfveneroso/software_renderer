@@ -98,7 +98,6 @@ void Renderer::Render() {
   entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 50.0f));
   entity_manager_->GetTerrain()->DrawWater(false);
 
-  player_->EnableMouse(false);
   Camera old_camera = camera;
   SetReflectionCamera(-50);
 #if APPLE
@@ -119,9 +118,6 @@ void Renderer::Render() {
   DrawScene(600, 400, "refraction");
 #endif
 
-  // PushRenderEntity("cube");
-  // PushRenderEntity("plane");
-
   entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 50.0f));
   entity_manager_->GetTerrain()->DrawWater(true);
   DrawScene(window_->width(), window_->height(), "screen");
@@ -133,9 +129,6 @@ void Renderer::Render() {
 
   PopRenderEntity();
   PopRenderEntity();
-  player_->EnableMouse(true);
-  // PopRenderEntity();
-  // PopRenderEntity();
 }
 
 void Renderer::Clean() {

@@ -5,5 +5,6 @@
 #define WINDOW_WIDTH 600
 #define WINDOW_HEIGHT 400
 #define WAVE_SPEED 0.01f
+#define PI 3.14159265359
 
 #endif
