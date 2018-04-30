@@ -95,7 +95,7 @@ Plane Player::GetFrustumPlane(FrustumPlane frustum_plane) {
   glm::vec3 vertical_axis = glm::normalize(glm::vec3(rotation_matrix * view_direction));
 
   // float vertical_fov = glm::radians(0.75f * fov_);
-  float vertical_fov = glm::radians(22.5f);
+  float vertical_fov = glm::radians(28.0f);
   // float fov = glm::radians(29.0f);
   float fov = glm::radians(45.0f);
   // float vertical_fov = glm::radians(11.25f);

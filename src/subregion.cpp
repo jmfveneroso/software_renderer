@@ -281,8 +281,8 @@ std::vector<glm::vec3> Subregion::GetClippedEnclosingCube(
 }
 
 void Subregion::DrawElements(glm::ivec2 offset, glm::ivec2 top_lft, glm::ivec2 bot_rgt, glm::ivec2 clipmap_top_left) {
-  float min_height = (min_height_[offset.x][offset.y] * 2 - 1) * MAX_HEIGHT;
-  float max_height = (max_height_[offset.x][offset.y] * 2 - 1) * MAX_HEIGHT;
+  float min_height = -MAX_HEIGHT;
+  float max_height = MAX_HEIGHT;
 
   std::vector<glm::vec3> clipped_cube = GetClippedEnclosingCube(top_lft, bot_rgt, min_height, max_height);
   if (clipped_cube.size() == 0) {

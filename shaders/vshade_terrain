@@ -23,6 +23,7 @@ uniform sampler2DRect HeightMapSampler;
 uniform ivec2 PlayerPosition;
 uniform ivec2 buffer_top_left;
 uniform int TILE_SIZE;
+uniform int PURE_TILE_SIZE;
 uniform int CLIPMAP_SIZE;
 uniform int MAX_HEIGHT;
 
@@ -42,7 +43,9 @@ void main(){
 
   gl_Position = MVP * vec4(out_data.position, 1);
   
-  out_data.UV = vertexUV; 
+  vec2 p = position_worldspace.xz / PURE_TILE_SIZE;
+  out_data.UV = p / 8;
+  // out_data.UV = vertexUV; 
   out_data.normal_cameraspace = (V * M * vec4(normal, 0)).xyz; 
 
   out_data.position_cameraspace = (V * M * vec4(out_data.position, 1)).xyz;

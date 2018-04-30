@@ -1,35 +1,21 @@
 #version 330 core
 
-in FragData {
+in VertexData {
   vec3 position;
   vec2 UV;
   vec3 normal;
-  vec3 barycentric;
 } in_data;
+
+uniform mat4 V;
+uniform sampler2D BarkTextureSampler;
 
 // Output data
 layout(location = 0) out vec3 color;
 
-// Values that stay constant for the whole mesh.
-uniform mat4 MVP;
-uniform mat4 V;
-uniform mat4 M;
-uniform mat3 MV3x3;
-uniform sampler2D RockTextureSampler;
-uniform vec3 rock_color;
-
-void main() {
-  // Barycentric.
-  if (any(lessThan(in_data.barycentric, vec3(0.02)))){
-    color = vec3(0.0, 0.0, 0.0);
-  } else{
-    color = vec3(0.5);
-  }
-
-  color = texture(RockTextureSampler, in_data.UV).rgb;
-
-  // Rock color.
-  // color = mix(color, rock_color, 0.3);
+void main(){
+  // color = vec3(0.5);
+  // color = vec3(in_data.UV.x, in_data.UV.y, 0.0);
+  color = texture(BarkTextureSampler, in_data.UV).rgb;
 
   // Light.
   vec3 ambient_color = vec3(0.7) * color;

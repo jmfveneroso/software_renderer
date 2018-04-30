@@ -52,6 +52,7 @@ set(
   src/terrain.cpp
   src/simplex_noise.cpp
   src/rock.cpp
+  src/tree.cpp
 )
 
 add_executable(main ${SRC})

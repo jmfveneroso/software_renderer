@@ -14,6 +14,7 @@ out FragData {
 } out_data;
 
 // Values that stay constant for the whole mesh.
+uniform float moveFactor;
 uniform mat4 MVP;
 uniform mat4 V;
 uniform mat4 M;
@@ -32,7 +33,6 @@ uniform vec3 cameraPosition;
 uniform vec4 plane;
  
 void main(){
-
   // Output position of the vertex, in clip space : MVP * position
   out_data.position = vertexPosition_modelspace;
 
@@ -42,7 +42,9 @@ void main(){
 
   out_data.position.x *= TILE_SIZE;
   out_data.position.z *= TILE_SIZE;
-  out_data.position.y = -50;
+
+  vec2 pos_world = (M * vec4(out_data.position, 1)).xz;
+  out_data.position.y = -50 * 15.0f * (sin((pos_world.x + moveFactor * 1000000) * 0.0001) + sin(pos_world.y * 0.0001));
 
   vec3 position_worldspace = (M * vec4(out_data.position, 1)).xyz;
   // gl_ClipDistance[0] = dot(vec4(position_worldspace, 1.0), plane);

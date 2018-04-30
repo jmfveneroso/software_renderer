@@ -18,11 +18,8 @@ uniform mat4 M;
 uniform mat3 MV3x3;
 
 void main(){
-  // Output position of the vertex, in clip space : MVP * position
-  out_data.UV = vertexUV;
   out_data.position = (M * vec4(vertexPosition_modelspace, 1)).xyz;
-  // out_data.normal = (V * M * vec4(normal, 0)).xyz; 
+  out_data.UV = vertexUV;
   out_data.normal = (V * M * vec4(normal, 0)).xyz; 
-
   gl_Position = MVP * vec4(vertexPosition_modelspace, 1);
 }

@@ -76,5 +76,5 @@ void main(){
   mcolor = mix(mcolor, vec3(0, 0.3, 0.5), 0.4) + specularHighlights;
 
   color = vec4(mcolor, clamp(waterDepth / 20.0, 0.0, 1.0));
-  // color = vec4(RefractionColor, 1.0);
+  color = vec4(0, 0.3, 0.5, 1.0) + vec4(specularHighlights, 1.0);
 }

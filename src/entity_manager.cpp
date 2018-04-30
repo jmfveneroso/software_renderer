@@ -54,6 +54,8 @@ void EntityManager::Initialize() {
   shaders_.insert(std::make_pair("test", Shader("test", "shaders/vshade_test", "shaders/fshade_test", "shaders/gshade_test")));
   shaders_.insert(std::make_pair("static_screen", Shader("test", "shaders/vshade_static_screen", "shaders/fshade_static_screen")));
   shaders_.insert(std::make_pair("rock", Shader("rock", "shaders/vshade_rock", "shaders/fshade_rock", "shaders/gshade_rock")));
+  shaders_.insert(std::make_pair("tree", Shader("tree", "shaders/vshade_tree", "shaders/fshade_tree")));
+  shaders_.insert(std::make_pair("twig", Shader("twig", "shaders/vshade_twig", "shaders/fshade_twig")));
 
 #if APPLE
   frame_buffers_.insert(std::make_pair("reflection", std::make_shared<FrameBuffer>(shaders_.find("static_screen")->second, 1000, 750)));
@@ -114,25 +116,10 @@ void EntityManager::Initialize() {
   entities_.insert(std::make_pair("water", water_));
 
   GLuint rock_texture_id = LoadTexture("rock_terrain", "textures/rock_3.bmp");
+  GLuint rock_2_texture_id = LoadTexture("rock_2_terrain", "textures/rock.bmp");
   for (int i = 0; i < 10; i++) {
-    rocks_[i] = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
+    rocks_[i] = std::make_shared<Rock>(shaders_.find("rock")->second, rock_2_texture_id);
   }
-
-  // std::shared_ptr<Rock> rock = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
-  // rock->set_position(glm::vec3(0, 16000.0f, 0));
-  // entities_.insert(std::make_pair("rock", rock));
-
-  // rock = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
-  // rock->set_position(glm::vec3(3000.0f, 16000.0f, 0));
-  // entities_.insert(std::make_pair("rock2", rock));
-
-  // rock = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
-  // rock->set_position(glm::vec3(-3000.0f, 16000.0f, 0));
-  // entities_.insert(std::make_pair("rock3", rock));
-
-  // rock = std::make_shared<Rock>(shaders_.find("rock")->second, rock_texture_id);
-  // rock->set_position(glm::vec3(-6000.0f, 16000.0f, 0));
-  // entities_.insert(std::make_pair("rock4", rock));
 
   // Procedural terrain.
   auto it = shaders_.find("terrain");
@@ -142,7 +129,6 @@ void EntityManager::Initialize() {
   diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/wild_grass.bmp");
   normal_texture_id = LoadTexture("normal_terrain", "textures/wild_grass_2.bmp");
   GLuint specular_texture_id = LoadTexture("specular_terrain", "textures/noise.bmp");
-  GLuint rock_2_texture_id = LoadTexture("rock_2_terrain", "textures/rock.bmp");
   GLuint sand_texture_id = LoadTexture("sand_terrain", "textures/sand.bmp");
 
   terrain_ = std::make_shared<Terrain>(
@@ -159,6 +145,16 @@ void EntityManager::Initialize() {
     water_
   );
   entities_.insert(std::make_pair("pro_terrain", terrain_));
+
+  GLuint bark_texture_id = LoadTexture("bark", "textures/bark.bmp");
+  GLuint twig_texture_id = LoadTexture("twig", "textures/twig.bmp");
+  GLuint twig_mask_texture_id = LoadTexture("twig_mask", "textures/twig_mask.bmp");
+  tree_ = std::make_shared<Tree>(
+    shaders_.find("tree")->second, 
+    shaders_.find("twig")->second, 
+    bark_texture_id, twig_texture_id, twig_mask_texture_id
+  );
+  entities_.insert(std::make_pair("tree", tree_));
 }
 
 std::shared_ptr<IEntity> EntityManager::GetEntity(const std::string& name) {

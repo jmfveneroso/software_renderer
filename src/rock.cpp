@@ -186,12 +186,12 @@ void Rock::Flatten() {
   }
 
   for (int i = 0; i < vertices_.size(); i++) {
-    float strength = 0.25;
+    float strength = 0.10;
     float amplitude = 0.0005f;
 
     float noise = strength * noise_.noise(1.0f + vertices_[i].x * amplitude, 1.0f + vertices_[i].y * amplitude);
     noise += strength * noise_.noise(1.0f + vertices_[i].z * amplitude, 1.0f + vertices_[i].x * amplitude);
-    noise += 0.08 * noise_.noise(1.0f + vertices_[i].z * 0.002, 1.0f + vertices_[i].x * 0.002);
+    noise += 0.02 * noise_.noise(1.0f + vertices_[i].z * 0.002, 1.0f + vertices_[i].x * 0.002);
 
     vertices_[i] *= (1.0f - noise);
   }
@@ -211,7 +211,14 @@ void Rock::CalculateNormals() {
     }
   }
 
+  int i = 2 * (num_circles_ - 1) - 1;
   for (int j = 0; j < num_points_in_circle_; j++) {
+    int next_j = 0;
+    if (j < num_points_in_circle_ - 1) next_j = j + 1;
+    glm::vec3 a = vertices_[1 + i * num_points_in_circle_ + j];
+    glm::vec3 b = vertices_[1 + i * num_points_in_circle_ + next_j];
+    glm::vec3 c = glm::vec3(0, -1, 0);
+    glm::vec3 normal = glm::normalize(glm::cross(b - a, c - a));
     normals_.push_back(glm::vec3(0, -1, 0));
   }
   normals_.push_back(glm::vec3(0, -1, 0));

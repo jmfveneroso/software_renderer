@@ -52,26 +52,32 @@ void HeightMap::CreateHeightMap() {
       }
 
       float h = 0;
-      distance_1 /= max_distance;
-      distance_2 /= max_distance;
+      // distance_1 /= max_distance;
+      // distance_2 /= max_distance;
 
-      float initial_height = 20000.0f;
-      h = initial_height + 2000000.0f * (-distance_1 + distance_2);
-      if (h < initial_height + 15000.0f) {
-        // h = initial_height + 5000.0f;
-        h = initial_height + 15000.0f -18000.0f * log(1 + (initial_height + 15000.0f - h) / 15000.0f);
-      // if (h < initial_height + 40000) {
-      //   h = initial_height + 40000 + -5000 * log(1 + (initial_height + 40000 - h) / 5000);
-      }
+      // float initial_height = 20000.0f;
+      float initial_height = 5000.0f;
+      h = initial_height + 1.6f * (-distance_1 + distance_2);
+      // if (h < initial_height + 10000.0f) {
+      //   // h = initial_height + 5000.0f;
+      //   h = initial_height + 10000.0f -18000.0f * log(1 + (initial_height + 10000.0f - h) / 10000.0f);
+      // // if (h < initial_height + 40000) {
+      // //   h = initial_height + 40000 + -5000 * log(1 + (initial_height + 40000 - h) / 5000);
+      // }
 
       height_map_[y * HEIGHT_MAP_SIZE + x] = h;
     }
   }
- 
-  // ApplyNoise();
-  ApplyPerturbationFilter();
-  ApplySmoothing();
+
+  std::cout << "Voronoi" << std::endl; 
   ApplyNoise();
+  std::cout << "Noise 1" << std::endl; 
+  ApplyPerturbationFilter();
+  std::cout << "Perturbation" << std::endl; 
+  ApplySmoothing();
+  std::cout << "Smoothing" << std::endl; 
+  ApplyNoise();
+  std::cout << "Noise 2" << std::endl; 
 
   for (int y = 0; y < HEIGHT_MAP_SIZE; y++) {
     for (int x = 0; x < HEIGHT_MAP_SIZE; x++) {
@@ -86,9 +92,8 @@ void HeightMap::CreateHeightMap() {
 float HeightMap::GetNoise(float world_x, float world_y, float height) {
   return height + 1.5f * (
     2000 * noise_.noise(world_x * 0.00002, world_y * 0.00002) +
-    // 1500 * noise_.noise((1000 + world_x) * 0.00002, (1000 + world_y) * 0.00002) +
-    200 * noise_.noise(world_x * 0.0003, world_y * 0.0003) +
-    // 100 * noise_.noise(world_x * 0.0006, world_y * 0.0006) +
+    100 * noise_.noise(world_x * 0.0003, world_y * 0.0003) +
+    20 * noise_.noise(world_x * 0.003, world_y * 0.003) +
     0
   );
 }
@@ -100,7 +105,8 @@ float HeightMap::GetRadialFilter(float x, float y) {
   // return 1;
   // float distance = sqrt(pow(x, 2) + pow(y, 2)); 
   // float alpha = 1 - (distance / (TILE_SIZE * HEIGHT_MAP_SIZE / 2));
-  return (alpha > 0) ? 0.5 * sin(alpha * PI / 2) : 0;
+  // return (alpha > 0) ? sin(alpha * PI / 2) : 0;
+  return (alpha > 0) ? alpha : 0;
 }
 
 void HeightMap::ApplyNoise() {

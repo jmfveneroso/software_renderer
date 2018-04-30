@@ -36,25 +36,33 @@ Terrain::Terrain(
 
 void Terrain::CreateTerrainFeatures() {
   for (int i = 0; i < 10; i++) {
-    rocks_[i] = std::make_shared<Rock>(rock_shader_, rock_texture_id_);
+    rocks_[i] = std::make_shared<Rock>(rock_shader_, rock_2_texture_id_);
   }
 
-  for (int i = 0; i < 200; i++) {
-    int x = rand() % (HEIGHT_MAP_SIZE * TILE_SIZE) - HEIGHT_MAP_SIZE * TILE_SIZE / 2;
-    int z = rand() % (HEIGHT_MAP_SIZE * TILE_SIZE) - HEIGHT_MAP_SIZE * TILE_SIZE / 2;
-    int y = height_map_->GetHeight(x, z) * MAX_HEIGHT / 2 + 1000.0f;
-    int r = 0.5f + 0.2f * float(rand() % 255) / 255;
-    int g = 0.5f + 0.2f * float(rand() % 255) / 255;
-    int b = 0.5f + 0.2f * float(rand() % 255) / 255;
-    int h_angle = 2 * PI * float(rand() % 100) / 100;
-    int v_angle = 2 * PI * float(rand() % 100) / 100;
-    float scale = 4.0f + 2.0 * float(rand() % 100) / 100;
+  for (int i = 0; i < 1; i++) {
+    // int x = rand() % (HEIGHT_MAP_SIZE * TILE_SIZE) - HEIGHT_MAP_SIZE * TILE_SIZE / 2;
+    // int z = rand() % (HEIGHT_MAP_SIZE * TILE_SIZE) - HEIGHT_MAP_SIZE * TILE_SIZE / 2;
+    // int y = height_map_->GetHeight(x, z) * MAX_HEIGHT / 2 + 500.0f;
+    // int r = 0.5f + 0.2f * float(rand() % 255) / 255;
+    // int g = 0.5f + 0.2f * float(rand() % 255) / 255;
+    // int b = 0.5f + 0.2f * float(rand() % 255) / 255;
+    // int h_angle = 2 * PI * float(rand() % 100) / 100;
+    // int v_angle = 2 * PI * float(rand() % 100) / 100;
+    // float scale = 0.5f + 0.5 * float(rand() % 100) / 100;
+    // features_.push_back(TerrainFeature(
+    //   rand() % 10,                 // Id.
+    //   glm::vec3(x, y, z),          // Position.
+    //   glm::vec3(r, g, b),          // Color.
+    //   glm::vec2(h_angle, v_angle), // Rotation.
+    //   scale                        // Scale.
+    // ));
+
     features_.push_back(TerrainFeature(
-      rand() % 10,        // Id.
-      glm::vec3(x, y, z), // Position.
-      glm::vec3(r, g, b), // Color.
-      glm::vec2(h_angle, v_angle), // Rotation.
-      scale // Scale.
+      rand() % 10,                 // Id.
+      glm::vec3(-205892, 18500.5, 69348),          // Position.
+      glm::vec3(1.0, 1.0, 1.0),          // Color.
+      glm::vec2(0, 0), // Rotation.
+      6.0                        // Scale.
     ));
   }
 }

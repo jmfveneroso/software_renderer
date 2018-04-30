@@ -13,6 +13,8 @@
 #include "sky_dome.hpp"
 #include "frame_buffer.hpp"
 #include "rock.hpp"
+#include "tree.hpp"
+#include "proctree.hpp"
 
 namespace Sibyl {
 
@@ -33,6 +35,7 @@ class EntityManager {
   std::shared_ptr<SkyDome> sky_dome_;
   std::shared_ptr<Cube> cube_;
   std::shared_ptr<Rock> rocks_[10];
+  std::shared_ptr<Tree> tree_;
 
   GLuint LoadTexture(const std::string&, const std::string&);
   void LoadSolid(

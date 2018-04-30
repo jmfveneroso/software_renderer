@@ -188,6 +188,7 @@ void Clipmap::Render(
   glUniformMatrix4fv(shader->GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
   glUniformMatrix4fv(shader->GetUniformId("V"),     1, GL_FALSE, &ViewMatrix[0][0]);
   glUniformMatrix3fv(shader->GetUniformId("MV3x3"), 1, GL_FALSE, &ModelView3x3Matrix[0][0]);
+  glUniform1i(shader->GetUniformId("PURE_TILE_SIZE"), TILE_SIZE);
   glUniform1i(shader->GetUniformId("TILE_SIZE"), TILE_SIZE * GetTileSize());
   glUniform1i(shader->GetUniformId("CLIPMAP_SIZE"), CLIPMAP_SIZE);
   glUniform1i(shader->GetUniformId("MAX_HEIGHT"), MAX_HEIGHT);

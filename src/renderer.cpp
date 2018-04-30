@@ -40,7 +40,7 @@ void Renderer::ComputeMatrices() {
   camera.up = up;
 
   // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 2000 units
-  if (player_->position().y > 20000.0f) {
+  if (player_->position().y > 50000.0f) {
     ProjectionMatrix = glm::perspective(glm::radians(player_->fov()), 4.0f / 3.0f, 2000.0f, 2000000.0f);
   } else {
     ProjectionMatrix = glm::perspective(glm::radians(player_->fov()), 4.0f / 3.0f, 20.0f, 2000000.0f);
@@ -95,6 +95,7 @@ void Renderer::Render() {
   entity_manager_->GetEntity("sky")->set_position(sky_position);
 
   PushRenderEntity("pro_terrain");
+#if PRETTY_WATER
   entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 50.0f));
   entity_manager_->GetTerrain()->DrawWater(false);
 
@@ -107,7 +108,9 @@ void Renderer::Render() {
 #endif
   camera = old_camera;
 
+#endif
   ComputeMatrices();
+#if PRETTY_WATER
 
   entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, -1, 0, 50.0f + 1.0f));
   entity_manager_->GetTerrain()->DrawWater(false);
@@ -117,7 +120,9 @@ void Renderer::Render() {
 #else
   DrawScene(600, 400, "refraction");
 #endif
+#endif
 
+  PushRenderEntity("tree");
   entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 50.0f));
   entity_manager_->GetTerrain()->DrawWater(true);
   DrawScene(window_->width(), window_->height(), "screen");
@@ -127,6 +132,7 @@ void Renderer::Render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   entity_manager_->GetFrameBuffer("screen")->Draw();
 
+  PopRenderEntity();
   PopRenderEntity();
   PopRenderEntity();
 }
