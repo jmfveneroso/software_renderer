@@ -95,7 +95,7 @@ void Renderer::Render() {
   entity_manager_->GetEntity("sky")->set_position(sky_position);
 
   PushRenderEntity("pro_terrain");
-#if PRETTY_WATER
+#ifdef PRETTY_WATER
   entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, 1, 0, 50.0f));
   entity_manager_->GetTerrain()->DrawWater(false);
 
@@ -110,7 +110,7 @@ void Renderer::Render() {
 
 #endif
   ComputeMatrices();
-#if PRETTY_WATER
+#ifdef PRETTY_WATER
 
   entity_manager_->GetTerrain()->SetClipPlane(glm::vec4(0, -1, 0, 50.0f + 1.0f));
   entity_manager_->GetTerrain()->DrawWater(false);

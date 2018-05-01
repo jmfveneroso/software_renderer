@@ -10,6 +10,7 @@
 #include "player.hpp"
 
 #define WATER_HEIGHT 0.0 
+#define PRETTY_WATER
 
 extern float verticalAngle;
 extern float horizontalAngle;

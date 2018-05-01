@@ -44,7 +44,8 @@ void main(){
   out_data.position.z *= TILE_SIZE;
 
   vec2 pos_world = (M * vec4(out_data.position, 1)).xz;
-  out_data.position.y = -50 * 15.0f * (sin((pos_world.x + moveFactor * 1000000) * 0.0001) + sin(pos_world.y * 0.0001));
+  out_data.position.y = -50;
+  // out_data.position.y = -50 * 15.0f * (sin((pos_world.x + moveFactor * 1000000) * 0.0001) + sin(pos_world.y * 0.0001));
 
   vec3 position_worldspace = (M * vec4(out_data.position, 1)).xyz;
   // gl_ClipDistance[0] = dot(vec4(position_worldspace, 1.0), plane);
