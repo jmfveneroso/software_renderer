@@ -15,15 +15,8 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/rotate_vector.hpp> 
 #include "shaders.h"
-#include "mesh.hpp"
-#include "player.hpp"
-#include "height_map.hpp"
-#include "entity.hpp"
 #include "subregion.hpp"
 #include "config.h"
-
-// #define CLIPMAP_LEVELS 2
-#define CLIPMAP_LEVELS 7
 
 namespace Sibyl {
 
@@ -40,8 +33,7 @@ struct HeightBuffer {
 };
 
 class Clipmap {
-  std::shared_ptr<Player> player_;
-  std::shared_ptr<HeightMap> height_map_;
+  float* height_map_;
 
   unsigned int level_;
   HeightBuffer height_buffer_;
@@ -68,17 +60,17 @@ class Clipmap {
   glm::ivec2 GridToBufferCoordinates(glm::ivec2);
   glm::ivec2 BufferToGridCoordinates(glm::ivec2);
   void InvalidateOuterBuffer(glm::ivec2);
+  float GetGridHeight(float, float);
 
  public:
   Clipmap();
-  Clipmap(std::shared_ptr<Player>, std::shared_ptr<HeightMap>, unsigned int);
+  Clipmap(float*, unsigned int);
 
   void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, bool);
-  void RenderWater(glm::vec3, Shader*, glm::mat4, glm::mat4, glm::vec3, bool, std::shared_ptr<Water>);
+  void RenderWater(glm::vec3, Shader*, glm::mat4, glm::mat4, glm::vec3, bool);
   void Init();
   void Update(glm::vec3);
   void UpdatePoint(int, int, float*, glm::vec3*);
-  void Clear();
 };
 
 } // End of namespace.

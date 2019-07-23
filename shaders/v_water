@@ -1,0 +1,62 @@
+#version 330 core
+
+// Input vertex data, different for all executions of this shader.
+layout(location = 0) in vec3 vertexPosition_modelspace;
+layout(location = 1) in vec2 vertexUV;
+layout(location = 2) in vec4 vertexBarycentric;
+
+out FragData {
+  vec3 position;
+  vec2 UV;
+  vec3 to_camera_vector;
+  vec3 from_light_vector;
+  vec4 clipSpace;
+} out_data;
+
+// Values that stay constant for the whole mesh.
+uniform float moveFactor;
+uniform mat4 MVP;
+uniform mat4 V;
+uniform mat4 M;
+uniform mat3 MV3x3;
+uniform sampler2DRect NormalsSampler;
+uniform sampler2DRect HeightMapSampler;
+uniform ivec2 PlayerPosition;
+uniform ivec2 buffer_top_left;
+uniform ivec2 top_left;
+uniform int PURE_TILE_SIZE;
+uniform int TILE_SIZE;
+uniform int CLIPMAP_SIZE;
+uniform int MAX_HEIGHT;
+uniform vec3 LightPosition_worldspace;
+uniform vec3 cameraPosition;
+uniform vec4 plane;
+ 
+void main(){
+  // Output position of the vertex, in clip space : MVP * position
+  out_data.position = vertexPosition_modelspace;
+
+  ivec2 toroidal_coords = ivec2(out_data.position.x, out_data.position.z);
+  ivec2 buffer_coords = (toroidal_coords + buffer_top_left + CLIPMAP_SIZE + 1) % (CLIPMAP_SIZE + 1);
+  float height = -(MAX_HEIGHT / 2) + MAX_HEIGHT * texelFetch(HeightMapSampler, buffer_coords).r;
+
+  out_data.position.x *= TILE_SIZE;
+  out_data.position.z *= TILE_SIZE;
+
+  vec2 pos_world = (M * vec4(out_data.position, 1)).xz;
+
+  // Waves.
+  out_data.position.y = -50 * 5.0f * (sin((pos_world.x + moveFactor * 500000) * 0.0001) + sin(pos_world.y * 0.0001));
+
+  vec3 position_worldspace = (M * vec4(out_data.position, 1)).xyz;
+
+  out_data.clipSpace = MVP * vec4(out_data.position, 1);
+  gl_Position = out_data.clipSpace;
+  
+  // UV of the vertex. No special space for this one.
+  vec2 pos = position_worldspace.xz / PURE_TILE_SIZE;
+  out_data.UV = pos / 32;
+
+  out_data.to_camera_vector = cameraPosition - position_worldspace;
+  out_data.from_light_vector = position_worldspace - LightPosition_worldspace;
+}

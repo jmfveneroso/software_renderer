@@ -1,0 +1,60 @@
+#version 330 core
+
+in VertexData {
+  vec3 position;
+  vec2 UV;
+  vec3 color;
+} in_data;
+
+// const vec2 sun_position = vec2(0.8, 0.5);
+const vec2 sun_position = vec2(0.5, 0.5);
+
+vec3 GetSky(vec3 position, vec2 uv) {
+  float atmosphere = sqrt(1.0 - position.y / 1100000);
+  
+  vec3 sky_color = vec3(0.2, 0.4, 0.8);
+   
+  float scatter = pow(sun_position.y, 1.0 / 15.0);
+  scatter = 1.0 - clamp(scatter, 0.8, 1.0);
+
+  vec3 scatter_color = mix(vec3(1.0), vec3(1.0, 0.3, 0.0) * 1.5, scatter);
+  return mix(sky_color, vec3(scatter_color), atmosphere / 1.3);
+}
+
+vec3 GetSun(vec3 position, vec2 uv) {
+  float sun = 1.0 - distance(uv, sun_position);
+  sun = clamp(sun, 0.0, 1.0);
+
+  float glow = clamp(sun, 0.0, 1.0);
+
+  sun = pow(sun, 100.0);
+  sun *= 100.0;
+  sun = clamp(sun, 0.0, 1.0);
+
+  glow = pow(glow, 6.0) * 1.0;
+  glow = pow(glow, position.y / 700000);
+  glow = clamp(glow, 0.0, 1.0);
+
+  // sun *= pow(dot(position.y / 700000, position.y / 700000), 1.0 / 1.65);
+  glow *= pow(dot(position.y / 700000, position.y / 700000), 1.0 / 2.0);
+  sun += glow;
+
+  vec3 sun_color = vec3(1.0, 0.6, 0.05) * sun;
+  return sun_color * sun;
+}
+
+// Output data
+layout(location = 0) out vec3 color;
+
+// Values that stay constant for the whole mesh.
+uniform sampler2D SkyTextureSampler;
+
+void main(){
+  color = vec3(1.0, 0, 0);
+  color = mix(texture(SkyTextureSampler, in_data.UV).rgb, vec3(0, 0.3, 0.5), 0.5);
+
+  vec3 sky = GetSky(in_data.position, in_data.UV);
+  vec3 sun = GetSun(in_data.position, in_data.UV);
+
+  color = sky + sun;  
+}

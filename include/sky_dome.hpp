@@ -15,9 +15,6 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/rotate_vector.hpp> 
 #include "shaders.h"
-#include "mesh.hpp"
-#include "player.hpp"
-#include "entity.hpp"
 #include "config.h"
 #include "clipmap.hpp"
 
@@ -27,8 +24,7 @@
 
 namespace Sibyl {
 
-class SkyDome : public IEntity {
-  std::shared_ptr<Player> player_;
+class SkyDome {
   Shader shader_;
 
   GLuint texture_;
@@ -44,14 +40,10 @@ class SkyDome : public IEntity {
 
  public:
   SkyDome(
-    std::shared_ptr<Player> player,
     Shader shader
   );
 
-  void Draw(glm::mat4, glm::mat4, glm::vec3);
-  std::vector<glm::vec3> vertices() { return std::vector<glm::vec3>(); }
-  void set_position(glm::vec3 v) {}
-  void Clean() {}
+  void Draw(glm::mat4, glm::mat4, glm::vec3, glm::vec3);
 };
 
 } // End of namespace.

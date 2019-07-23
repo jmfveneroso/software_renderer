@@ -5,10 +5,9 @@ namespace Sibyl {
 Clipmap::Clipmap() {}
 
 Clipmap::Clipmap(
-  std::shared_ptr<Player> player,
-  std::shared_ptr<HeightMap> height_map,
+  float* height_map,
   unsigned int level
-) : player_(player), height_map_(height_map), level_(level) {
+) : height_map_(height_map), level_(level) {
   Init();
 }
 
@@ -46,7 +45,7 @@ void Clipmap::Init() {
 
   // Create subregions.
   for (int region = 0; region < 5; region++) {
-    subregions_[region] = Subregion(player_, static_cast<SubregionLabel>(region), level_);
+    subregions_[region] = Subregion(static_cast<SubregionLabel>(region), level_);
   }
 }
 
@@ -93,7 +92,6 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
   for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
     glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, 0));
     if (grid_coords.x < new_top_left.x || grid_coords.x > new_bottom_right.x) {
-      // Invalidate column.
       height_buffer_.valid_columns[x] = 0;
     }
   }
@@ -102,7 +100,6 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
   for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
     glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(0, y));
     if (grid_coords.y < new_top_left.y || grid_coords.y > new_bottom_right.y) {
-      // Invalidate row.
       height_buffer_.valid_rows[y] = 0;
     }
   }
@@ -110,19 +107,31 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
   height_buffer_.top_left = GridToBufferCoordinates(new_top_left);
 }
 
+float Clipmap::GetGridHeight(float x, float y) {
+  int buffer_x = x / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
+  int buffer_y = y / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
+
+  float h = -4000.0f / MAX_HEIGHT;
+  if (
+    buffer_x < 0 || buffer_x >= HEIGHT_MAP_SIZE - 1 || 
+    buffer_y < 0 || buffer_y >= HEIGHT_MAP_SIZE - 1
+  ) {
+    return h;
+  }
+
+  return height_map_[buffer_y * HEIGHT_MAP_SIZE + buffer_x];
+}
+
 void Clipmap::UpdatePoint(int x, int y, float* p_height, glm::vec3* p_normal) {
   glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, y));
   glm::vec3 world_coords = GridToWorldCoordinates(grid_coords);
 
-  float height = float(1 + height_map_->GetGridHeight(world_coords.x, world_coords.z)) / 2;
-  for (int region = 0 ; region < 5; region++) {
-    subregions_[region].UpdateHeight(top_left_, grid_coords.x, grid_coords.y, height);
-  }
+  float height = float(1 + GetGridHeight(world_coords.x, world_coords.z)) / 2;
 
   float step = GetTileSize() * TILE_SIZE;
-  glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z        )) / 2), 0);
-  glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
-  glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + height_map_->GetGridHeight(world_coords.x       , world_coords.z + step )) / 2), step);
+  glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + GetGridHeight(world_coords.x       , world_coords.z        )) / 2), 0);
+  glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + GetGridHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
+  glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + GetGridHeight(world_coords.x       , world_coords.z + step )) / 2), step);
   glm::vec3 tangent = b - a;
   glm::vec3 bitangent = c - a;
   glm::vec3 normal = (normalize(glm::cross(bitangent, tangent)) + 1.0f) / 2.0f;
@@ -141,12 +150,8 @@ void Clipmap::Update(glm::vec3 player_pos) {
   top_left_ = new_top_left;
 
   // Rows.
-  bool updated_all = true;
   for (int y = 0; y < CLIPMAP_SIZE + 1; y++) {
-    if (height_buffer_.valid_rows[y]) {
-      updated_all = false;
-      continue;
-    }
+    if (height_buffer_.valid_rows[y]) continue;
     for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
       UpdatePoint(x, y, &height_buffer_.row_heights[y][x], &height_buffer_.row_normals[y][x]);
     }
@@ -156,8 +161,6 @@ void Clipmap::Update(glm::vec3 player_pos) {
     glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, y, CLIPMAP_SIZE + 1, 1, GL_RGB, GL_FLOAT, &height_buffer_.row_normals[y][0]);
     height_buffer_.valid_rows[y] = true;
   }
-
-  if (updated_all) return;
 
   // Columns.
   for (int x = 0; x < CLIPMAP_SIZE + 1; x++) {
@@ -234,8 +237,7 @@ void Clipmap::RenderWater(
   glm::mat4 ProjectionMatrix, 
   glm::mat4 ViewMatrix,
   glm::vec3 camera,
-  bool center,
-  std::shared_ptr<Water> water
+  bool center
 ) {
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(top_left_.x * TILE_SIZE, 0, top_left_.y * TILE_SIZE));
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
@@ -255,7 +257,10 @@ void Clipmap::RenderWater(
   glm::vec3 lightPos = glm::vec3(0, 20000, 0);
   glUniform3f(shader->GetUniformId("LightPosition_worldspace"), lightPos.x, lightPos.y, lightPos.z);
   glUniform3fv(shader->GetUniformId("cameraPosition"), 1, (float*) &camera);
-  glUniform1f(shader->GetUniformId("moveFactor"), Water::move_factor);
+
+  static float water_move_factor = 0;
+  water_move_factor += 0.0001f;
+  glUniform1f(shader->GetUniformId("moveFactor"), water_move_factor);
 
   shader->BindBuffer(vertex_buffer_, 0, 3);
   shader->BindBuffer(uv_buffer_, 1, 2);
@@ -277,14 +282,5 @@ void Clipmap::RenderWater(
     subregions_[region].Draw(clipmap_offset, top_left_, true);
   }
 } 
-
-void Clipmap::Clear() {
-  num_invalid_ = 0;
-  for (int z = 0; z < CLIPMAP_SIZE+1; z++) {
-    for (int x = 0; x < CLIPMAP_SIZE+1; x++) {
-      num_invalid_++;
-    }
-  }
-}
 
 } // End of namespace.

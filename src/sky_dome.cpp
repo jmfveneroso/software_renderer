@@ -3,9 +3,8 @@
 namespace Sibyl {
 
 SkyDome::SkyDome(
-  std::shared_ptr<Player> player,
   Shader shader
-) : shader_(shader), player_(player) {
+) : shader_(shader) {
   glGenBuffers(1, &vertex_buffer_);
   glGenBuffers(1, &uv_buffer_);
   glGenBuffers(1, &element_buffer_);
@@ -47,7 +46,6 @@ void SkyDome::CreateMesh() {
       float x = radius * cos(angle);
       float z = radius * sin(angle);
       vertices_.push_back(glm::vec3(x, y, z));
-      // uvs_.push_back(glm::vec2((DOME_RADIUS + x) / (2 * DOME_RADIUS), (DOME_RADIUS + z) / (2 * DOME_RADIUS)));
       uvs_.push_back(glm::vec2(0.5 + uv_radius * cos(angle), 0.5 + uv_radius * sin(angle)));
       angle += angle_step;
     }
@@ -89,13 +87,13 @@ void SkyDome::CreateMesh() {
   );
 }
 
-void SkyDome::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
+void SkyDome::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera, glm::vec3 player_pos) {
   glUseProgram(shader_.program_id());
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture_);
   glUniform1i(shader_.GetUniformId("SkyTextureSampler"), 0);
 
-  glm::vec3 position = player_->position();
+  glm::vec3 position = player_pos;
   position.y = -10000.0f;
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position);
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;

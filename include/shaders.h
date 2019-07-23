@@ -11,6 +11,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
+using namespace std;
+
 namespace Sibyl {
 
 enum UniformType { 
@@ -26,6 +28,7 @@ class Shader {
   int available_texture_slot_;
 
  public:
+  Shader() {}
   Shader(const std::string&, const std::string&, const std::string&);
   Shader(const std::string&, const std::string&, const std::string&, const std::string&);
   void Load(const std::string&, const std::string&, const std::string&);

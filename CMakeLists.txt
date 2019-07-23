@@ -4,13 +4,28 @@ set (CMAKE_CXX_STANDARD 11)
 
 find_package(OpenGL REQUIRED)
 
-include_directories(include)
-
 if (APPLE) 
   set(ALL_LIBS
     ${OPENGL_LIBRARY}
     glfw
     glew
+  )
+
+  set(INCLUDE_DIRS
+    ${CMAKE_SOURCE_DIR}/include
+    /usr/local/Cellar/glew/2.1.0/include
+    /usr/local/Cellar/glfw/3.2.1/include
+    /usr/local/Cellar/glm/0.9.9.4/include
+    # /usr/local/Cellar/glew/2.1.0/bin
+    # /usr/local/Cellar/glfw/3.2.1/bin
+    # /usr/local/Cellar/glew/2.1.0/lib
+    # /usr/local/Cellar/glfw/3.2.1/lib
+  )
+
+  set(LINK_DIRS
+    /usr/local/Cellar/glew/2.1.0/lib
+    /usr/local/Cellar/glfw/3.2.1/lib
+    /usr/local/Cellar/glm/0.9.9.4/lib
   )
   add_definitions(-DAPPLE)
 else()
@@ -28,31 +43,21 @@ else()
   )
 endif()
 
+include_directories(${INCLUDE_DIRS})
+link_directories(${LINK_DIRS})
+
 set(
   SRC
   src/main.cpp 
-  src/geometry.cpp 
-  src/window.cpp 
-  src/input.cpp 
-  src/player.cpp 
   src/engine.cpp 
-  src/entity.cpp 
-  src/physics.cpp 
   src/shaders.cpp 
   src/frame_buffer.cpp 
-  src/entity_manager.cpp 
   src/sky_dome.cpp 
-  src/renderer.cpp
   src/texture.cpp 
   src/shaders.cpp
-  src/mesh.cpp
-  src/height_map.cpp
-  src/subregion.cpp
   src/clipmap.cpp
   src/terrain.cpp
-  src/simplex_noise.cpp
-  src/rock.cpp
-  src/tree.cpp
+  src/subregion.cpp
 )
 
 add_executable(main ${SRC})

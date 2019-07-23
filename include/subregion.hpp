@@ -14,8 +14,6 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/rotate_vector.hpp> 
 #include "shaders.h"
-#include "player.hpp"
-#include "height_map.hpp"
 #include "config.h"
 
 #define CLIPMAP_SIZE 258
@@ -38,14 +36,11 @@ enum SubregionLabel {
 class Subregion {
   static const short BORDERS[];
 
-  std::shared_ptr<Player> player_;
   SubregionLabel subregion_;
   GLuint buffer_[2][2];
   int buffer_size_[2][2];
   glm::ivec2 top_left_[2][2];
   glm::ivec2 size_[2][2];
-  float min_height_[2][2];
-  float max_height_[2][2];
   int clipmap_level_;
 
   void Init();
@@ -56,18 +51,11 @@ class Subregion {
   void CreateBuffer(glm::ivec2);
   void CreateTile(std::vector<unsigned int>&, int, int);
 
-  std::vector<glm::vec3> GetEnclosingCubePlane(glm::ivec2, glm::ivec2, float, float, int);
-  std::vector<glm::vec3> GetClippedEnclosingCube(glm::ivec2, glm::ivec2, float, float);
-
-  void DrawElements(glm::ivec2, glm::ivec2, glm::ivec2, glm::ivec2);
-
  public:
   Subregion() {}
-  Subregion(std::shared_ptr<Player>, SubregionLabel, int);
+  Subregion(SubregionLabel, int);
 
   void Draw(glm::ivec2, glm::ivec2, bool);
-  void UpdateHeight(glm::ivec2, int, int, float);
-  void Clear();
 };
 
 } // End of namespace.
