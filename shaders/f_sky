@@ -6,11 +6,10 @@ in VertexData {
   vec3 color;
 } in_data;
 
-// const vec2 sun_position = vec2(0.8, 0.5);
 const vec2 sun_position = vec2(0.5, 0.5);
 
 vec3 GetSky(vec3 position, vec2 uv) {
-  float atmosphere = sqrt(1.0 - position.y / 1100000);
+  float atmosphere = sqrt(1.0 - position.y / 11000000);
   
   vec3 sky_color = vec3(0.2, 0.4, 0.8);
    
@@ -32,11 +31,10 @@ vec3 GetSun(vec3 position, vec2 uv) {
   sun = clamp(sun, 0.0, 1.0);
 
   glow = pow(glow, 6.0) * 1.0;
-  glow = pow(glow, position.y / 700000);
+  glow = pow(glow, position.y / 7000000);
   glow = clamp(glow, 0.0, 1.0);
 
-  // sun *= pow(dot(position.y / 700000, position.y / 700000), 1.0 / 1.65);
-  glow *= pow(dot(position.y / 700000, position.y / 700000), 1.0 / 2.0);
+  glow *= pow(dot(position.y / 7000000, position.y / 7000000), 1.0 / 2.0);
   sun += glow;
 
   vec3 sun_color = vec3(1.0, 0.6, 0.05) * sun;
@@ -55,6 +53,7 @@ void main(){
 
   vec3 sky = GetSky(in_data.position, in_data.UV);
   vec3 sun = GetSun(in_data.position, in_data.UV);
+  // vec3 sun = vec3(0, 0, 0);
 
   color = sky + sun;  
 }

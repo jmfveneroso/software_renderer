@@ -13,10 +13,10 @@ case $key in
     cd ..
     ./build/main
     ;;
-  *)    # unknown option
+  *) # unknown option
     cd build
     make
     cd ..
-    # ./build/main
+    ./build/main
     ;;
 esac

@@ -108,18 +108,14 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
 }
 
 float Clipmap::GetGridHeight(float x, float y) {
-  int buffer_x = x / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
-  int buffer_y = y / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
+  double period = 0.000001f;
+  double amplitude = 24.0f * pow(E, -0.0000002f * sqrt(x*x + y*y));
+  double long_wave = amplitude * (cos(x * period) + cos(y * period));
 
-  float h = -4000.0f / MAX_HEIGHT;
-  if (
-    buffer_x < 0 || buffer_x >= HEIGHT_MAP_SIZE - 1 || 
-    buffer_y < 0 || buffer_y >= HEIGHT_MAP_SIZE - 1
-  ) {
-    return h;
-  }
-
-  return height_map_[buffer_y * HEIGHT_MAP_SIZE + buffer_x];
+  double period2 = 0.00004f;
+  double amplitude2 = .5f;
+  double short_wave = amplitude2 * (cos(x * period2) + cos(y * period2));
+  return -16.f + long_wave + short_wave;
 }
 
 void Clipmap::UpdatePoint(int x, int y, float* p_height, glm::vec3* p_normal) {

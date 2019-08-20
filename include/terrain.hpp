@@ -24,7 +24,6 @@ class Terrain {
   Clipmap clipmaps_[CLIPMAP_LEVELS]; 
   float* height_map_;
 
-  // std::shared_ptr<HeightMap> height_map_;
   Shader shader_;
   Shader water_shader_;
   GLuint grass_texture_id_;
@@ -42,7 +41,6 @@ class Terrain {
     GLuint water_normal_texture_id
   );
 
-  float GetGridHeight(float x , float y);
   float GetHeight(float x , float y);
   void Draw(glm::mat4, glm::mat4, glm::vec3, glm::vec3);
 };

@@ -18,10 +18,6 @@
 #include "config.h"
 #include "clipmap.hpp"
 
-#define NUM_CIRCLES 8
-#define NUM_POINTS_IN_CIRCLE 64
-#define DOME_RADIUS 1000000
-
 namespace Sibyl {
 
 class SkyDome {

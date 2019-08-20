@@ -60,7 +60,6 @@ class Clipmap {
   glm::ivec2 GridToBufferCoordinates(glm::ivec2);
   glm::ivec2 BufferToGridCoordinates(glm::ivec2);
   void InvalidateOuterBuffer(glm::ivec2);
-  float GetGridHeight(float, float);
 
  public:
   Clipmap();
@@ -71,6 +70,7 @@ class Clipmap {
   void Init();
   void Update(glm::vec3);
   void UpdatePoint(int, int, float*, glm::vec3*);
+  float GetGridHeight(float, float);
 };
 
 } // End of namespace.

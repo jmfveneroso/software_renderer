@@ -5,8 +5,8 @@ in FragData {
   vec2 UV;
   vec3 normal_cameraspace;
   float visibility;
-  float steepness;
   vec3 position_cameraspace;
+  vec3 barycentric;
 } in_data;
 
 // Output data
@@ -22,12 +22,22 @@ uniform mat3 MV3x3;
 
 void main(){
   // Material properties.
-  vec3 diffuse_color = texture(GrassTextureSampler, in_data.UV).rgb;
+  vec3 diffuse_color;
+  float weight = 0.02;
+  if (any(lessThan(in_data.barycentric, vec3(weight)))){
+    diffuse_color = vec3(0.0, 0.0, 0.0);
+  } else{
+    diffuse_color = vec3(0.5);
+    // diffuse_color = in_data.barycentric;
 
-  // Sand.
-  float limit = 5000 * 0.5;
-  float height = float(clamp(in_data.position.y, 0, limit)) / limit;
-  diffuse_color = mix(texture(SandTextureSampler, in_data.UV).rgb, diffuse_color, height);
+    // // Grass.
+    // diffuse_color = texture(GrassTextureSampler, in_data.UV).rgb;
+
+    // // Sand.
+    // float limit = 5000 * 0.5;
+    // float height = float(clamp(in_data.position.y, 0, limit)) / limit;
+    // diffuse_color = mix(texture(SandTextureSampler, in_data.UV).rgb, diffuse_color, height);
+  }
 
   // Light.
   vec3 ambient_color = vec3(0.5, 0.5, 0.5) * diffuse_color;

@@ -59,21 +59,6 @@ void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
   water_shader_.Clear();
 }
 
-float Terrain::GetGridHeight(float x, float y) {
-  int buffer_x = x / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
-  int buffer_y = y / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
-
-  float h = -4000.0f / MAX_HEIGHT;
-  if (
-    buffer_x < 0 || buffer_x >= HEIGHT_MAP_SIZE - 1 || 
-    buffer_y < 0 || buffer_y >= HEIGHT_MAP_SIZE - 1
-  ) {
-    return h;
-  }
-
-  return height_map_[buffer_y * HEIGHT_MAP_SIZE + buffer_x];
-}
-
 float Terrain::GetHeight(float x , float y) { 
   int buffer_x = x / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
   glm::ivec2 top_left = (glm::ivec2(x, y) / TILE_SIZE) * TILE_SIZE;
@@ -81,10 +66,10 @@ float Terrain::GetHeight(float x , float y) {
   if (y < 0 && fabs(top_left.y - y) > 0.00001) top_left.y -= TILE_SIZE;
 
   float v[4];
-  v[0] = GetGridHeight(top_left.x                  , top_left.y                  );
-  v[1] = GetGridHeight(top_left.x                  , top_left.y + TILE_SIZE + 0.1);
-  v[2] = GetGridHeight(top_left.x + TILE_SIZE + 0.1, top_left.y + TILE_SIZE + 0.1);
-  v[3] = GetGridHeight(top_left.x + TILE_SIZE + 0.1, top_left.y                  );
+  v[0] = clipmaps_[0].GetGridHeight(top_left.x                  , top_left.y                  );
+  v[1] = clipmaps_[0].GetGridHeight(top_left.x                  , top_left.y + TILE_SIZE + 0.1);
+  v[2] = clipmaps_[0].GetGridHeight(top_left.x + TILE_SIZE + 0.1, top_left.y + TILE_SIZE + 0.1);
+  v[3] = clipmaps_[0].GetGridHeight(top_left.x + TILE_SIZE + 0.1, top_left.y                  );
 
   glm::vec2 tile_v = (glm::vec2(x, y) - glm::vec2(top_left)) / float(TILE_SIZE);
 
