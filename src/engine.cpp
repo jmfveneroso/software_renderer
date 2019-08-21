@@ -112,7 +112,7 @@ void Engine::Render() {
   camera.direction = direction;
   camera.up = up;
 
-  ProjectionMatrix = glm::perspective(glm::radians(player_.fov), 4.0f / 3.0f, 1000.0f, 20000000.0f);
+  ProjectionMatrix = glm::perspective(glm::radians(player_.fov), 4.0f / 3.0f, NEAR_CLIPPING, FAR_CLIPPING);
 
   // Camera matrix
   ViewMatrix = glm::lookAt(
@@ -190,7 +190,7 @@ void Engine::ProcessInput(){
     Move(LEFT, delta_time);
 
   if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS)
-    player_.speed.y += 15.0f;
+    player_.speed.y += 0.02f;
 
   double x_pos, y_pos;
   glfwGetCursorPos(window_, &x_pos, &y_pos);
@@ -207,11 +207,11 @@ void Engine::ProcessInput(){
 }
 
 void Engine::UpdateForces() {
-  player_.speed += glm::vec3(0, -10.0, 0);
+  player_.speed += glm::vec3(0, -0.01, 0);
   player_.position += player_.speed;
 
   // Test collision with terrain.
-  float height = MAX_HEIGHT / 2 * terrain_->GetHeight(player_.position.x, player_.position.z);
+  float height = terrain_->GetHeight(player_.position.x, player_.position.z);
   if (player_.position.y - player_.height < height) {
     glm::vec3 pos = player_.position;
     pos.y = height + player_.height;

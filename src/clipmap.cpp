@@ -107,38 +107,42 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
   height_buffer_.top_left = GridToBufferCoordinates(new_top_left);
 }
 
+// Must output value between 0 and MAX_HEIGHT (400).
 float Clipmap::GetGridHeight(float x, float y) {
+  x /= 5;
+  y /= 5;
+
   int buffer_x = x / TILE_SIZE + height_map_.size() / 2;
   int buffer_y = y / TILE_SIZE + height_map_.size() / 2;
 
+  float h = MAX_HEIGHT / 2;
+  if (x >= 0 && x <= 2 && y >= 0 && y <= 2)
+    return h + 18 + 5;
+
   if (buffer_x < 0 || buffer_y < 0)
-    return 0;
+    return h;
 
   if (buffer_x >= height_map_.size() || buffer_y >= height_map_.size())
-    return 0;
+    return h;
 
-  return height_map_[buffer_x][buffer_y] / 5;
+  return h + height_map_[buffer_x][buffer_y];
 
-  // double period = 0.000001f;
-  // double amplitude = 24.0f * pow(E, -0.0000002f * sqrt(x*x + y*y));
-  // double long_wave = amplitude * (cos(x * period) + cos(y * period));
-
-  // double period2 = 0.00004f;
-  // double amplitude2 = .5f;
-  // double short_wave = amplitude2 * (cos(x * period2) + cos(y * period2));
-  // return -16.f + long_wave + short_wave;
+  // Cos wave.
+  // double long_wave = 5 * (cos(x * 0.1) + cos(y * 0.1));
+  // return 200.0f + long_wave;
 }
 
 void Clipmap::UpdatePoint(int x, int y, float* p_height, glm::vec3* p_normal) {
   glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, y));
   glm::vec3 world_coords = GridToWorldCoordinates(grid_coords);
 
-  float height = float(1 + GetGridHeight(world_coords.x, world_coords.z)) / 2;
+  // float height = float(1 + GetGridHeight(world_coords.x, world_coords.z)) / 2;
+  float height = GetGridHeight(world_coords.x, world_coords.z) / MAX_HEIGHT;
 
   float step = GetTileSize() * TILE_SIZE;
-  glm::vec3 a = glm::vec3(0,    MAX_HEIGHT * (float(1 + GetGridHeight(world_coords.x       , world_coords.z        )) / 2), 0);
-  glm::vec3 b = glm::vec3(step, MAX_HEIGHT * (float(1 + GetGridHeight(world_coords.x + step, world_coords.z        )) / 2), 0);
-  glm::vec3 c = glm::vec3(0,    MAX_HEIGHT * (float(1 + GetGridHeight(world_coords.x       , world_coords.z + step )) / 2), step);
+  glm::vec3 a = glm::vec3(0,    GetGridHeight(world_coords.x       , world_coords.z        ), 0);
+  glm::vec3 b = glm::vec3(step, GetGridHeight(world_coords.x + step, world_coords.z        ), 0);
+  glm::vec3 c = glm::vec3(0,    GetGridHeight(world_coords.x       , world_coords.z + step ), step);
   glm::vec3 tangent = b - a;
   glm::vec3 bitangent = c - a;
   glm::vec3 normal = (normalize(glm::cross(bitangent, tangent)) + 1.0f) / 2.0f;

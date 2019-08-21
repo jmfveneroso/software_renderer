@@ -34,9 +34,7 @@ Terrain::Terrain(
 
 void Terrain::LoadTerrain(const string& filename) {
   ifstream is(filename, ifstream::binary);
-
-  if (!is)
-    return;
+  if (!is) return;
 
   int size;
   is >> size;

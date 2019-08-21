@@ -40,8 +40,8 @@ struct Player {
   glm::vec3 speed = glm::vec3(0, 0, 0);
   float h_angle = 0.0f;
   float v_angle = 0.0f;
-  float fov = 45.0f;
-  float height = 2000.0f;
+  float fov = PLAYER_FOV;
+  float height = PLAYER_HEIGHT;
 };
 
 class Engine {
