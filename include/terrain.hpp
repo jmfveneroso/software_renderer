@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
 #include <memory>
 #include <fstream>
 #include <cstring>
@@ -22,7 +23,8 @@ namespace Sibyl {
 
 class Terrain {
   Clipmap clipmaps_[CLIPMAP_LEVELS]; 
-  float* height_map_;
+  // float* height_map_;
+  vector< vector<float> > height_map_;
 
   Shader shader_;
   Shader water_shader_;
@@ -41,6 +43,7 @@ class Terrain {
     GLuint water_normal_texture_id
   );
 
+  void LoadTerrain(const string& filename);
   float GetHeight(float x , float y);
   void Draw(glm::mat4, glm::mat4, glm::vec3, glm::vec3);
 };

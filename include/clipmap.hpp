@@ -33,7 +33,7 @@ struct HeightBuffer {
 };
 
 class Clipmap {
-  float* height_map_;
+  vector< vector<float> > height_map_;
 
   unsigned int level_;
   HeightBuffer height_buffer_;
@@ -63,7 +63,7 @@ class Clipmap {
 
  public:
   Clipmap();
-  Clipmap(float*, unsigned int);
+  Clipmap(vector< vector<float> >, unsigned int);
 
   void Render(glm::vec3, Shader*, glm::mat4, glm::mat4, bool);
   void RenderWater(glm::vec3, Shader*, glm::mat4, glm::mat4, glm::vec3, bool);

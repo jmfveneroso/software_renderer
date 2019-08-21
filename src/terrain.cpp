@@ -1,5 +1,7 @@
 #include "terrain.hpp"
 
+using namespace std;
+
 namespace Sibyl {
 
 Terrain::Terrain(
@@ -16,16 +18,38 @@ Terrain::Terrain(
     water_diffuse_texture_id_(water_diffuse_texture_id),
     water_normal_texture_id_(water_normal_texture_id) {
 
-  height_map_ = new float[HEIGHT_MAP_SIZE * HEIGHT_MAP_SIZE];
-  for (int x = 0; x < HEIGHT_MAP_SIZE; x++) {
-    for (int y = 0; y < HEIGHT_MAP_SIZE; y++) {
-      height_map_[y * HEIGHT_MAP_SIZE + x] = (sin(x * 0.01f) + sin(y * 0.01f)) - 0.5f;
-    }
-  }
+  LoadTerrain("./meshes/terrain.data");
+
+  // height_map_ = new float[HEIGHT_MAP_SIZE * HEIGHT_MAP_SIZE];
+  // for (int x = 0; x < HEIGHT_MAP_SIZE; x++) {
+  //   for (int y = 0; y < HEIGHT_MAP_SIZE; y++) {
+  //     height_map_[y * HEIGHT_MAP_SIZE + x] = (sin(x * 0.01f) + sin(y * 0.01f)) - 0.5f;
+  //   }
+  // }
 
   for (int i = 0; i < CLIPMAP_LEVELS; i++) {
     clipmaps_[i] = Clipmap(height_map_, i + 1); 
   }
+}
+
+void Terrain::LoadTerrain(const string& filename) {
+  ifstream is(filename, ifstream::binary);
+
+  if (!is)
+    return;
+
+  int size;
+  is >> size;
+  height_map_ = vector< vector<float> >(size, vector<float>(size, 0.0));
+
+  float height;
+  for (int i = 0; i < size; i++) {
+    for (int j = 0; j < size; j++) {
+      is >> height_map_[i][j];
+    }
+  }
+
+  is.close();
 }
 
 void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera, glm::vec3 player_pos) {

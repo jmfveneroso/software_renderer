@@ -5,7 +5,7 @@ namespace Sibyl {
 Clipmap::Clipmap() {}
 
 Clipmap::Clipmap(
-  float* height_map,
+  vector< vector<float> > height_map,
   unsigned int level
 ) : height_map_(height_map), level_(level) {
   Init();
@@ -108,14 +108,25 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
 }
 
 float Clipmap::GetGridHeight(float x, float y) {
-  double period = 0.000001f;
-  double amplitude = 24.0f * pow(E, -0.0000002f * sqrt(x*x + y*y));
-  double long_wave = amplitude * (cos(x * period) + cos(y * period));
+  int buffer_x = x / TILE_SIZE + height_map_.size() / 2;
+  int buffer_y = y / TILE_SIZE + height_map_.size() / 2;
 
-  double period2 = 0.00004f;
-  double amplitude2 = .5f;
-  double short_wave = amplitude2 * (cos(x * period2) + cos(y * period2));
-  return -16.f + long_wave + short_wave;
+  if (buffer_x < 0 || buffer_y < 0)
+    return 0;
+
+  if (buffer_x >= height_map_.size() || buffer_y >= height_map_.size())
+    return 0;
+
+  return height_map_[buffer_x][buffer_y] / 5;
+
+  // double period = 0.000001f;
+  // double amplitude = 24.0f * pow(E, -0.0000002f * sqrt(x*x + y*y));
+  // double long_wave = amplitude * (cos(x * period) + cos(y * period));
+
+  // double period2 = 0.00004f;
+  // double amplitude2 = .5f;
+  // double short_wave = amplitude2 * (cos(x * period2) + cos(y * period2));
+  // return -16.f + long_wave + short_wave;
 }
 
 void Clipmap::UpdatePoint(int x, int y, float* p_height, glm::vec3* p_normal) {
