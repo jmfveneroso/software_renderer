@@ -64,6 +64,7 @@ void Engine::CreateEntities() {
   shaders_["terrain"] = Shader("terrain", "v_terrain", "f_terrain", "g_terrain");
   shaders_["water"] = Shader("water", "v_water", "f_water");
   shaders_["sky"] = Shader("sky", "v_sky", "f_sky");
+  shaders_["cube"] = Shader("cube", "v_cube", "f_cube", "g_cube");
 
   // Frame buffer.
   screen_ = make_shared<FrameBuffer>(shaders_["static_screen"], window_width_, window_height_);
@@ -85,6 +86,15 @@ void Engine::CreateEntities() {
     w_diffuse_texture_id, 
     w_normal_texture_id
   );
+
+  cube_ = make_shared<Cube>(shaders_["cube"]);
+  building_ = make_shared<Building>(shaders_["cube"], 0.125f, 5.0f, glm::vec3(2000.125f, 205.0f, 2000.0f));
+  building1_ = make_shared<Building>(shaders_["cube"], 0.125f, 5.0f, glm::vec3(2009.875f, 205.0f, 2000.0f));
+  building2_ = make_shared<Building>(shaders_["cube"], 5.0f, 0.125f, glm::vec3(2005.0f, 205.0f, 1995.125f));
+  building3_ = make_shared<Building>(shaders_["cube"], 5.0f, 0.125f, glm::vec3(2005.0f, 205.0f, 2004.875f));
+  float sx = 0.125f;
+  float sz = 5.0f;
+
 }
 
 void Engine::Render() {
@@ -126,8 +136,13 @@ void Engine::Render() {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
   glViewport(0, 0, window_width_, window_height_);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  sky_dome_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
+  // sky_dome_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
   terrain_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
+  cube_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
+  building_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
+  building1_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
+  building2_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
+  building3_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, window_width_ * 2, window_height_ * 2);

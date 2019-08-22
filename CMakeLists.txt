@@ -62,6 +62,8 @@ set(
   src/clipmap.cpp
   src/terrain.cpp
   src/subregion.cpp
+  src/cube.cpp 
+  src/building.cpp 
 )
 
 add_executable(main ${SRC})

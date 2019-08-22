@@ -10,6 +10,8 @@
 
 #include "terrain.hpp"
 #include "sky_dome.hpp"
+#include "cube.hpp"
+#include "building.hpp"
 #include "frame_buffer.hpp"
 #include "texture.hpp"
 #include "shaders.h"
@@ -36,7 +38,7 @@ struct Camera {
 };
 
 struct Player {
-  glm::vec3 position = glm::vec3(0, 300, 0);
+  glm::vec3 position = glm::vec3(2000, 300, 2000);
   glm::vec3 speed = glm::vec3(0, 0, 0);
   float h_angle = 0.0f;
   float v_angle = 0.0f;
@@ -59,6 +61,11 @@ class Engine {
   TextureMap textures_;
   std::shared_ptr<Terrain> terrain_;
   std::shared_ptr<SkyDome> sky_dome_;
+  std::shared_ptr<Cube> cube_;
+  std::shared_ptr<Building> building_;
+  std::shared_ptr<Building> building1_;
+  std::shared_ptr<Building> building2_;
+  std::shared_ptr<Building> building3_;
   std::shared_ptr<FrameBuffer> screen_;
 
   GLuint LoadTexture(const std::string&, const std::string&);

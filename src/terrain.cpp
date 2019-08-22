@@ -101,7 +101,6 @@ void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
   shader_.Clear();
 
   // Water.
-
   glUseProgram(water_shader_.program_id());
   water_shader_.BindTexture("dudvMap", water_diffuse_texture_id_);
   water_shader_.BindTexture("normalMap", water_normal_texture_id_);
@@ -116,7 +115,6 @@ void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 c
 }
 
 float Terrain::GetHeight(float x , float y) { 
-  int buffer_x = x / TILE_SIZE + HEIGHT_MAP_SIZE / 2;
   glm::ivec2 top_left = (glm::ivec2(x, y) / TILE_SIZE) * TILE_SIZE;
   if (x < 0 && fabs(top_left.x - x) > 0.00001) top_left.x -= TILE_SIZE;
   if (y < 0 && fabs(top_left.y - y) > 0.00001) top_left.y -= TILE_SIZE;

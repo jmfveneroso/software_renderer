@@ -109,12 +109,15 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
 
 // Must output value between 0 and MAX_HEIGHT (400).
 float Clipmap::GetGridHeight(float x, float y) {
+  x -= 2000;
+  y -= 2000;
+
   int buffer_x = x / TILE_SIZE + height_map_.size() / 2;
   int buffer_y = y / TILE_SIZE + height_map_.size() / 2;
 
   float h = MAX_HEIGHT / 2;
-  if (x >= 0 && x <= 10 && y >= 0 && y <= 10)
-    return h + 18 + 5;
+  // if (x >= 0 && x <= 10 && y >= 0 && y <= 10)
+  //   return h + 18 + 5;
 
   if (buffer_x < 0 || buffer_y < 0)
     return h;

@@ -24,11 +24,12 @@ uniform int PURE_TILE_SIZE;
 void main(){
   // Material properties.
   vec3 diffuse_color;
-  float weight = 0.05;
+  float weight = 0.01f;
 
-  vec2 what = ivec2(in_data.UV) / PURE_TILE_SIZE;
-  what = in_data.UV - what * PURE_TILE_SIZE;
-  if (what.x < weight || what.y < weight){
+  vec2 uv = (ivec2(in_data.UV) / PURE_TILE_SIZE) * PURE_TILE_SIZE;
+  uv = (in_data.UV - uv) / PURE_TILE_SIZE;
+
+  if (uv.x < weight || uv.y < weight){
   // if (any(lessThan(in_data.barycentric, vec3(weight)))){
     diffuse_color = vec3(0.0, 0.0, 0.0);
   } else{
@@ -43,6 +44,7 @@ void main(){
     // float height = float(clamp(in_data.position.y, 0, limit)) / limit;
     // diffuse_color = mix(texture(SandTextureSampler, in_data.UV).rgb, diffuse_color, height);
   }
+  // diffuse_color = vec3(uv.x, uv.y, 0.0);
 
   // Light.
   vec3 ambient_color = vec3(0.5, 0.5, 0.5) * diffuse_color;
