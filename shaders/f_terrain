@@ -19,12 +19,17 @@ uniform mat4 MVP;
 uniform mat4 V;
 uniform mat4 M;
 uniform mat3 MV3x3;
+uniform int PURE_TILE_SIZE;
 
 void main(){
   // Material properties.
   vec3 diffuse_color;
-  float weight = 0.02;
-  if (any(lessThan(in_data.barycentric, vec3(weight)))){
+  float weight = 0.05;
+
+  vec2 what = ivec2(in_data.UV) / PURE_TILE_SIZE;
+  what = in_data.UV - what * PURE_TILE_SIZE;
+  if (what.x < weight || what.y < weight){
+  // if (any(lessThan(in_data.barycentric, vec3(weight)))){
     diffuse_color = vec3(0.0, 0.0, 0.0);
   } else{
     diffuse_color = vec3(0.5);

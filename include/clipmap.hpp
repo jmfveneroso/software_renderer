@@ -2,6 +2,7 @@
 #define _CLIPMAP_HPP_
 
 #include <algorithm>
+#include <iostream>
 #include <vector>
 #include <memory>
 #include <fstream>

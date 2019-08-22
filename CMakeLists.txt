@@ -29,6 +29,10 @@ if (APPLE)
   )
   add_definitions(-DAPPLE)
 else()
+  set(INCLUDE_DIRS
+    ${CMAKE_SOURCE_DIR}/include
+  )
+
   link_directories(/usr/X11/lib /usr/local/lib)
   set(ALL_LIBS
     ${OPENGL_LIBRARY}

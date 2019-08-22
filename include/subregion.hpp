@@ -16,13 +16,6 @@
 #include "shaders.h"
 #include "config.h"
 
-#define CLIPMAP_SIZE 258
-#define CLIPMAP_OFFSET ((CLIPMAP_SIZE - 2) / 2)
-#define LEFT_BORDER   8
-#define TOP_BORDER    4
-#define BOTTOM_BORDER 2
-#define RIGHT_BORDER  1
-
 namespace Sibyl {
 
 enum SubregionLabel {

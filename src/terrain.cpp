@@ -20,13 +20,6 @@ Terrain::Terrain(
 
   LoadTerrain("./meshes/terrain.data");
 
-  // height_map_ = new float[HEIGHT_MAP_SIZE * HEIGHT_MAP_SIZE];
-  // for (int x = 0; x < HEIGHT_MAP_SIZE; x++) {
-  //   for (int y = 0; y < HEIGHT_MAP_SIZE; y++) {
-  //     height_map_[y * HEIGHT_MAP_SIZE + x] = (sin(x * 0.01f) + sin(y * 0.01f)) - 0.5f;
-  //   }
-  // }
-
   for (int i = 0; i < CLIPMAP_LEVELS; i++) {
     clipmaps_[i] = Clipmap(height_map_, i + 1); 
   }
@@ -38,16 +31,57 @@ void Terrain::LoadTerrain(const string& filename) {
 
   int size;
   is >> size;
-  height_map_ = vector< vector<float> >(size, vector<float>(size, 0.0));
+
+  // The map is 41 X 41, where each tile is 5 x 5 meters wide.
+  // But in our actual map, each tile is 1 x 1 meters wide.
+  vector< vector<float> > height_data(size+1, vector<float>(size+1, 0.0));
 
   float height;
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++) {
-      is >> height_map_[i][j];
+      is >> height_data[i][j];
     }
   }
-
   is.close();
+
+  // The step is the gap between sample points in the map grid.
+  int step = 5;
+  size = (size-1) * step + 1;
+  height_map_ = vector< vector<float> >(size, vector<float>(size, 0.0));
+
+  // Now we need to do linear interpolation to obtain the 1 x 1 meter wide
+  // tile heights.
+  for (int i = 0; i < size; i++) {
+    for (int j = 0; j < size; j++) {
+      int grid_x = i / step;
+      int grid_y = j / step;
+      int offset_x = i % step;
+      int offset_y = j % step;
+
+      float top_lft = height_data[grid_x][grid_y];
+      float top_rgt = height_data[grid_x+1][grid_y];
+      float bot_lft = height_data[grid_x][grid_y+1];
+      float bot_rgt = height_data[grid_x+1][grid_y+1];
+
+      float height = 0.0;
+      height_map_[i][j] = top_lft;
+  
+      // Top left triangle.
+      if (offset_x + offset_y <= step) {
+        height = top_lft;
+        height += (top_rgt - top_lft) * (offset_x / float(step));
+        height += (bot_lft - top_lft) * (offset_y / float(step));
+
+      // Bottom right triangle.
+      } else {
+        height = bot_rgt;
+        height += (bot_lft - bot_rgt) * (1 - (offset_x / float(step)));
+        height += (top_rgt - bot_rgt) * (1 - (offset_y / float(step)));
+      }
+
+      height_map_[i][j] = height;
+    }
+  }
 }
 
 void Terrain::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera, glm::vec3 player_pos) {

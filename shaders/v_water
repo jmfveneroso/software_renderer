@@ -27,7 +27,7 @@ uniform ivec2 top_left;
 uniform int PURE_TILE_SIZE;
 uniform int TILE_SIZE;
 uniform int CLIPMAP_SIZE;
-uniform int MAX_HEIGHT;
+uniform float MAX_HEIGHT;
 uniform vec3 LightPosition_worldspace;
 uniform vec3 cameraPosition;
 uniform vec4 plane;
@@ -38,7 +38,6 @@ void main(){
 
   ivec2 toroidal_coords = ivec2(out_data.position.x, out_data.position.z);
   ivec2 buffer_coords = (toroidal_coords + buffer_top_left + CLIPMAP_SIZE + 1) % (CLIPMAP_SIZE + 1);
-  float height = MAX_HEIGHT * texelFetch(HeightMapSampler, buffer_coords).r;
 
   out_data.position.x *= TILE_SIZE;
   out_data.position.z *= TILE_SIZE;
@@ -46,7 +45,7 @@ void main(){
   vec2 pos_world = (M * vec4(out_data.position, 1)).xz;
 
   // Waves.
-  out_data.position.y = -50 * (sin((pos_world.x + moveFactor * 500) * 0.01) + sin(pos_world.y * 0.01));
+  out_data.position.y = (MAX_HEIGHT / 2) + 3 - (sin((pos_world.x + moveFactor * 500) * 0.01) + sin(pos_world.y * 0.01));;
 
   vec3 position_worldspace = (M * vec4(out_data.position, 1)).xyz;
 

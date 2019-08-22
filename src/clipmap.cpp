@@ -37,7 +37,7 @@ void Clipmap::Init() {
 
   glGenTextures(1, &height_texture_);
   glBindTexture(GL_TEXTURE_RECTANGLE, height_texture_);
-  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RED, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RED, GL_FLOAT, NULL);
+  glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_R32F, CLIPMAP_SIZE+1, CLIPMAP_SIZE+1, 0, GL_RED, GL_FLOAT, NULL);
 
   glGenTextures(1, &normals_texture_);
   glBindTexture(GL_TEXTURE_RECTANGLE, normals_texture_);
@@ -109,14 +109,11 @@ void Clipmap::InvalidateOuterBuffer(glm::ivec2 new_top_left) {
 
 // Must output value between 0 and MAX_HEIGHT (400).
 float Clipmap::GetGridHeight(float x, float y) {
-  x /= 5;
-  y /= 5;
-
   int buffer_x = x / TILE_SIZE + height_map_.size() / 2;
   int buffer_y = y / TILE_SIZE + height_map_.size() / 2;
 
   float h = MAX_HEIGHT / 2;
-  if (x >= 0 && x <= 2 && y >= 0 && y <= 2)
+  if (x >= 0 && x <= 10 && y >= 0 && y <= 10)
     return h + 18 + 5;
 
   if (buffer_x < 0 || buffer_y < 0)
@@ -136,7 +133,6 @@ void Clipmap::UpdatePoint(int x, int y, float* p_height, glm::vec3* p_normal) {
   glm::ivec2 grid_coords = BufferToGridCoordinates(glm::ivec2(x, y));
   glm::vec3 world_coords = GridToWorldCoordinates(grid_coords);
 
-  // float height = float(1 + GetGridHeight(world_coords.x, world_coords.z)) / 2;
   float height = GetGridHeight(world_coords.x, world_coords.z) / MAX_HEIGHT;
 
   float step = GetTileSize() * TILE_SIZE;
@@ -205,7 +201,7 @@ void Clipmap::Render(
   glUniform1i(shader->GetUniformId("PURE_TILE_SIZE"), TILE_SIZE);
   glUniform1i(shader->GetUniformId("TILE_SIZE"), TILE_SIZE * GetTileSize());
   glUniform1i(shader->GetUniformId("CLIPMAP_SIZE"), CLIPMAP_SIZE);
-  glUniform1i(shader->GetUniformId("MAX_HEIGHT"), MAX_HEIGHT);
+  glUniform1f(shader->GetUniformId("MAX_HEIGHT"), MAX_HEIGHT);
   glUniform2iv(shader->GetUniformId("buffer_top_left"), 1, (int*) &height_buffer_.top_left);
   glUniform2iv(shader->GetUniformId("top_left"), 1, (int*) &top_left_);
 
@@ -261,7 +257,7 @@ void Clipmap::RenderWater(
   glUniform1i(shader->GetUniformId("PURE_TILE_SIZE"), TILE_SIZE);
   glUniform1i(shader->GetUniformId("TILE_SIZE"), TILE_SIZE * GetTileSize());
   glUniform1i(shader->GetUniformId("CLIPMAP_SIZE"), CLIPMAP_SIZE);
-  glUniform1i(shader->GetUniformId("MAX_HEIGHT"), MAX_HEIGHT);
+  glUniform1f(shader->GetUniformId("MAX_HEIGHT"), MAX_HEIGHT);
   glUniform2iv(shader->GetUniformId("buffer_top_left"), 1, (int*) &height_buffer_.top_left);
   glUniform2iv(shader->GetUniformId("top_left"), 1, (int*) &top_left_);
 
