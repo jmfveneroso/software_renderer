@@ -10,9 +10,11 @@ in FragData {
 layout(location = 0) out vec3 color;
 
 void main(){
-  if (any(lessThan(in_data.barycentric, vec3(0.02)))) {
+  vec2 uv = in_data.UV - ivec2(in_data.UV);
+
+  if (uv.x < 0.02 || uv.y < 0.02){
     color = vec3(0.0, 0.0, 0.0);
   } else{
-    color = vec3(0.5, 0.5, 0.5);
+    color = vec3(0.5);
   }
 }

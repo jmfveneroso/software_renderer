@@ -17,9 +17,30 @@
 #include <glm/gtx/rotate_vector.hpp> 
 #include "shaders.h"
 #include "config.h"
-#include "clipmap.hpp"
 
 namespace Sibyl {
+
+class Wall {
+  GLuint vertex_buffer_;
+  GLuint uv_buffer_;
+  GLuint element_buffer_;
+  std::vector<glm::vec3> vertices_;
+  std::vector<unsigned int> indices_;
+
+  protected:
+   glm::vec3 position_;
+   float rotation_;
+   float length_;
+   float height_;
+   Shader shader_;
+
+   void Init();
+
+ public:
+  Wall(Shader shader, glm::vec3, float, float, float);
+
+  void Draw(glm::mat4, glm::mat4, glm::vec3);
+};
 
 class Building {
   GLuint vertex_buffer_;
@@ -29,12 +50,11 @@ class Building {
   std::vector<unsigned int> indices_;
   float sx_, sz_;
 
+  std::vector<Wall> walls_;
+
   protected:
-   glm::vec3 speed_ = glm::vec3(0, 0.1, 0);
    glm::vec3 position_;
    Shader shader_;
-
-   void CreateCube();
 
  public:
   Building(Shader shader, float, float, glm::vec3);
