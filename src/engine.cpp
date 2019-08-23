@@ -89,9 +89,6 @@ void Engine::CreateEntities() {
 
   cube_ = make_shared<Cube>(shaders_["cube"]);
   building_ = make_shared<Building>(shaders_["cube"], 0.125f, 5.0f, glm::vec3(2000.125f, 205.0f, 2000.0f));
-  building1_ = make_shared<Building>(shaders_["cube"], 0.125f, 5.0f, glm::vec3(2009.875f, 205.0f, 2000.0f));
-  building2_ = make_shared<Building>(shaders_["cube"], 5.0f, 0.125f, glm::vec3(2005.0f, 205.0f, 1995.125f));
-  building3_ = make_shared<Building>(shaders_["cube"], 5.0f, 0.125f, glm::vec3(2005.0f, 205.0f, 2004.875f));
   float sx = 0.125f;
   float sz = 5.0f;
 
@@ -140,9 +137,6 @@ void Engine::Render() {
   terrain_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
   cube_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
   building_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
-  building1_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
-  building2_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
-  building3_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, window_width_ * 2, window_height_ * 2);
@@ -165,16 +159,17 @@ void Engine::Move(Direction direction, float delta_time) {
   
   switch (direction) {
     case FORWARD:
-      player_.position += front * delta_time * PLAYER_SPEED;
+      player_.speed += front * delta_time * PLAYER_SPEED;
+      // player_.position += front * delta_time * PLAYER_SPEED;
       break;
     case BACK:
-      player_.position -= front * delta_time * PLAYER_SPEED;
+      player_.speed -= front * delta_time * PLAYER_SPEED;
       break;
     case RIGHT:
-      player_.position += right * delta_time * PLAYER_SPEED;
+      player_.speed += right * delta_time * PLAYER_SPEED;
       break;
     case LEFT:
-      player_.position -= right * delta_time * PLAYER_SPEED;
+      player_.speed -= right * delta_time * PLAYER_SPEED;
       break;
     default:
       break;
@@ -205,7 +200,7 @@ void Engine::ProcessInput(){
     Move(LEFT, delta_time);
 
   if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS)
-    player_.speed.y += 0.02f;
+    player_.speed.y += 0.1f;
 
   double x_pos, y_pos;
   glfwGetCursorPos(window_, &x_pos, &y_pos);
@@ -222,7 +217,13 @@ void Engine::ProcessInput(){
 }
 
 void Engine::UpdateForces() {
-  player_.speed += glm::vec3(0, -0.01, 0);
+  glm::vec3 prev_pos = player_.position;
+
+  player_.speed += glm::vec3(0, -0.05, 0);
+
+  // Decay.
+  player_.speed *= 0.9;
+
   player_.position += player_.speed;
 
   // Test collision with terrain.
@@ -235,6 +236,9 @@ void Engine::UpdateForces() {
     if (speed.y < 0) speed.y = 0.0f;
     player_.speed = speed;
   }
+
+  // Test collision with building.
+  building_->Collide(player_.position, prev_pos);
 }
 
 void Engine::Run() {

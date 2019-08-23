@@ -5,6 +5,107 @@ using namespace glm;
 
 namespace Sibyl {
 
+bool TestAABBCollision(BoundingBox& b1, BoundingBox& b2) {
+  return (
+      b1.x < b2.x + b2.width  &&
+      b1.x + b1.width > b2.x  &&
+      b1.y < b2.y + b2.height &&
+      b1.y + b1.height > b2.y &&
+      b1.z < b2.z + b2.length &&
+      b1.z + b1.length > b2.z
+  );
+}
+
+Floor::Floor(
+  Shader shader,
+  glm::vec3 position,
+  float width,
+  float length
+) : shader_(shader), 
+    position_(position), 
+    width_(width), 
+    length_(length) {
+  Init();
+}
+
+void Floor::Init() {
+  glGenBuffers(1, &vertex_buffer_);
+  glGenBuffers(1, &uv_buffer_);
+  glGenBuffers(1, &element_buffer_);
+
+  float w = width_;
+  float l = length_;
+  float h = 0.5;
+ 
+  vector<vec3> v {
+    // Back face.
+    vec3(0, h, 0), vec3(w, h, 0), vec3(0, 0, 0), vec3(w, 0, 0),
+    // Front face.
+    vec3(0, h, l), vec3(w, h, l), vec3(0, 0, l), vec3(w, 0, l),
+  };
+
+  vertices_ = {
+    v[0], v[4], v[1], v[1], v[4], v[5], // Top.
+    v[1], v[3], v[0], v[0], v[3], v[2], // Back.
+    v[0], v[2], v[4], v[4], v[2], v[6], // Left.
+    v[5], v[7], v[1], v[1], v[7], v[3], // Right.
+    v[4], v[6], v[5], v[5], v[6], v[7], // Front.
+    v[6], v[2], v[7], v[7], v[2], v[3]  // Bottom.
+  };
+
+  vector<vec2> u = {
+    vec2(0, 0), vec2(0, l), vec2(w, 0), vec2(w, l), // Top.
+    vec2(0, 0), vec2(0, h), vec2(w, 0), vec2(w, h), // Back.
+    vec2(0, 0), vec2(0, h), vec2(l, 0), vec2(l, h)  // Left.
+  };
+
+  vector<glm::vec2> uvs {
+    u[0], u[1], u[2],  u[2],  u[1], u[3],  // Top.
+    u[4], u[5], u[6],  u[6],  u[5], u[7],  // Back.
+    u[8], u[9], u[10], u[10], u[9], u[11], // Left.
+    u[8], u[9], u[10], u[10], u[9], u[11], // Right.
+    u[4], u[5], u[6],  u[6],  u[5], u[7],  // Front.
+    u[0], u[1], u[2],  u[2],  u[1], u[3]   // Bottom.
+  };
+
+  for (int i = 0; i < 36; i++) indices_.push_back(i);
+
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3), &vertices_[0], GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
+  glBufferData(
+    GL_ELEMENT_ARRAY_BUFFER, 
+    indices_.size() * sizeof(unsigned int), 
+    &indices_[0], 
+    GL_STATIC_DRAW
+  );
+}
+
+void Floor::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
+  glUseProgram(shader_.program_id());
+
+  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
+
+  glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
+  glm::mat4 MVP = ProjectionMatrix * ModelViewMatrix;
+
+  glUniformMatrix4fv(shader_.GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
+  glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
+
+  shader_.BindBuffer(vertex_buffer_, 0, 3);
+  shader_.BindBuffer(uv_buffer_, 1, 2);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
+  glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
+  shader_.Clear();
+}
+
+void Floor::Collide(glm::vec3& player_pos, glm::vec3 prev_pos) {
+}
+
 Wall::Wall(
   Shader shader,
   glm::vec3 position,
@@ -95,6 +196,52 @@ void Wall::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 came
   shader_.Clear();
 }
 
+void Wall::Collide(glm::vec3& player_pos, glm::vec3 prev_pos) {
+  BoundingBox p = BoundingBox(player_pos.x - 0.35, player_pos.y - 1.5, player_pos.z - 0.35, 0.7, 1.5, 0.7);
+  if (p.y >= position_.y + height_ || p.y + p.height <= position_.y) return;
+
+  bool horizontal = rotation_ == 0 || rotation_ == 2;
+  if (horizontal) {
+    float x = position_.x;
+    float z = position_.z;
+    float w = length_;
+    float l = 0.25;
+
+    if (rotation_ == 2) {
+      x -= w; z -= l;
+    }
+
+    if (
+      p.x < x + w && p.x + p.width > x   &&
+      p.z < z + l && p.z + p.length > z
+    ) {
+      if (prev_pos.z < player_pos.z)
+        player_pos.z = z - (p.length/2);
+      else
+        player_pos.z = z + l;
+    }
+  } else {
+    float x = position_.x;
+    float z = position_.z;
+    float w = 0.25;
+    float l = length_;
+
+    if (rotation_ == 3) {
+      x -= w; z -= l;
+    }
+
+    if (
+      p.x < x + w && p.x + p.width > x  &&
+      p.z < z + l && p.z + p.length > z
+    ) {
+      if (prev_pos.x < player_pos.x)
+        player_pos.x = x - (p.width/2);
+      else
+        player_pos.x = x + w;
+    }
+  }
+}
+
 Building::Building(
   Shader shader,
   float sx, 
@@ -116,12 +263,33 @@ Building::Building(
   walls_.push_back(Wall(shader_, vec3(1995, 205, 2000), 3, 4.75, 6));
   walls_.push_back(Wall(shader_, vec3(1995, 209, 2001), 3, 1, 2));
   walls_.push_back(Wall(shader_, vec3(1995, 205, 2001), 3, 1, 1));
-}
 
+  floors_.push_back(Floor(shader_, vec3(1995, 211, 1995), 11, 9));
+  floors_.push_back(Floor(shader_, vec3(1995, 211, 2004), 3, 2));
+  floors_.push_back(Floor(shader_, vec3(2004, 211, 2004), 2, 2));
+ 
+  // Stairs.
+  float x = 0;
+  for (int i = 0; i < 12; i++) {
+    x += 0.5;
+    floors_.push_back(Floor(shader_, vec3(2004 - x, 211 - x, 2004), 0.5, 2));
+  }
+}
 
 void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
   for (auto& w : walls_)
     w.Draw(ProjectionMatrix, ViewMatrix, camera);
+
+  for (auto& f : floors_)
+    f.Draw(ProjectionMatrix, ViewMatrix, camera);
+}
+
+void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos) {
+  for (auto& w : walls_)
+    w.Collide(player_pos, prev_pos);
+  
+  for (auto& f : floors_)
+    f.Collide(player_pos, prev_pos);
 }
 
 } // End of namespace.

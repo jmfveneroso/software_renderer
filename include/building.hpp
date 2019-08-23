@@ -20,6 +20,44 @@
 
 namespace Sibyl {
 
+struct BoundingBox {
+  float x, y, z;
+  float width, height, length;
+
+  BoundingBox () : x(0), y(0), z(0),
+      width(0), height(0), length(0) {
+  }
+
+  BoundingBox (
+    float x, float y, float z,
+    float width, float height, float length
+  ) : x(x), y(y), z(z),
+      width(width), height(height), length(length) {
+  }
+};
+
+class Floor {
+  GLuint vertex_buffer_;
+  GLuint uv_buffer_;
+  GLuint element_buffer_;
+  std::vector<glm::vec3> vertices_;
+  std::vector<unsigned int> indices_;
+
+  protected:
+   glm::vec3 position_;
+   float width_;
+   float length_;
+   Shader shader_;
+
+   void Init();
+
+ public:
+  Floor(Shader shader, glm::vec3, float, float);
+
+  void Draw(glm::mat4, glm::mat4, glm::vec3);
+  void Collide(glm::vec3&, glm::vec3);
+};
+
 class Wall {
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
@@ -40,6 +78,7 @@ class Wall {
   Wall(Shader shader, glm::vec3, float, float, float);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
+  void Collide(glm::vec3&, glm::vec3);
 };
 
 class Building {
@@ -51,6 +90,7 @@ class Building {
   float sx_, sz_;
 
   std::vector<Wall> walls_;
+  std::vector<Floor> floors_;
 
   protected:
    glm::vec3 position_;
@@ -60,6 +100,7 @@ class Building {
   Building(Shader shader, float, float, glm::vec3);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
+  void Collide(glm::vec3&, glm::vec3);
 };
 
 } // End of namespace.

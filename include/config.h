@@ -6,7 +6,7 @@
 #define WINDOW_HEIGHT 800
 #define WAVE_SPEED 0.01f
 #define PI 3.14159265359
-#define PLAYER_SPEED 4.0f
+#define PLAYER_SPEED 0.6f
 #define CLIPMAP_LEVELS 5
 #define MAX_HEIGHT 400.0f
 #define TILE_SIZE 1
@@ -16,7 +16,7 @@
 #define NUM_POINTS_IN_CIRCLE 64
 #define E 2.71828
 #define PLAYER_HEIGHT 1.5
-#define NEAR_CLIPPING 0.1f
+#define NEAR_CLIPPING 0.05f
 #define FAR_CLIPPING 2000.0f
 #define PLAYER_FOV 45.0f
 #define CLIPMAP_SIZE 202
