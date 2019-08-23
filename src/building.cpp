@@ -101,10 +101,21 @@ Building::Building(
   float sz,
   glm::vec3 position
 ) : shader_(shader), position_(position), sx_(sx), sz_(sz) {
-  walls_.push_back(Wall(shader_, vec3(1995, 205, 1995), 0, 10, 6));
-  walls_.push_back(Wall(shader_, vec3(2005, 205, 1995.25), 1, 9.5, 6));
-  walls_.push_back(Wall(shader_, vec3(2005, 205, 2005), 2, 10, 6));
-  walls_.push_back(Wall(shader_, vec3(1995, 205, 2004.75), 3, 9.5, 6));
+  walls_.push_back(Wall(shader_, vec3(1995, 205, 1995), 0, 5, 6));
+  walls_.push_back(Wall(shader_, vec3(2001, 205, 1995), 0, 5, 6));
+  walls_.push_back(Wall(shader_, vec3(2000, 207, 1995), 0, 1, 4));
+
+  walls_.push_back(Wall(shader_, vec3(2006, 205, 1995.25), 1, 4.75, 6));
+  walls_.push_back(Wall(shader_, vec3(2006, 205, 2001), 1, 4.75, 6));
+  walls_.push_back(Wall(shader_, vec3(2006, 209, 2000), 1, 1, 2));
+  walls_.push_back(Wall(shader_, vec3(2006, 205, 2000), 1, 1, 1));
+
+  walls_.push_back(Wall(shader_, vec3(2006, 205, 2006), 2, 11, 6));
+
+  walls_.push_back(Wall(shader_, vec3(1995, 205, 2005.75), 3, 4.75, 6));
+  walls_.push_back(Wall(shader_, vec3(1995, 205, 2000), 3, 4.75, 6));
+  walls_.push_back(Wall(shader_, vec3(1995, 209, 2001), 3, 1, 2));
+  walls_.push_back(Wall(shader_, vec3(1995, 205, 2001), 3, 1, 1));
 }
 
 
