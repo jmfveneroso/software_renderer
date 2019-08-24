@@ -92,9 +92,11 @@ class Building {
   std::vector<Wall> walls_;
   std::vector<Floor> floors_;
 
-  protected:
-   glm::vec3 position_;
-   Shader shader_;
+ protected:
+  glm::vec3 position_;
+  Shader shader_;
+
+  void CreateFloor(glm::vec3);
 
  public:
   Building(Shader shader, float, float, glm::vec3);

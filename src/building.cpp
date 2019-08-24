@@ -5,17 +5,6 @@ using namespace glm;
 
 namespace Sibyl {
 
-bool TestAABBCollision(BoundingBox& b1, BoundingBox& b2) {
-  return (
-      b1.x < b2.x + b2.width  &&
-      b1.x + b1.width > b2.x  &&
-      b1.y < b2.y + b2.height &&
-      b1.y + b1.height > b2.y &&
-      b1.z < b2.z + b2.length &&
-      b1.z + b1.length > b2.z
-  );
-}
-
 Floor::Floor(
   Shader shader,
   glm::vec3 position,
@@ -104,6 +93,24 @@ void Floor::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 cam
 }
 
 void Floor::Collide(glm::vec3& player_pos, glm::vec3 prev_pos) {
+  BoundingBox p = BoundingBox(player_pos.x - 0.35, player_pos.y - 1.5, player_pos.z - 0.35, 0.7, 1.5, 0.7);
+
+  if (
+      p.x >= position_.x + width_  || p.x + p.width <= position_.x ||
+      p.z >= position_.z + length_ || p.z + p.length <= position_.z
+  ) return;
+
+  if (p.y >= position_.y + 0.5 || p.y + p.height <= position_.y) 
+    return;
+
+  // Coming from top.
+  if (prev_pos.y > player_pos.y) {
+    player_pos.y = position_.y + 0.5 + 1.5;
+
+  // Coming from bottom.
+  } else {
+    player_pos.y = position_.y - 1.5;
+  }
 }
 
 Wall::Wall(
@@ -248,31 +255,38 @@ Building::Building(
   float sz,
   glm::vec3 position
 ) : shader_(shader), position_(position), sx_(sx), sz_(sz) {
-  walls_.push_back(Wall(shader_, vec3(1995, 205, 1995), 0, 5, 6));
-  walls_.push_back(Wall(shader_, vec3(2001, 205, 1995), 0, 5, 6));
-  walls_.push_back(Wall(shader_, vec3(2000, 207, 1995), 0, 1, 4));
+  CreateFloor(vec3(1995, 205, 1995));
+  CreateFloor(vec3(1995, 211.5, 1995));
+  CreateFloor(vec3(1995, 218, 1995));
+  // CreateFloor(vec3(1995, 205, 1995));
+}
 
-  walls_.push_back(Wall(shader_, vec3(2006, 205, 1995.25), 1, 4.75, 6));
-  walls_.push_back(Wall(shader_, vec3(2006, 205, 2001), 1, 4.75, 6));
-  walls_.push_back(Wall(shader_, vec3(2006, 209, 2000), 1, 1, 2));
-  walls_.push_back(Wall(shader_, vec3(2006, 205, 2000), 1, 1, 1));
+void Building::CreateFloor(glm::vec3 position) {
+  walls_.push_back(Wall(shader_,   position + vec3(0, 0, 0), 0, 5, 6));
+  walls_.push_back(Wall(shader_,   position + vec3(6, 0, 0), 0, 5, 6));
+  walls_.push_back(Wall(shader_,   position + vec3(5, 2, 0), 0, 1, 4));
 
-  walls_.push_back(Wall(shader_, vec3(2006, 205, 2006), 2, 11, 6));
+  walls_.push_back(Wall(shader_,   position + vec3(11, 0, 0.25), 1, 4.75, 6));
+  walls_.push_back(Wall(shader_,   position + vec3(11, 0, 6), 1, 4.75, 6));
+  walls_.push_back(Wall(shader_,   position + vec3(11, 4, 5), 1, 1, 2));
+  walls_.push_back(Wall(shader_,   position + vec3(11, 0, 5), 1, 1, 1));
 
-  walls_.push_back(Wall(shader_, vec3(1995, 205, 2005.75), 3, 4.75, 6));
-  walls_.push_back(Wall(shader_, vec3(1995, 205, 2000), 3, 4.75, 6));
-  walls_.push_back(Wall(shader_, vec3(1995, 209, 2001), 3, 1, 2));
-  walls_.push_back(Wall(shader_, vec3(1995, 205, 2001), 3, 1, 1));
+  walls_.push_back(Wall(shader_,   position + vec3(11, 0, 11), 2, 11, 6));
 
-  floors_.push_back(Floor(shader_, vec3(1995, 211, 1995), 11, 9));
-  floors_.push_back(Floor(shader_, vec3(1995, 211, 2004), 3, 2));
-  floors_.push_back(Floor(shader_, vec3(2004, 211, 2004), 2, 2));
+  walls_.push_back(Wall(shader_,   position + vec3(0, 0, 10.75), 3, 4.75, 6));
+  walls_.push_back(Wall(shader_,   position + vec3(0, 0, 5), 3, 4.75, 6));
+  walls_.push_back(Wall(shader_,   position + vec3(0, 4, 6), 3, 1, 2));
+  walls_.push_back(Wall(shader_,   position + vec3(0, 0, 6), 3, 1, 1));
+
+  floors_.push_back(Floor(shader_, position + vec3(0, 6, 0), 11, 9));
+  floors_.push_back(Floor(shader_, position + vec3(0, 6, 9), 3, 2));
+  floors_.push_back(Floor(shader_, position + vec3(9, 6, 9), 2, 2));
  
   // Stairs.
   float x = 0;
   for (int i = 0; i < 12; i++) {
     x += 0.5;
-    floors_.push_back(Floor(shader_, vec3(2004 - x, 211 - x, 2004), 0.5, 2));
+    floors_.push_back(Floor(shader_, position + vec3(9 - x, 6 - x, 9), 0.5, 2));
   }
 }
 

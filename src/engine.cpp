@@ -219,7 +219,7 @@ void Engine::ProcessInput(){
 void Engine::UpdateForces() {
   glm::vec3 prev_pos = player_.position;
 
-  player_.speed += glm::vec3(0, -0.05, 0);
+  player_.speed += glm::vec3(0, -0.03, 0);
 
   // Decay.
   player_.speed *= 0.9;
