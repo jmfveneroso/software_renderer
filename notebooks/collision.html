@@ -1,0 +1,39 @@
+<html>
+  <body>
+    <canvas id="myCanvas" width="600" height="400" style="border: 1px solid black;"></canvas>
+
+    <script type="text/javascript">
+      var c = document.getElementById("myCanvas");
+      var ctx = c.getContext("2d");
+      var frames = 0;
+      
+      function drawLine () {
+          ctx.moveTo(0, 0);
+          ctx.lineTo(200, 300);
+          ctx.stroke();
+      }
+      
+      function rect(x1, y1, x2, y2) {
+          ctx.beginPath();    
+          ctx.rect(x1, y1, x2, y2);
+          ctx.stroke();
+      }
+      
+
+      var x = 200, y = 200;
+      function drawFrame() {
+        setTimeout(function () {
+	  x++; y--;
+          ctx.clearRect(0, 0, c.width, c.height);
+          rect(x, y, 50, 50);
+          rect(300, 100, 100, 100);
+	  if (frames++ < 60) drawFrame();
+	}, 10);
+      }
+
+      drawFrame();
+    </script>
+
+  </body>
+</html>
+

@@ -38,7 +38,7 @@ struct Camera {
 };
 
 struct Player {
-  glm::vec3 position = glm::vec3(2000, 300, 2000);
+  glm::vec3 position = glm::vec3(2020, 210, 2020);
   glm::vec3 next_position = glm::vec3(0, 0, 0);
   glm::vec3 speed = glm::vec3(0, 0, 0);
   float h_angle = 0.0f;

@@ -46,36 +46,14 @@ class Floor {
   protected:
    glm::vec3 position_;
    float width_;
-   float length_;
-   Shader shader_;
-
-   void Init();
-
- public:
-  Floor(Shader shader, glm::vec3, float, float);
-
-  void Draw(glm::mat4, glm::mat4, glm::vec3);
-  void Collide(glm::vec3&, glm::vec3);
-};
-
-class Wall {
-  GLuint vertex_buffer_;
-  GLuint uv_buffer_;
-  GLuint element_buffer_;
-  std::vector<glm::vec3> vertices_;
-  std::vector<unsigned int> indices_;
-
-  protected:
-   glm::vec3 position_;
-   float rotation_;
-   float length_;
    float height_;
+   float length_;
    Shader shader_;
 
    void Init();
 
  public:
-  Wall(Shader shader, glm::vec3, float, float, float);
+  Floor(Shader shader, glm::vec3, float, float, float);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3);
@@ -89,7 +67,6 @@ class Building {
   std::vector<unsigned int> indices_;
   float sx_, sz_;
 
-  std::vector<Wall> walls_;
   std::vector<Floor> floors_;
 
  protected:

@@ -25,6 +25,6 @@
 #define TOP_BORDER    4
 #define BOTTOM_BORDER 2
 #define RIGHT_BORDER  1
-
+#define GRAVITY 0.01
 
 #endif

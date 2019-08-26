@@ -219,12 +219,15 @@ void Engine::ProcessInput(){
 void Engine::UpdateForces() {
   glm::vec3 prev_pos = player_.position;
 
-  player_.speed += glm::vec3(0, -0.03, 0);
+  player_.speed += glm::vec3(0, -GRAVITY, 0);
 
   // Decay.
   player_.speed *= 0.9;
 
   player_.position += player_.speed;
+
+  // Test collision with building.
+  building_->Collide(player_.position, prev_pos);
 
   // Test collision with terrain.
   float height = terrain_->GetHeight(player_.position.x, player_.position.z);
@@ -236,9 +239,6 @@ void Engine::UpdateForces() {
     if (speed.y < 0) speed.y = 0.0f;
     player_.speed = speed;
   }
-
-  // Test collision with building.
-  building_->Collide(player_.position, prev_pos);
 }
 
 void Engine::Run() {
