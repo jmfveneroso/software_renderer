@@ -95,77 +95,66 @@ void Floor::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 cam
 }
 
 void Floor::Collide(glm::vec3& player_pos, glm::vec3 prev_pos) {
-  BoundingBox p = BoundingBox(player_pos.x - 0.35, player_pos.y - 1.5, player_pos.z - 0.35, 0.7, 1.5, 0.7);
+  // Player bounding box.
+  BoundingBox p = BoundingBox(
+    player_pos.x - 0.35, 
+    player_pos.y - 1.5, 
+    player_pos.z - 0.35, 
+    0.7, 1.5, 0.7
+  );
 
+  // AABB collision.
   if (
       p.x >= position_.x + width_  || p.x + p.width  <= position_.x ||
       p.y >= position_.y + height_ || p.y + p.height <= position_.y ||
       p.z >= position_.z + length_ || p.z + p.length <= position_.z
   ) return;
 
-  vec3 collision_v = player_pos - prev_pos;
-  vector<float> k_arr(6, numeric_limits<float>::max());
+  // Collision vector.
+  vec3 collision = player_pos - prev_pos;
 
-  // Top Face Y.
-  float f = position_.y + height_ + 1.5;
-  float k = (f - prev_pos.y) / collision_v.y;
-  if (k >= 0.0 && k <= 1.0) k_arr[0] = k;
+  // Collision point between the player and each box face in collision 
+  // vector coordinates.
+  vector<double> collision_magnitude {
+    (position_.y + height_ + 1.50 - prev_pos.y) / collision.y, // Top.
+    (position_.y - prev_pos.y                 ) / collision.y, // Bottom.
+    (position_.x + width_  + 0.35 - prev_pos.x) / collision.x, // Right.
+    (position_.x - 0.35 - prev_pos.x          ) / collision.x, // Left.
+    (position_.z + length_ + 0.35 - prev_pos.z) / collision.z, // Front.
+    (position_.z - 0.35 - prev_pos.z          ) / collision.z  // Back.
+  };
 
-  // Bottom Face Y.
-  f = position_.y;
-  k = (f - prev_pos.y) / collision_v.y;
-  if (k >= 0.0 && k <= 1.0) k_arr[1] = k;
+  // Select the face for which the collision displacement is minimum
+  // when moving the player only along the collision vector.
+  int min_index = -1;
+  double min_value = numeric_limits<double>::max();
+  for (int i = 0; i < 6; i++) {
+    double k = collision_magnitude[i];
+    if (k < 0.0 || k > 1.0) continue;
 
-  // Right Face X.
-  f = position_.x + width_ + 0.35;
-  k = (f - prev_pos.x) / collision_v.x;
-  if (k >= 0.0 && k <= 1.0) k_arr[2] = k;
-
-  // Left Face X.
-  f = position_.x - 0.35;
-  k = (f - prev_pos.x) / collision_v.x;
-  if (k >= 0.0 && k <= 1.0) k_arr[3] = k;
-
-  // Front Face Z.
-  f = position_.z + length_ + 0.35;
-  k = (f - prev_pos.z) / collision_v.z;
-  if (k >= 0.0 && k <= 1.0) k_arr[4] = k;
-
-  // Back Face Z.
-  f = position_.z - 0.35;
-  k = (f - prev_pos.z) / collision_v.z;
-  if (k >= 0.0 && k <= 1.0) k_arr[5] = k;
-
-  int min_index = 0;
-  float min_value = k_arr[0];
-
-  for (int i = 1; i < 6; i++) {
-    if (k_arr[i] < min_value) {
+    if (min_index == -1 || k < min_value) {
       min_index = i;
-      min_value = k_arr[i];
+      min_value = k;
     }
-  } 
+  }
 
-  k = k_arr[min_index] - 0.0001;
+  // Displace the player such that it is no longer in collision with
+  // the selected face.
   switch (min_index) {
-    case 0: // Top.
-      player_pos.y = prev_pos.y + k * collision_v.y;
+    case 0:
+    case 1:
+      player_pos.y = prev_pos.y + min_value * collision.y;
+      player_pos.y += ((min_index % 2) ? -0.0001 : 0.0001);
       break;
-    case 1: // Bottom.
-      player_pos.y = prev_pos.y + k * collision_v.y;
+    case 2:
+    case 3:
+      player_pos.x = prev_pos.x + min_value * collision.x;
+      player_pos.x += ((min_index % 2) ? -0.0001 : 0.0001);
       break;
-    case 2: // Right.
-      player_pos.x = prev_pos.x + k * collision_v.x;
-      break;
-    case 3: // Left.
-      player_pos.x = prev_pos.x + k * collision_v.x;
-      break;
-    case 4: // Front.
-      player_pos.z = prev_pos.z + k * collision_v.z;
-      break;
-    case 5: // Back.
-      player_pos.z = position_.z - 0.35;
-      player_pos.z = prev_pos.z + k * collision_v.z;
+    case 4:
+    case 5:
+      player_pos.z = prev_pos.z + min_value * collision.z;
+      player_pos.z += ((min_index % 2) ? -0.0001 : 0.0001);
       break;
     default:
       break;
@@ -178,43 +167,46 @@ Building::Building(
   float sz,
   glm::vec3 position
 ) : shader_(shader), position_(position), sx_(sx), sz_(sz) {
+  float s = 14.0f;
   CreateFloor(vec3(1995, 205, 1995));
   CreateFloor(vec3(1995, 211.5, 1995));
   CreateFloor(vec3(1995, 218, 1995));
 
   vec3 pos = vec3(1995, 205, 1995);
-  floors_.push_back(Floor(shader_, pos + vec3(0, 19.5, 0), 11, 1, 0.25));
-  floors_.push_back(Floor(shader_, pos + vec3(10.75, 19.5, 0), 0.25, 1, 10.5));
-  floors_.push_back(Floor(shader_, pos + vec3(0, 19.5, 10.75), 11, 1, 0.25));
-  floors_.push_back(Floor(shader_, pos + vec3(0, 19.5, 0.25), 0.25, 1, 10.5));
+  floors_.push_back(Floor(shader_, pos + vec3(0, 19.5, 0), s+1, 1, 0.25));
+  floors_.push_back(Floor(shader_, pos + vec3(s+0.75, 19.5, 0), 0.25, 1, s+0.5));
+  floors_.push_back(Floor(shader_, pos + vec3(0, 19.5, s+0.75), s+1, 1, 0.25));
+  floors_.push_back(Floor(shader_, pos + vec3(0, 19.5, 0.25), 0.25, 1, s+0.5));
 }
 
 void Building::CreateFloor(glm::vec3 position) {
-  floors_.push_back(Floor(shader_, position + vec3(0, 0, 0), 5, 6, 0.25));
-  floors_.push_back(Floor(shader_, position + vec3(6, 0, 0), 5, 6, 0.25));
-  floors_.push_back(Floor(shader_, position + vec3(5, 2, 0), 1, 4, 0.25));
+  float s = 14.0f;
 
-  floors_.push_back(Floor(shader_, position + vec3(11, 0, 0.25), 0.25, 6, 4.75));
-  floors_.push_back(Floor(shader_, position + vec3(11, 0, 6),    0.25, 6, 4.75));
-  floors_.push_back(Floor(shader_, position + vec3(11, 4, 5),    0.25, 2, 1));
-  floors_.push_back(Floor(shader_, position + vec3(11, 0, 5),    0.25, 1, 1));
+  floors_.push_back(Floor(shader_, position + vec3(0,       0, 0), s/2, 6, 0.25));
+  floors_.push_back(Floor(shader_, position + vec3(s/2+1, 0, 0),   s/2, 6, 0.25));
+  floors_.push_back(Floor(shader_, position + vec3(s/2,     2, 0), 1,   4, 0.25));
 
-  floors_.push_back(Floor(shader_, position + vec3(0, 0, 11), 11, 6, 0.25));
+  floors_.push_back(Floor(shader_, position + vec3(s+1, 0, 0.25),  0.25, 6, s/2-0.25));
+  floors_.push_back(Floor(shader_, position + vec3(s+1, 0, s/2+1), 0.25, 6, s/2-0.25));
+  floors_.push_back(Floor(shader_, position + vec3(s+1, 4, s/2),   0.25, 2, 1));
+  floors_.push_back(Floor(shader_, position + vec3(s+1, 0, s/2),   0.25, 1, 1));
 
-  floors_.push_back(Floor(shader_, position + vec3(0, 0, 0.25), 0.25, 6, 4.75));
-  floors_.push_back(Floor(shader_, position + vec3(0, 0, 6),    0.25, 6, 4.75));
-  floors_.push_back(Floor(shader_, position + vec3(0, 4, 5),    0.25, 2, 1));
-  floors_.push_back(Floor(shader_, position + vec3(0, 0, 5),    0.25, 1, 1));
+  floors_.push_back(Floor(shader_, position + vec3(0, 0, s+1), s+1, 6, 0.25));
 
-  floors_.push_back(Floor(shader_, position + vec3(0, 6, 0), 11, 0.5, 9));
-  floors_.push_back(Floor(shader_, position + vec3(0, 6, 9), 3,  0.5, 2));
-  floors_.push_back(Floor(shader_, position + vec3(9, 6, 9), 2,  0.5, 2));
+  floors_.push_back(Floor(shader_, position + vec3(0, 0, 0.25),  0.25, 6, s/2-0.25));
+  floors_.push_back(Floor(shader_, position + vec3(0, 0, s/2+1), 0.25, 6, s/2-0.25));
+  floors_.push_back(Floor(shader_, position + vec3(0, 4, s/2),   0.25, 2, 1));
+  floors_.push_back(Floor(shader_, position + vec3(0, 0, s/2),   0.25, 1, 1));
+
+  floors_.push_back(Floor(shader_, position + vec3(0, 6, 0    ), s+1,   0.5, s-1));
+  floors_.push_back(Floor(shader_, position + vec3(0, 6, s-1  ), s-1-6, 0.5, 2));
+  floors_.push_back(Floor(shader_, position + vec3(s-1, 6, s-1), 2,     0.5, 2));
  
   // Stairs.
   float x = 0;
   for (int i = 0; i < 12; i++) {
     x += 0.5;
-    floors_.push_back(Floor(shader_, position + vec3(9 - x, 6 - x, 9), 0.5, 0.5, 2));
+    floors_.push_back(Floor(shader_, position + vec3(s-1 - x, 6 - x, s-1), 0.5, 0.5, 2));
   }
 }
 
