@@ -56,7 +56,7 @@ class Floor {
   Floor(Shader shader, glm::vec3, float, float, float);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
-  void Collide(glm::vec3&, glm::vec3);
+  void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
 };
 
 class Building {
@@ -73,13 +73,13 @@ class Building {
   glm::vec3 position_;
   Shader shader_;
 
-  void CreateFloor(glm::vec3);
+  void CreateFloor(glm::vec3, float, bool);
 
  public:
   Building(Shader shader, float, float, glm::vec3);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
-  void Collide(glm::vec3&, glm::vec3);
+  void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
 };
 
 } // End of namespace.

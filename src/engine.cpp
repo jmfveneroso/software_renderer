@@ -199,8 +199,12 @@ void Engine::ProcessInput(){
   if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
     Move(LEFT, delta_time);
 
-  if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS)
-    player_.speed.y += 0.1f;
+  if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS) {
+    if (player_.can_jump) {
+      player_.can_jump = false;
+      player_.speed.y += 0.3f;
+    }
+  }
 
   double x_pos, y_pos;
   glfwGetCursorPos(window_, &x_pos, &y_pos);
@@ -221,13 +225,15 @@ void Engine::UpdateForces() {
 
   player_.speed += glm::vec3(0, -GRAVITY, 0);
 
-  // Decay.
-  player_.speed *= 0.9;
+  // Friction.
+  player_.speed.x *= 0.9;
+  player_.speed.y *= 0.99;
+  player_.speed.z *= 0.9;
 
   player_.position += player_.speed;
 
   // Test collision with building.
-  building_->Collide(player_.position, prev_pos);
+  building_->Collide(player_.position, prev_pos, player_.can_jump, player_.speed);
 
   // Test collision with terrain.
   float height = terrain_->GetHeight(player_.position.x, player_.position.z);
@@ -238,6 +244,7 @@ void Engine::UpdateForces() {
     glm::vec3 speed = player_.speed;
     if (speed.y < 0) speed.y = 0.0f;
     player_.speed = speed;
+    player_.can_jump = true;
   }
 }
 

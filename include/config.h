@@ -25,6 +25,7 @@
 #define TOP_BORDER    4
 #define BOTTOM_BORDER 2
 #define RIGHT_BORDER  1
-#define GRAVITY 0.01
+#define GRAVITY 0.016
+#define JUMP_FORCE 0.016
 
 #endif

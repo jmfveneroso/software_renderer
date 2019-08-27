@@ -45,6 +45,7 @@ struct Player {
   float v_angle = 0.0f;
   float fov = PLAYER_FOV;
   float height = PLAYER_HEIGHT;
+  bool can_jump = false;
 };
 
 class Engine {
