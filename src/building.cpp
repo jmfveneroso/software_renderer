@@ -5,6 +5,85 @@ using namespace glm;
 
 namespace Sibyl {
 
+Object::Object(
+  Shader shader,
+  glm::vec3 position,
+  const string& filename
+) : shader_(shader), 
+    position_(position) {
+  Load(filename);
+}
+
+void Object::Load(const string& filename) {
+  ifstream f(filename);
+  if (!f.is_open()) return;
+
+  vector<glm::vec2> uvs;
+
+  string line;
+  while (getline(f, line)) {
+    vector<string> tokens;
+    boost::split(tokens, line, boost::is_any_of(" "));
+    if (!tokens.size()) continue;
+
+    string type = tokens[0];
+    if (type == "v") {
+      glm::vec3 vertex;
+      vertex.x = boost::lexical_cast<float>(tokens[1]); 
+      vertex.y = boost::lexical_cast<float>(tokens[2]);
+      vertex.z = boost::lexical_cast<float>(tokens[3]);
+      vertices_.push_back(vertex);
+      uvs.push_back({ 0, 0 });
+    } else if (type == "f") {
+      vector<unsigned int> face;
+      for (int i = 1; i < tokens.size(); i++) {
+        size_t j = tokens[i].find_first_of("/", 0);
+        face.push_back(boost::lexical_cast<unsigned int>(tokens[i].substr(0, j))); 
+      }
+      indices_.push_back(face[0]-1);
+      indices_.push_back(face[1]-1);
+      indices_.push_back(face[2]-1);
+      indices_.push_back(face[2]-1);
+      indices_.push_back(face[1]-1);
+      indices_.push_back(face[3]-1);
+    }
+  }
+  f.close();
+
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3), &vertices_[0], GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
+  glBufferData(
+    GL_ELEMENT_ARRAY_BUFFER, 
+    indices_.size() * sizeof(unsigned int), 
+    &indices_[0], 
+    GL_STATIC_DRAW
+  );
+}
+
+void Object::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
+  glUseProgram(shader_.program_id());
+
+  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
+
+  glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
+  glm::mat4 MVP = ProjectionMatrix * ModelViewMatrix;
+
+  glUniformMatrix4fv(shader_.GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
+  glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
+
+  shader_.BindBuffer(vertex_buffer_, 0, 3);
+  shader_.BindBuffer(uv_buffer_, 1, 2);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
+  glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
+  shader_.Clear();
+}
+
+
 Floor::Floor(
   Shader shader,
   glm::vec3 position,
@@ -180,6 +259,8 @@ Building::Building(
   floors_.push_back(Floor(shader_, pos + vec3(s+1, 19.5, 0   ), t,       1, s+1));
   floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, s+1 ), s+1+2*t, 1, t  ));
   floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, 0   ), t,       1, s+1));
+
+  platform_ = Object(shader_, vec3(1990, 205, 1990), "meshes/platform.obj");
 }
 
 void Building::CreateFloor(glm::vec3 position, float s, bool door) {
@@ -221,6 +302,8 @@ void Building::CreateFloor(glm::vec3 position, float s, bool door) {
 void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
   for (auto& f : floors_)
     f.Draw(ProjectionMatrix, ViewMatrix, camera);
+
+  platform_.Draw(ProjectionMatrix, ViewMatrix, camera);
 }
 
 void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {

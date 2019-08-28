@@ -16,6 +16,7 @@ if (APPLE)
     /usr/local/Cellar/glew/2.1.0/include
     /usr/local/Cellar/glfw/3.2.1/include
     /usr/local/Cellar/glm/0.9.9.4/include
+    /usr/local/Cellar/boost/1.70.0/include
     # /usr/local/Cellar/glew/2.1.0/bin
     # /usr/local/Cellar/glfw/3.2.1/bin
     # /usr/local/Cellar/glew/2.1.0/lib
@@ -26,6 +27,7 @@ if (APPLE)
     /usr/local/Cellar/glew/2.1.0/lib
     /usr/local/Cellar/glfw/3.2.1/lib
     /usr/local/Cellar/glm/0.9.9.4/lib
+    /usr/local/Cellar/boost/1.70.0/lib
   )
   add_definitions(-DAPPLE)
 else()

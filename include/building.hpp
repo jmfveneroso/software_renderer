@@ -7,6 +7,7 @@
 #include <memory>
 #include <fstream>
 #include <cstring>
+#include <sstream>
 #include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -15,6 +16,8 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/rotate_vector.hpp> 
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include "shaders.h"
 #include "config.h"
 
@@ -24,7 +27,8 @@ struct BoundingBox {
   float x, y, z;
   float width, height, length;
 
-  BoundingBox () : x(0), y(0), z(0),
+  BoundingBox (
+  ) : x(0), y(0), z(0),
       width(0), height(0), length(0) {
   }
 
@@ -34,6 +38,26 @@ struct BoundingBox {
   ) : x(x), y(y), z(z),
       width(width), height(height), length(length) {
   }
+};
+
+class Object {
+  GLuint vertex_buffer_;
+  GLuint uv_buffer_;
+  GLuint element_buffer_;
+  std::vector<glm::vec3> vertices_;
+  std::vector<unsigned int> indices_;
+
+  protected:
+   glm::vec3 position_;
+   Shader shader_;
+
+   void Load(const string& filename);
+
+ public:
+  Object() {}
+  Object(Shader shader, glm::vec3, const string&);
+
+  void Draw(glm::mat4, glm::mat4, glm::vec3);
 };
 
 class Floor {
@@ -68,6 +92,7 @@ class Building {
   float sx_, sz_;
 
   std::vector<Floor> floors_;
+  Object platform_;
 
  protected:
   glm::vec3 position_;
