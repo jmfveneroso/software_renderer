@@ -15,9 +15,15 @@ Object::Object(
 }
 
 void Object::Load(const string& filename) {
+  glGenBuffers(1, &vertex_buffer_);
+  glGenBuffers(1, &uv_buffer_);
+  glGenBuffers(1, &element_buffer_);
+
   ifstream f(filename);
   if (!f.is_open()) return;
 
+  vector<glm::vec3> vertex_lookup;
+  vector<glm::vec2> uv_lookup;
   vector<glm::vec2> uvs;
 
   string line;
@@ -32,20 +38,31 @@ void Object::Load(const string& filename) {
       vertex.x = boost::lexical_cast<float>(tokens[1]); 
       vertex.y = boost::lexical_cast<float>(tokens[2]);
       vertex.z = boost::lexical_cast<float>(tokens[3]);
-      vertices_.push_back(vertex);
-      uvs.push_back({ 0, 0 });
+      vertex_lookup.push_back(vertex);
+    } else if (type == "vt") {
+      glm::vec2 uv_coordinate;
+      uv_coordinate.x = boost::lexical_cast<float>(tokens[1]); 
+      uv_coordinate.y = boost::lexical_cast<float>(tokens[2]);
+      uv_lookup.push_back(uv_coordinate);
     } else if (type == "f") {
-      vector<unsigned int> face;
+      vector<unsigned int> vertex_ids;
+      vector<unsigned int> uv_ids;
       for (int i = 1; i < tokens.size(); i++) {
-        size_t j = tokens[i].find_first_of("/", 0);
-        face.push_back(boost::lexical_cast<unsigned int>(tokens[i].substr(0, j))); 
+        string& s = tokens[i];
+        size_t j = s.find_first_of("/", 0);
+        vertex_ids.push_back(boost::lexical_cast<unsigned int>(s.substr(0, j)) - 1); 
+
+        size_t k = s.find_first_of("/", j+1);
+        uv_ids.push_back(boost::lexical_cast<unsigned int>(s.substr(j+1, k-j-1)) - 1); 
       }
-      indices_.push_back(face[0]-1);
-      indices_.push_back(face[1]-1);
-      indices_.push_back(face[2]-1);
-      indices_.push_back(face[2]-1);
-      indices_.push_back(face[1]-1);
-      indices_.push_back(face[3]-1);
+  
+      for (int i = 0; i < 3; i++) { 
+        vertices_.push_back(vertex_lookup[vertex_ids[i]]);
+        uvs.push_back(uv_lookup[uv_ids[i]]);
+        cout << uv_lookup[uv_ids[i]].x << " ";
+        cout << uv_lookup[uv_ids[i]].y << endl;
+        indices_.push_back(vertices_.size()-1);
+      }
     }
   }
   f.close();
@@ -67,6 +84,7 @@ void Object::Load(const string& filename) {
 
 void Object::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
   glUseProgram(shader_.program_id());
+  // glDisable(GL_CULL_FACE);  
 
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
 
@@ -80,6 +98,8 @@ void Object::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 ca
   shader_.BindBuffer(uv_buffer_, 1, 2);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
   glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
+
+  // glEnable(GL_CULL_FACE);  
   shader_.Clear();
 }
 
@@ -260,7 +280,7 @@ Building::Building(
   floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, s+1 ), s+1+2*t, 1, t  ));
   floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, 0   ), t,       1, s+1));
 
-  platform_ = Object(shader_, vec3(1990, 205, 1990), "meshes/platform.obj");
+  platform_ = Object(shader_, vec3(1970, 205.5, 1990), "meshes/platform.obj");
 }
 
 void Building::CreateFloor(glm::vec3 position, float s, bool door) {

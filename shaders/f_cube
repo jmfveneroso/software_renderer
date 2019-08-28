@@ -12,6 +12,7 @@ layout(location = 0) out vec3 color;
 void main(){
   vec2 uv = in_data.UV - ivec2(in_data.UV);
 
+  // if (any(lessThan(in_data.barycentric, vec3(0.01)))){
   if (uv.x < 0.02 || uv.y < 0.02){
     color = vec3(0.0, 0.0, 0.0);
   } else{
