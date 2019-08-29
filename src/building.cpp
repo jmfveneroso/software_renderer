@@ -280,6 +280,10 @@ Building::Building(
   floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, s+1 ), s+1+2*t, 1, t  ));
   floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, 0   ), t,       1, s+1));
 
+
+  floors_.push_back(Floor(shader_, pos + vec3(4.25,  0, 2), 6.75, 1, 0.5));
+  floors_.push_back(Floor(shader_, pos + vec3(4,  0, 2), 0.25, 4, 13));
+
   platform_ = Object(shader_, vec3(1970, 205.5, 1990), "meshes/platform.obj");
 }
 
