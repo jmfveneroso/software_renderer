@@ -65,6 +65,7 @@ void Engine::CreateEntities() {
   shaders_["water"] = Shader("water", "v_water", "f_water");
   shaders_["sky"] = Shader("sky", "v_sky", "f_sky");
   shaders_["cube"] = Shader("cube", "v_cube", "f_cube", "g_cube");
+  shaders_["terminal"] = Shader("terminal", "v_terminal", "f_terminal");
 
   // Frame buffer.
   screen_ = make_shared<FrameBuffer>(shaders_["static_screen"], window_width_, window_height_);
@@ -92,6 +93,9 @@ void Engine::CreateEntities() {
   float sx = 0.125f;
   float sz = 5.0f;
 
+  terminal_ = make_shared<Terminal>(
+    shaders_["terminal"]
+  );
 }
 
 void Engine::Render() {
@@ -137,6 +141,7 @@ void Engine::Render() {
   terrain_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
   cube_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
   building_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
+  terminal_->Draw();
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, window_width_ * 2, window_height_ * 2);
@@ -205,6 +210,14 @@ void Engine::ProcessInput(){
       player_.speed.y += 0.3f;
     }
   }
+
+  if (glfwGetKey(window_, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS) {
+    if (terminal_->delay <= 0) {
+      terminal_->enabled = !terminal_->enabled;
+      terminal_->delay = 10;
+    }
+  }
+  if (terminal_->delay > 0) terminal_->delay--;
 
   double x_pos, y_pos;
   glfwGetCursorPos(window_, &x_pos, &y_pos);

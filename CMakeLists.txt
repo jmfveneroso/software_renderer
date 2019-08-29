@@ -9,6 +9,7 @@ if (APPLE)
     ${OPENGL_LIBRARY}
     glfw
     glew
+    freetype
   )
 
   set(INCLUDE_DIRS
@@ -17,10 +18,7 @@ if (APPLE)
     /usr/local/Cellar/glfw/3.2.1/include
     /usr/local/Cellar/glm/0.9.9.4/include
     /usr/local/Cellar/boost/1.70.0/include
-    # /usr/local/Cellar/glew/2.1.0/bin
-    # /usr/local/Cellar/glfw/3.2.1/bin
-    # /usr/local/Cellar/glew/2.1.0/lib
-    # /usr/local/Cellar/glfw/3.2.1/lib
+    /usr/local/Cellar/freetype/2.9.1/include/freetype2
   )
 
   set(LINK_DIRS
@@ -28,6 +26,7 @@ if (APPLE)
     /usr/local/Cellar/glfw/3.2.1/lib
     /usr/local/Cellar/glm/0.9.9.4/lib
     /usr/local/Cellar/boost/1.70.0/lib
+    /usr/local/Cellar/freetype/2.9.1/lib
   )
   add_definitions(-DAPPLE)
 else()
@@ -46,6 +45,7 @@ else()
     Xi 
     Xxf86vm 
     pthread
+    freetype
   )
 endif()
 
@@ -66,6 +66,7 @@ set(
   src/subregion.cpp
   src/cube.cpp 
   src/building.cpp 
+  src/terminal.cpp 
 )
 
 add_executable(main ${SRC})

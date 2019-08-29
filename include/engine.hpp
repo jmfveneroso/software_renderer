@@ -14,6 +14,7 @@
 #include "building.hpp"
 #include "frame_buffer.hpp"
 #include "texture.hpp"
+#include "terminal.hpp"
 #include "shaders.h"
 #include "config.h"
 
@@ -65,6 +66,7 @@ class Engine {
   std::shared_ptr<SkyDome> sky_dome_;
   std::shared_ptr<Cube> cube_;
   std::shared_ptr<Building> building_;
+  std::shared_ptr<Terminal> terminal_;
   std::shared_ptr<FrameBuffer> screen_;
 
   GLuint LoadTexture(const std::string&, const std::string&);

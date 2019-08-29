@@ -59,8 +59,6 @@ void Object::Load(const string& filename) {
       for (int i = 0; i < 3; i++) { 
         vertices_.push_back(vertex_lookup[vertex_ids[i]]);
         uvs.push_back(uv_lookup[uv_ids[i]]);
-        cout << uv_lookup[uv_ids[i]].x << " ";
-        cout << uv_lookup[uv_ids[i]].y << endl;
         indices_.push_back(vertices_.size()-1);
       }
     }
