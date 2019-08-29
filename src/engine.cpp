@@ -66,6 +66,7 @@ void Engine::CreateEntities() {
   shaders_["sky"] = Shader("sky", "v_sky", "f_sky");
   shaders_["cube"] = Shader("cube", "v_cube", "f_cube", "g_cube");
   shaders_["terminal"] = Shader("terminal", "v_terminal", "f_terminal");
+  shaders_["text"] = Shader("text", "v_text", "f_text");
 
   // Frame buffer.
   screen_ = make_shared<FrameBuffer>(shaders_["static_screen"], window_width_, window_height_);
@@ -94,7 +95,7 @@ void Engine::CreateEntities() {
   float sz = 5.0f;
 
   terminal_ = make_shared<Terminal>(
-    shaders_["terminal"]
+    shaders_["terminal"], shaders_["text"]
   );
 }
 
@@ -137,11 +138,11 @@ void Engine::Render() {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
   glViewport(0, 0, window_width_, window_height_);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  // sky_dome_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
+  sky_dome_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
   terrain_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
   cube_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
   building_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
-  terminal_->Draw();
+  terminal_->Draw(player_.position);
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, window_width_ * 2, window_height_ * 2);

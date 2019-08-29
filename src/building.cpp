@@ -322,10 +322,10 @@ void Building::CreateFloor(glm::vec3 position, float s, bool door) {
 }
 
 void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
+  platform_.Draw(ProjectionMatrix, ViewMatrix, camera);
+
   for (auto& f : floors_)
     f.Draw(ProjectionMatrix, ViewMatrix, camera);
-
-  platform_.Draw(ProjectionMatrix, ViewMatrix, camera);
 }
 
 void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {

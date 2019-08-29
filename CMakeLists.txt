@@ -32,9 +32,14 @@ if (APPLE)
 else()
   set(INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/include
+    /usr/include/freetype2/
   )
 
-  link_directories(/usr/X11/lib /usr/local/lib)
+  link_directories(
+    /usr/X11/lib 
+    /usr/local/lib
+    /usr/lib/x86_64-linux-gnu/
+  )
   set(ALL_LIBS
     ${OPENGL_LIBRARY}
     glfw3
