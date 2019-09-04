@@ -58,6 +58,7 @@ class Object {
   Object(Shader shader, glm::vec3, const string&);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
+  void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
 };
 
 class Floor {

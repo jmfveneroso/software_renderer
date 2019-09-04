@@ -71,8 +71,7 @@ void Object::Load(const string& filename) {
   glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_);
   glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
-  glBufferData(
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_); glBufferData(
     GL_ELEMENT_ARRAY_BUFFER, 
     indices_.size() * sizeof(unsigned int), 
     &indices_[0], 
@@ -82,10 +81,8 @@ void Object::Load(const string& filename) {
 
 void Object::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
   glUseProgram(shader_.program_id());
-  // glDisable(GL_CULL_FACE);  
 
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
-
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
   glm::mat4 MVP = ProjectionMatrix * ModelViewMatrix;
 
@@ -97,10 +94,19 @@ void Object::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 ca
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
   glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
 
-  // glEnable(GL_CULL_FACE);  
   shader_.Clear();
 }
 
+void Object::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {
+  for (int i = 0; i < indices_.size(); i += 3) {
+    vec3 v[3];
+    v[0] = vertices_[indices_[i]];
+    v[1] = vertices_[indices_[i+1]];
+    v[2] = vertices_[indices_[i+2]];
+    // cout << v[0].x << " " << v[0].y << " " << v[2].z << endl;
+    // cout << indices_[i] << " " << indices_[i+1] << " " << indices_[i+2] << endl;
+  }
+}
 
 Floor::Floor(
   Shader shader,
@@ -329,6 +335,8 @@ void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 
 }
 
 void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {
+  platform_.Collide(player_pos, prev_pos, can_jump, speed);
+
   for (auto& f : floors_)
     f.Collide(player_pos, prev_pos, can_jump, speed);
 }

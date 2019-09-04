@@ -44,7 +44,7 @@ void Terminal::LoadFonts() {
     cout << "ERROR::FREETYPE: Could not init FreeType Library" << endl;
   
   FT_Face face;
-  if (FT_New_Face(ft, "meshes/ubuntu_monospace.ttf", 0, &face))
+  if (FT_New_Face(ft, "fonts/ubuntu_monospace.ttf", 0, &face))
     cout << "ERROR::FREETYPE: Failed to load font" << endl; 
 
   if (FT_Set_Char_Size(face, 0, 16*64, 300, 300))
