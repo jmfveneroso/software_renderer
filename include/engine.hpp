@@ -38,22 +38,14 @@ struct Camera {
   glm::vec3 direction;
 };
 
-struct Player {
-  glm::vec3 position = glm::vec3(2020, 210, 2020);
-  glm::vec3 next_position = glm::vec3(0, 0, 0);
-  glm::vec3 speed = glm::vec3(0, 0, 0);
-  float h_angle = 0.0f;
-  float v_angle = 0.0f;
-  float fov = PLAYER_FOV;
-  float height = PLAYER_HEIGHT;
-  bool can_jump = false;
-};
-
 class Engine {
   GLFWwindow* window_;
   int window_width_ = WINDOW_WIDTH;
   int window_height_ = WINDOW_HEIGHT;
+  double pressed_backspace_at_ = 0.0;
+  double pressed_enter_at_ = 0.0;
 
+  GameState game_state_ = FREE;
   Player player_;
 
   glm::mat4 ProjectionMatrix;
@@ -73,7 +65,8 @@ class Engine {
   void Move(Direction, float);
   void CreateWindow();
   void CreateEntities();
-  void ProcessInput();
+  void ProcessGameInput();
+  void ProcessTerminalInput();
   void Render();
   void UpdateForces();
 

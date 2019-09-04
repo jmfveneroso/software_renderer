@@ -47,6 +47,16 @@ void Engine::CreateWindow() {
   GLuint VertexArrayID;
   glGenVertexArrays(1, &VertexArrayID);
   glBindVertexArray(VertexArrayID);
+
+  glfwSetCharCallback(window_, terminal_->PressKey);
+
+  // [] (GLFWwindow* window, unsigned int char_code) {
+  //     cout << "wtf: " << char_code << endl;
+  // });
+  // GLFWcharfun cbfun)
+
+  // typedef void(* GLFWcharfun) (GLFWwindow *, unsigned int)
+
 }
 
 GLuint Engine::LoadTexture(
@@ -166,7 +176,6 @@ void Engine::Move(Direction direction, float delta_time) {
   switch (direction) {
     case FORWARD:
       player_.speed += front * delta_time * PLAYER_SPEED;
-      // player_.position += front * delta_time * PLAYER_SPEED;
       break;
     case BACK:
       player_.speed -= front * delta_time * PLAYER_SPEED;
@@ -182,26 +191,25 @@ void Engine::Move(Direction direction, float delta_time) {
   }
 }
 
-void Engine::ProcessInput(){
+void Engine::ProcessGameInput(){
   static double last_time = glfwGetTime();
   
-  // Compute time difference between current and last frame
+  // Compute time difference between current and last frame.
   double current_time = glfwGetTime();
   float delta_time = float(current_time - last_time);
 
-  // player_->set_last_position(player_->position());
   if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS)
     Move(FORWARD, delta_time);
 
-  // Move backward
+  // Move backward.
   if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS)
     Move(BACK, delta_time);
 
-  // Strafe right
+  // Strafe right.
   if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS)
     Move(RIGHT, delta_time);
 
-  // Strafe left
+  // Strafe left.
   if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
     Move(LEFT, delta_time);
 
@@ -213,25 +221,58 @@ void Engine::ProcessInput(){
   }
 
   if (glfwGetKey(window_, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS) {
-    if (terminal_->delay <= 0) {
-      terminal_->enabled = !terminal_->enabled;
-      terminal_->delay = 10;
+    if (terminal_->SetState(true)) {
+      game_state_ = TERMINAL;
     }
   }
-  if (terminal_->delay > 0) terminal_->delay--;
 
   double x_pos, y_pos;
   glfwGetCursorPos(window_, &x_pos, &y_pos);
-  glfwSetCursorPos(window_, 1024 / 2, 768 / 2);
+  glfwSetCursorPos(window_, 0, 0);
 
   // Change orientation.
-  float mouse_speed = 0.005f;
-  player_.h_angle += mouse_speed * float(1024 / 2 - x_pos);
-  player_.v_angle   += mouse_speed * float(768 / 2 - y_pos);
+  float mouse_sensitivity = 0.005f;
+  player_.h_angle += mouse_sensitivity * float(-x_pos);
+  player_.v_angle += mouse_sensitivity * float(-y_pos);
   if (player_.v_angle < -1.57f) player_.v_angle = -1.57f;
   if (player_.v_angle >  1.57f) player_.v_angle =  1.57f;
 
   last_time = current_time;
+}
+
+void Engine::ProcessTerminalInput(){
+  if (glfwGetKey(window_, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS) {
+    if (terminal_->SetState(false)) {
+      game_state_ = FREE;
+    }
+    return;
+  }
+
+  if (glfwGetKey(window_, GLFW_KEY_BACKSPACE) == GLFW_PRESS) {
+    double current_time = glfwGetTime();
+    if (pressed_backspace_at_ == 0.0) {
+      terminal_->Backspace();
+      pressed_backspace_at_ = current_time;
+    } else if (current_time > pressed_backspace_at_ + TYPE_DELAY) {
+      terminal_->Backspace();
+      pressed_backspace_at_ += TYPE_SPEED;
+    }
+  } else {
+    pressed_backspace_at_ = 0.0;
+  }
+
+  if (glfwGetKey(window_, GLFW_KEY_ENTER) == GLFW_PRESS) {
+    double current_time = glfwGetTime();
+    if (pressed_enter_at_ == 0.0) {
+      terminal_->Execute(game_state_, player_);
+      pressed_enter_at_ = current_time;
+    } else if (current_time > pressed_enter_at_ + TYPE_DELAY) {
+      terminal_->Execute(game_state_, player_);
+      pressed_enter_at_ += TYPE_SPEED;
+    }
+  } else {
+    pressed_enter_at_ = 0.0;
+  }
 }
 
 void Engine::UpdateForces() {
@@ -281,7 +322,18 @@ void Engine::Run() {
     }
 
     Render();
-    ProcessInput();
+
+    switch (game_state_) {
+      case TERMINAL:
+        ProcessTerminalInput();
+        terminal_->Update();
+        break;
+      case FREE:
+      default:
+        ProcessGameInput();
+        break;
+    }
+
     UpdateForces();
 
     // Swap buffers.

@@ -2,8 +2,8 @@
 #define _CONFIG_H_
 
 #define APP_NAME "Sybil"
-#define WINDOW_WIDTH 1200
-#define WINDOW_HEIGHT 800
+#define WINDOW_WIDTH 600
+#define WINDOW_HEIGHT 400
 #define WAVE_SPEED 0.01f
 #define PI 3.14159265359
 #define PLAYER_SPEED 0.6f
@@ -26,5 +26,29 @@
 #define RIGHT_BORDER  1
 #define GRAVITY 0.016
 #define JUMP_FORCE 0.016
+#define DEBOUNCE_DELAY 0.2
+#define TYPE_DELAY 0.2
+#define TYPE_SPEED 0.05
+#define LINE_HEIGHT 18
+
+namespace Sibyl {
+
+enum GameState {
+  FREE,
+  TERMINAL
+};
+
+struct Player {
+  glm::vec3 position = glm::vec3(2002.5, 208, 1985);
+  glm::vec3 next_position = glm::vec3(0, 0, 0);
+  glm::vec3 speed = glm::vec3(0, 0, 0);
+  float h_angle = 0.0f;
+  float v_angle = 0.0f;
+  float fov = PLAYER_FOV;
+  float height = PLAYER_HEIGHT;
+  bool can_jump = false;
+};
+
+} // End of namespace.
 
 #endif
