@@ -37,7 +37,6 @@ void Engine::CreateWindow() {
   glfwPollEvents();
   glfwSetCursorPos(window_, window_width_ / 2, window_height_ / 2);
 
-  glClearColor(0.3f, 0.5f, 0.6f, 0.0f);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS); 
   glEnable(GL_CULL_FACE);
@@ -147,6 +146,7 @@ void Engine::Render() {
   GLuint frame_buffer = screen_->GetFramebuffer();
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
   glViewport(0, 0, window_width_, window_height_);
+  glClearColor(0.3f, 0.5f, 0.6f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   sky_dome_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
   terrain_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);

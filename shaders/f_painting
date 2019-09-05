@@ -1,0 +1,22 @@
+#version 330 core
+
+in FragData {
+  vec3 position;
+  vec2 UV;
+} in_data;
+
+uniform sampler2D TextureSampler;
+
+// Output data
+layout(location = 0) out vec3 color;
+
+void main(){
+  vec2 uv = in_data.UV - ivec2(in_data.UV);
+
+  if (uv.x < 0.01 || uv.y < 0.01 || uv.x > 0.99 || uv.y > 0.99) {
+    color = vec3(0.0, 0.0, 0.0);
+  } else{
+    // color = vec3(uv.x, uv.y, 0.0);
+    color = texture(TextureSampler, in_data.UV).rgb;
+  }
+}

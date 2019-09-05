@@ -12,6 +12,7 @@ class Texture {
   void LoadBitmap(const char*);
 
  public:
+  Texture() {}
   Texture(const std::string&);
 
   GLuint texture_id() { return texture_id_; }

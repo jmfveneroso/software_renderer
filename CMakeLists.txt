@@ -72,6 +72,7 @@ set(
   src/cube.cpp 
   src/building.cpp 
   src/terminal.cpp 
+  src/wall_painting.cpp 
 )
 
 add_executable(main ${SRC})

@@ -18,6 +18,7 @@
 #include <glm/gtx/rotate_vector.hpp> 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include "wall_painting.hpp"
 #include "shaders.h"
 #include "config.h"
 
@@ -94,6 +95,7 @@ class Building {
 
   std::vector<Floor> floors_;
   Object platform_;
+  WallPainting painting_;
 
  protected:
   glm::vec3 position_;

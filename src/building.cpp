@@ -284,11 +284,11 @@ Building::Building(
   floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, s+1 ), s+1+2*t, 1, t  ));
   floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, 0   ), t,       1, s+1));
 
-
   floors_.push_back(Floor(shader_, pos + vec3(4.25,  0, 2), 6.75, 1, 0.5));
   floors_.push_back(Floor(shader_, pos + vec3(4,  0, 2), 0.25, 4, 13));
 
   platform_ = Object(shader_, vec3(1970, 205.5, 1990), "meshes/platform.obj");
+  painting_ = WallPainting(vec3(1996, 208, 1995));
 }
 
 void Building::CreateFloor(glm::vec3 position, float s, bool door) {
@@ -328,10 +328,12 @@ void Building::CreateFloor(glm::vec3 position, float s, bool door) {
 }
 
 void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
-  platform_.Draw(ProjectionMatrix, ViewMatrix, camera);
+  painting_.Draw(ProjectionMatrix, ViewMatrix, camera);
 
   for (auto& f : floors_)
     f.Draw(ProjectionMatrix, ViewMatrix, camera);
+
+  platform_.Draw(ProjectionMatrix, ViewMatrix, camera);
 }
 
 void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {
