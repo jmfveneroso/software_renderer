@@ -62,7 +62,6 @@ set(
   src/main.cpp 
   src/engine.cpp 
   src/shaders.cpp 
-  src/frame_buffer.cpp 
   src/sky_dome.cpp 
   src/texture.cpp 
   src/shaders.cpp

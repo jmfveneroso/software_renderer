@@ -231,6 +231,7 @@ GLuint Shader::GetUniformId(const std::string& name) {
   if (it == glsl_variables_.end()) {
     GLuint id = glGetUniformLocation(program_id_, name.c_str());
     glsl_variables_.insert(std::make_pair(name, id));
+    it = glsl_variables_.find(name);
   }
   return it->second; 
 }

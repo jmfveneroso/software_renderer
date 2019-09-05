@@ -7,12 +7,13 @@
 #include <GLFW/glfw3.h>
 #include <exception>
 #include <memory>
+#include <thread>
+#include <chrono>
 
 #include "terrain.hpp"
 #include "sky_dome.hpp"
 #include "cube.hpp"
 #include "building.hpp"
-#include "frame_buffer.hpp"
 #include "texture.hpp"
 #include "terminal.hpp"
 #include "shaders.h"
@@ -59,7 +60,6 @@ class Engine {
   std::shared_ptr<Cube> cube_;
   std::shared_ptr<Building> building_;
   std::shared_ptr<Terminal> terminal_;
-  std::shared_ptr<FrameBuffer> screen_;
 
   GLuint LoadTexture(const std::string&, const std::string&);
   void Move(Direction, float);

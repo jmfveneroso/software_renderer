@@ -35,17 +35,22 @@ class WallPainting {
   GLuint uv_buffer_;
   GLuint element_buffer_;
   std::vector<glm::vec3> vertices_;
+  glm::vec2 texture_size_;
   std::vector<unsigned int> indices_;
   double size_ = 2.0f;
+  GLuint vbo;
 
   void Init();
 
  public:
   WallPainting() {}
-  WallPainting(glm::vec3);
+  WallPainting(Shader, glm::vec3);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void DrawToTexture();
+  void DrawLine(glm::vec2, glm::vec2, GLfloat, glm::vec3);
+  void DrawArrow(glm::vec2, glm::vec2, GLfloat, glm::vec3);
+  void DrawGrid();
 };
 
 } // End of namespace.

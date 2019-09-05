@@ -48,14 +48,6 @@ void Engine::CreateWindow() {
   glBindVertexArray(VertexArrayID);
 
   glfwSetCharCallback(window_, terminal_->PressKey);
-
-  // [] (GLFWwindow* window, unsigned int char_code) {
-  //     cout << "wtf: " << char_code << endl;
-  // });
-  // GLFWcharfun cbfun)
-
-  // typedef void(* GLFWcharfun) (GLFWwindow *, unsigned int)
-
 }
 
 GLuint Engine::LoadTexture(
@@ -76,9 +68,7 @@ void Engine::CreateEntities() {
   shaders_["cube"] = Shader("cube", "v_cube", "f_cube", "g_cube");
   shaders_["terminal"] = Shader("terminal", "v_terminal", "f_terminal");
   shaders_["text"] = Shader("text", "v_text", "f_text");
-
-  // Frame buffer.
-  screen_ = make_shared<FrameBuffer>(shaders_["static_screen"], window_width_, window_height_);
+  shaders_["lines"] = Shader("lines", "v_lines", "f_lines");
 
   // Procedural terrain.
   GLuint diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/dirt.bmp");
@@ -99,7 +89,7 @@ void Engine::CreateEntities() {
   );
 
   cube_ = make_shared<Cube>(shaders_["cube"]);
-  building_ = make_shared<Building>(shaders_["cube"], 0.125f, 5.0f, glm::vec3(2000.125f, 205.0f, 2000.0f));
+  building_ = make_shared<Building>(shaders_["cube"], shaders_["lines"], 0.125f, 5.0f, glm::vec3(2000.125f, 205.0f, 2000.0f));
   float sx = 0.125f;
   float sz = 5.0f;
 
@@ -143,8 +133,6 @@ void Engine::Render() {
   );
 
   // Draw.
-  GLuint frame_buffer = screen_->GetFramebuffer();
-  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
   glViewport(0, 0, window_width_, window_height_);
   glClearColor(0.3f, 0.5f, 0.6f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -153,11 +141,6 @@ void Engine::Render() {
   cube_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
   building_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
   terminal_->Draw(player_.position);
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, window_width_ * 2, window_height_ * 2);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  screen_->Draw();
 }
 
 void Engine::Move(Direction direction, float delta_time) {
@@ -309,6 +292,7 @@ void Engine::Run() {
 
   double last_time = glfwGetTime();
   int frames = 0;
+  // std::this_thread::sleep_for(std::chrono::seconds(1));
   do {
     // Measure speed.
     double current_time = glfwGetTime();

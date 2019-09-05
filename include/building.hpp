@@ -95,16 +95,18 @@ class Building {
 
   std::vector<Floor> floors_;
   Object platform_;
-  WallPainting painting_;
 
  protected:
   glm::vec3 position_;
   Shader shader_;
+  Shader shader2_;
 
   void CreateFloor(glm::vec3, float, bool);
 
  public:
-  Building(Shader shader, float, float, glm::vec3);
+  WallPainting painting_;
+
+  Building(Shader, Shader, float, float, glm::vec3);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);

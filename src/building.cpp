@@ -103,8 +103,6 @@ void Object::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, 
     v[0] = vertices_[indices_[i]];
     v[1] = vertices_[indices_[i+1]];
     v[2] = vertices_[indices_[i+2]];
-    // cout << v[0].x << " " << v[0].y << " " << v[2].z << endl;
-    // cout << indices_[i] << " " << indices_[i+1] << " " << indices_[i+2] << endl;
   }
 }
 
@@ -268,10 +266,11 @@ void Floor::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, g
 
 Building::Building(
   Shader shader,
+  Shader shader2,
   float sx, 
   float sz,
   glm::vec3 position
-) : shader_(shader), position_(position), sx_(sx), sz_(sz) {
+) : shader_(shader), shader2_(shader2), position_(position), sx_(sx), sz_(sz) {
   float s = 14.0f;
   float t = 0.25f;
   CreateFloor(vec3(1995, 205,   1995), s, true );
@@ -288,7 +287,10 @@ Building::Building(
   floors_.push_back(Floor(shader_, pos + vec3(4,  0, 2), 0.25, 4, 13));
 
   platform_ = Object(shader_, vec3(1970, 205.5, 1990), "meshes/platform.obj");
-  painting_ = WallPainting(vec3(1996, 208, 1995));
+  painting_ = WallPainting(shader2_, vec3(1996, 208, 1995));
+
+  painting_.DrawToTexture();
+  painting_.DrawToTexture();
 }
 
 void Building::CreateFloor(glm::vec3 position, float s, bool door) {
