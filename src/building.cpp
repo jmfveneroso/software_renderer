@@ -286,11 +286,36 @@ Building::Building(
   floors_.push_back(Floor(shader_, pos + vec3(4.25,  0, 2), 6.75, 1, 0.5));
   floors_.push_back(Floor(shader_, pos + vec3(4,  0, 2), 0.25, 4, 13));
 
-  platform_ = Object(shader_, vec3(1970, 205.5, 1990), "meshes/book_stand.obj");
-  painting_ = WallPainting(shader2_, vec3(1996, 208, 1995));
+  platform_ = Object(shader_, vec3(1970, 205, 1990), "meshes/book_stand.obj");
+  paintings_.push_back(WallPainting(shader2_, vec3(1995.75, 208, 1995), 0.0f));
+  paintings_.push_back(WallPainting(shader2_, vec3(1995, 208, 1998), radians(90.0f)));
+  paintings_.push_back(WallPainting(shader2_, vec3(1995, 208, 2001), radians(90.0f)));
 
-  painting_.DrawToTexture();
-  painting_.DrawToTexture();
+  for (auto& p : paintings_) {
+    p.BeginDraw();
+    p.EndDraw();
+  }
+
+  vector<vec2> points {
+    { 1, 2 }, { 4, 6 }, { 2, 1 }, { 2, 3 },
+    { 5, 5 }, { 2, 4 }, { 5, 2 }, { 6, 4 },
+    { -1, -2 }, { -4, -6 }, { -2, -1 }, { -2, -3 },
+    { -5, -5 }, { -2, -4 }, { -5, -2 }, { -6, -4 },
+    { 2, -1 }, { -1, 1 }
+  };
+
+  paintings_[1].BeginDraw();
+  paintings_[1].DrawLine(vec2(-256, 256), vec2(256, -256), 3, vec3(0, 0, 1));
+  for (auto& p : points) {
+    paintings_[1].DrawPoint(vec2(32 * p.x, -32 * p.y), 10, vec3(1, 0, 0));
+  }
+  paintings_[1].EndDraw();
+
+  paintings_[2].BeginDraw();
+  paintings_[2].DrawArrow(vec2(0, 0), vec2(64, -128), 3, vec3(1, 0, 0));
+  paintings_[2].DrawArrow(vec2(64, -128), vec2(160, -192), 3, vec3(0, 1, 0));
+  paintings_[2].DrawArrow(vec2(0, 0), vec2(160, -192), 3, vec3(0, 1, 1));
+  paintings_[2].EndDraw();
 }
 
 void Building::CreateFloor(glm::vec3 position, float s, bool door) {
@@ -330,7 +355,8 @@ void Building::CreateFloor(glm::vec3 position, float s, bool door) {
 }
 
 void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
-  painting_.Draw(ProjectionMatrix, ViewMatrix, camera);
+  for (auto& p : paintings_)
+    p.Draw(ProjectionMatrix, ViewMatrix, camera);
 
   for (auto& f : floors_)
     f.Draw(ProjectionMatrix, ViewMatrix, camera);

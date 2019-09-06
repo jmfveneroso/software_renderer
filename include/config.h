@@ -2,6 +2,8 @@
 #define _CONFIG_H_
 
 #define APP_NAME "Sybil"
+// #define WINDOW_WIDTH 300
+// #define WINDOW_HEIGHT 200
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 800
 #define WAVE_SPEED 0.01f

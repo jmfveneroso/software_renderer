@@ -7,11 +7,13 @@ namespace Sibyl {
 
 WallPainting::WallPainting(
   Shader shader,
-  glm::vec3 position
+  glm::vec3 position,
+  GLfloat rotation
 ) : shader_("painting", "v_painting", "f_painting"), 
     // shader2_("lines", "v_lines", "f_lines"), 
     shader2_(shader),
     position_(position),
+    rotation_(rotation),
     texture_size_(512, 512) {
   Init();
 }
@@ -31,6 +33,15 @@ void WallPainting::Init() {
     // Front face.
     vec3(0, 0, t), vec3(w, 0, t), vec3(0, -h, t), vec3(w, -h, t),
   };
+
+  glUseProgram(shader_.program_id());
+
+  glm::mat4 ModelMatrix = glm::rotate(glm::mat4(1.0f), rotation_, glm::vec3(0.0, 1.0, 0.0));
+
+  for (size_t i = 0; i < v.size(); ++i) {
+    vec4 aux = ModelMatrix * vec4(v[i], 1.0f);
+    v[i] = vec3(aux);
+  }
 
   vertices_ = {
     v[0], v[4], v[1], v[1], v[4], v[5], // Top.
@@ -114,6 +125,7 @@ void WallPainting::DrawLine(
 
   shader2_.BindBuffer(vbo, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void WallPainting::DrawArrow(
@@ -141,6 +153,30 @@ void WallPainting::DrawArrow(
 
   shader2_.BindBuffer(vbo, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 3);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+}
+
+void WallPainting::DrawPoint(
+  vec2 point, GLfloat thickness, vec3 color
+) {
+  GLfloat s = thickness / 2.0f;
+  vector<vec2> v {
+    point + vec2(-s, -s), point + vec2(-s, s), 
+    point + vec2(s, -s), point + vec2(s, s)
+  };
+
+  glUniform3f(shader2_.GetUniformId("lineColor"), color.x, color.y, color.z);
+
+  std::vector<glm::vec3> verts {
+    vec3(v[0], 0), vec3(v[1], 0), vec3(v[2], 0),
+    vec3(v[2], 0), vec3(v[1], 0), vec3(v[3], 0)
+  };
+
+  glBufferSubData(GL_ARRAY_BUFFER, 0, verts.size() * sizeof(glm::vec3), &verts[0]); 
+
+  shader2_.BindBuffer(vbo, 0, 3);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void WallPainting::DrawGrid() {
@@ -158,9 +194,10 @@ void WallPainting::DrawGrid() {
   DrawLine(vec2(-256, 0), vec2(256, 0), 5, vec3(0));
 }
 
-void WallPainting::DrawToTexture() {
+void WallPainting::BeginDraw() {
+  glDisable(GL_CULL_FACE);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(glm::vec3), nullptr, GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, 32 * sizeof(glm::vec3), nullptr, GL_DYNAMIC_DRAW);
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
   glViewport(0, 0, texture_size_.x, texture_size_.y);
   glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
@@ -172,12 +209,12 @@ void WallPainting::DrawToTexture() {
   glUniformMatrix4fv(shader2_.GetUniformId("projection"), 1, GL_FALSE, &projection[0][0]);
 
   DrawGrid();
-  DrawArrow(vec2(0, 0), vec2(64, -128), 3, vec3(1, 0, 0));
-  DrawArrow(vec2(64, -128), vec2(160, -192), 3, vec3(0, 1, 0));
-  DrawArrow(vec2(0, 0), vec2(160, -192), 3, vec3(0, 1, 1));
+}
 
+void WallPainting::EndDraw() {
   shader2_.Clear();
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glEnable(GL_CULL_FACE);
 }
 
 void WallPainting::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {

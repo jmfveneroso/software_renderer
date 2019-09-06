@@ -94,6 +94,7 @@ class Building {
   float sx_, sz_;
 
   std::vector<Floor> floors_;
+  vector<WallPainting> paintings_;
   Object platform_;
 
  protected:
@@ -104,7 +105,6 @@ class Building {
   void CreateFloor(glm::vec3, float, bool);
 
  public:
-  WallPainting painting_;
 
   Building(Shader, Shader, float, float, glm::vec3);
 
