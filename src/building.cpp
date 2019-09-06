@@ -286,7 +286,7 @@ Building::Building(
   floors_.push_back(Floor(shader_, pos + vec3(4.25,  0, 2), 6.75, 1, 0.5));
   floors_.push_back(Floor(shader_, pos + vec3(4,  0, 2), 0.25, 4, 13));
 
-  platform_ = Object(shader_, vec3(1970, 205.5, 1990), "meshes/platform.obj");
+  platform_ = Object(shader_, vec3(1970, 205.5, 1990), "meshes/book_stand.obj");
   painting_ = WallPainting(shader2_, vec3(1996, 208, 1995));
 
   painting_.DrawToTexture();
