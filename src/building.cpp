@@ -8,15 +8,18 @@ namespace Sibyl {
 Object::Object(
   Shader shader,
   glm::vec3 position,
+  GLfloat rotation,
   const string& filename
-) : shader_(shader), 
-    position_(position) {
+) : shader_("object", "v_object", "f_object"), 
+    position_(position),
+    rotation_(rotation) {
   Load(filename);
 }
 
 void Object::Load(const string& filename) {
   glGenBuffers(1, &vertex_buffer_);
   glGenBuffers(1, &uv_buffer_);
+  glGenBuffers(1, &normal_buffer_);
   glGenBuffers(1, &element_buffer_);
 
   ifstream f(filename);
@@ -24,6 +27,7 @@ void Object::Load(const string& filename) {
 
   vector<glm::vec3> vertex_lookup;
   vector<glm::vec2> uv_lookup;
+  vector<glm::vec3> normal_lookup;
   vector<glm::vec2> uvs;
 
   string line;
@@ -44,9 +48,16 @@ void Object::Load(const string& filename) {
       uv_coordinate.x = boost::lexical_cast<float>(tokens[1]); 
       uv_coordinate.y = boost::lexical_cast<float>(tokens[2]);
       uv_lookup.push_back(uv_coordinate);
+    } else if (type == "vn") {
+      glm::vec3 normal;
+      normal.x = boost::lexical_cast<float>(tokens[1]); 
+      normal.y = boost::lexical_cast<float>(tokens[2]);
+      normal.z = boost::lexical_cast<float>(tokens[3]);
+      normal_lookup.push_back(normal);
     } else if (type == "f") {
       vector<unsigned int> vertex_ids;
       vector<unsigned int> uv_ids;
+      vector<unsigned int> normal_ids;
       for (int i = 1; i < tokens.size(); i++) {
         string& s = tokens[i];
         size_t j = s.find_first_of("/", 0);
@@ -54,11 +65,14 @@ void Object::Load(const string& filename) {
 
         size_t k = s.find_first_of("/", j+1);
         uv_ids.push_back(boost::lexical_cast<unsigned int>(s.substr(j+1, k-j-1)) - 1); 
+
+        normal_ids.push_back(boost::lexical_cast<unsigned int>(s.substr(k+1)) - 1); 
       }
   
       for (int i = 0; i < 3; i++) { 
         vertices_.push_back(vertex_lookup[vertex_ids[i]]);
         uvs.push_back(uv_lookup[uv_ids[i]]);
+        normals_.push_back(vertex_lookup[normal_ids[i]]);
         indices_.push_back(vertices_.size()-1);
       }
     }
@@ -70,6 +84,9 @@ void Object::Load(const string& filename) {
 
   glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_);
   glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, normal_buffer_);
+  glBufferData(GL_ARRAY_BUFFER, normals_.size() * sizeof(glm::vec3), &normals_[0], GL_STATIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_); glBufferData(
     GL_ELEMENT_ARRAY_BUFFER, 
@@ -83,14 +100,17 @@ void Object::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 ca
   glUseProgram(shader_.program_id());
 
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
+  ModelMatrix *= glm::rotate(glm::mat4(1.0f), rotation_, glm::vec3(0.0, 1.0, 0.0));
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
   glm::mat4 MVP = ProjectionMatrix * ModelViewMatrix;
 
   glUniformMatrix4fv(shader_.GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
   glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
+  glUniformMatrix4fv(shader_.GetUniformId("V"),     1, GL_FALSE, &ViewMatrix[0][0]);
 
   shader_.BindBuffer(vertex_buffer_, 0, 3);
   shader_.BindBuffer(uv_buffer_, 1, 2);
+  shader_.BindBuffer(normal_buffer_, 2, 3);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
   glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
 
@@ -286,7 +306,7 @@ Building::Building(
   floors_.push_back(Floor(shader_, pos + vec3(4.25,  0, 2), 6.75, 1, 0.5));
   floors_.push_back(Floor(shader_, pos + vec3(4,  0, 2), 0.25, 4, 13));
 
-  platform_ = Object(shader_, vec3(1970, 205, 1990), "meshes/book_stand.obj");
+  platform_ = Object(shader_, vec3(2009, 205, 1996), radians(-90.0f), "meshes/book_stand.obj");
   paintings_.push_back(WallPainting(shader2_, vec3(1995.75, 208, 1995), 0.0f));
   paintings_.push_back(WallPainting(shader2_, vec3(1995, 208, 1998), radians(90.0f)));
   paintings_.push_back(WallPainting(shader2_, vec3(1995, 208, 2001), radians(90.0f)));

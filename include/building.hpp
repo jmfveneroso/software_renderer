@@ -44,9 +44,12 @@ struct BoundingBox {
 class Object {
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
+  GLuint normal_buffer_;
   GLuint element_buffer_;
   std::vector<glm::vec3> vertices_;
+  std::vector<glm::vec3> normals_;
   std::vector<unsigned int> indices_;
+  GLfloat rotation_;
 
   protected:
    glm::vec3 position_;
@@ -56,7 +59,7 @@ class Object {
 
  public:
   Object() {}
-  Object(Shader shader, glm::vec3, const string&);
+  Object(Shader shader, glm::vec3, GLfloat, const string&);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
