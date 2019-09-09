@@ -120,7 +120,17 @@ void Engine::Render() {
   sky_dome_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
   terrain_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
   building_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
-  terminal_->Draw(player_.position);
+
+  switch (game_state_) {
+    case TERMINAL:
+      terminal_->Draw(player_.position);
+      break;
+    case TXT:
+      building_->DrawTxt();
+      break;
+    default:
+      break;
+  }
 }
 
 void Engine::Move(Direction direction, float delta_time) {
@@ -175,6 +185,9 @@ void Engine::ProcessGameInput(){
   // Strafe left.
   if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
     Move(LEFT, delta_time);
+
+  if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS)
+    building_->Interact(player_, game_state_);
 
   if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS) {
     if (player_.can_jump) {
@@ -238,6 +251,12 @@ void Engine::ProcessTerminalInput(){
   }
 }
 
+void Engine::ProcessTextInput() {
+  if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS) {
+    building_->SetTextMode(game_state_, false);
+  }
+}
+
 void Engine::UpdateForces() {
   glm::vec3 prev_pos = player_.position;
 
@@ -291,6 +310,9 @@ void Engine::Run() {
       case TERMINAL:
         ProcessTerminalInput();
         terminal_->Update();
+        break;
+      case TXT:
+        ProcessTextInput();
         break;
       case FREE:
       default:

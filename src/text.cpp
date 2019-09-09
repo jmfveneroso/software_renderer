@@ -75,7 +75,7 @@ void Text::LoadFonts() {
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
 
-  SetProjection((float) WINDOW_WIDTH, (float) WINDOW_HEIGHT); 
+  projection_ = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT); 
 }
 
 void Text::DrawChar(char c, float x, float y, vec3 color) {
@@ -108,10 +108,6 @@ void Text::DrawChar(char c, float x, float y, vec3 color) {
 
   // Render quad
   glDrawArrays(GL_TRIANGLES, 0, 6);
-}
-
-void Text::SetProjection(GLfloat width, GLfloat height) {
-  projection_ = glm::ortho(0.0f, width, 0.0f, height); 
 }
 
 void Text::DrawText(const string& text, float x, float y, vec3 color) {

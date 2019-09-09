@@ -125,6 +125,15 @@ void Object::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, 
   }
 }
 
+Scroll::Scroll(
+  glm::vec3 position,
+  GLfloat rotation,
+  const std::string& filename
+) : position(position),
+    object_(position, rotation, "meshes/scroll.obj"), 
+    filename(filename) {
+}
+
 Floor::Floor(
   glm::vec3 position,
   float width,
@@ -286,7 +295,7 @@ Building::Building(
   float sx, 
   float sz,
   glm::vec3 position
-) : shader_("building"), position_(position), sx_(sx), sz_(sz) {
+) : shader_("building"), shader2_("terminal"), position_(position), sx_(sx), sz_(sz) {
   float s = 14.0f;
   float t = 0.25f;
   CreateFloor(vec3(1995, 205,   1995), s, true );
@@ -302,7 +311,21 @@ Building::Building(
   floors_.push_back(Floor(pos + vec3(4.25,  0, 2), 6.75, 1, 0.5));
   floors_.push_back(Floor(pos + vec3(4,  0, 2), 0.25, 4, 13));
 
-  platform_ = Object(vec3(2009, 205, 1996), radians(-90.0f), "meshes/book_stand.obj");
+  floors_.push_back(Floor(pos + vec3(14, 0, 5), 1, 1, 9));
+
+  objects_.push_back(Object(vec3(2009, 205, 1996), radians(-90.0f), "meshes/book_stand.obj"));
+  // objects_.push_back(Object(vec3(2009.25, 206, 2000.5), radians(-90.0f), "meshes/scroll.obj"));
+  // objects_.push_back(Object(vec3(2009.25, 206, 2001.5), radians(-90.0f), "meshes/scroll.obj"));
+  // objects_.push_back(Object(vec3(2009.25, 206, 2002.5), radians(-90.0f), "meshes/scroll.obj"));
+  // objects_.push_back(Object(vec3(2009.25, 206, 2003.5), radians(-90.0f), "meshes/scroll.obj"));
+  // objects_.push_back(Object(vec3(2009.25, 206, 2004.5), radians(-90.0f), "meshes/scroll.obj"));
+
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2000.5), radians(-90.0f), "txt/scroll_1.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2001.5), radians(-90.0f), "txt/scroll_2.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2002.5), radians(-90.0f), "txt/scroll_3.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2003.5), radians(-90.0f), "txt/scroll_4.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2004.5), radians(-90.0f), "txt/scroll_5.txt"));
+
   paintings_.push_back(WallPainting(vec3(1995.75, 208, 1995), 0.0f));
   paintings_.push_back(WallPainting(vec3(1995, 208, 1998), radians(90.0f)));
   paintings_.push_back(WallPainting(vec3(1995, 208, 2001), radians(90.0f)));
@@ -321,18 +344,32 @@ Building::Building(
   };
 
   paintings_[1].BeginDraw();
-  paintings_[1].DrawLine(vec2(-256, 256), vec2(256, -256), 3, vec3(0, 0, 1));
+  paintings_[1].DrawLine(vec2(-256, -256), vec2(256, 256), 3, vec3(0, 0, 1));
   for (auto& p : points) {
-    paintings_[1].DrawPoint(vec2(32 * p.x, -32 * p.y), 10, vec3(1, 0, 0));
+    paintings_[1].DrawPoint(vec2(32 * p.x, 32 * p.y), 10, vec3(1, 0, 0));
   }
   paintings_[1].EndDraw();
 
   paintings_[2].BeginDraw();
-  paintings_[2].DrawArrow(vec2(0, 0), vec2(64, -128), 3, vec3(1, 0, 0));
-  paintings_[2].DrawArrow(vec2(64, -128), vec2(160, -192), 3, vec3(0, 1, 0));
-  paintings_[2].DrawArrow(vec2(0, 0), vec2(160, -192), 3, vec3(0, 1, 1));
+  paintings_[2].DrawArrow(vec2(0, 0), vec2(64, 128), 3, vec3(1, 0, 0));
+  paintings_[2].DrawArrow(vec2(64, 128), vec2(160, 192), 3, vec3(0, 1, 0));
+  paintings_[2].DrawArrow(vec2(0, 0), vec2(160, 192), 3, vec3(0, 1, 1));
   paintings_[2].DrawText("Le ble ble", vec2(64, 64), vec3(1, 0, 1));
   paintings_[2].EndDraw();
+
+  glGenBuffers(1, &quad_vbo_);
+
+  vector<vec3> vertices = {
+    { 100, WINDOW_HEIGHT - 50, 0 },
+    { 100, 50, 0 },
+    { WINDOW_WIDTH-100, WINDOW_HEIGHT - 50, 0 },
+    { WINDOW_WIDTH-100, WINDOW_HEIGHT - 50, 0 },
+    { 100, 50, 0 },
+    { WINDOW_WIDTH-100, 50, 0 }
+  };
+
+  glBindBuffer(GL_ARRAY_BUFFER, quad_vbo_);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 }
 
 void Building::CreateFloor(glm::vec3 position, float s, bool door) {
@@ -378,14 +415,72 @@ void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 
   for (auto& f : floors_)
     f.Draw(ProjectionMatrix, ViewMatrix, camera);
 
-  platform_.Draw(ProjectionMatrix, ViewMatrix, camera);
+  for (auto& o : objects_)
+    o.Draw(ProjectionMatrix, ViewMatrix, camera);
+
+  for (auto& s : scrolls_)
+    s.object().Draw(ProjectionMatrix, ViewMatrix, camera);
 }
 
 void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {
-  platform_.Collide(player_pos, prev_pos, can_jump, speed);
-
   for (auto& f : floors_)
     f.Collide(player_pos, prev_pos, can_jump, speed);
+
+  // for (auto& o : objects_)
+  //   o.Collide(player_pos, prev_pos, can_jump, speed);
+}
+
+void Building::Interact(Player& player, GameState& state) {
+  for (auto& s : scrolls_) {
+    if (distance2(player.position, s.position) < 1.0) {
+      cout << s.filename << endl;
+
+      // Open document.
+      SetTextMode(state, true);
+      opened_document_ = s.filename;
+      return;
+    }
+  }
+}
+
+void Building::DrawTxt() {
+  stringstream ss;
+  // ss << "Position: " << position.x << " " << position.y << " " << position.z;
+  // lines_[1] = ss.str();
+
+  // int height = WINDOW_HEIGHT - LINE_HEIGHT;
+  // for (int i = 0; i < lines_.size(); ++i) {
+  //   bool draw_cursor = i == (lines_.size() - 1);
+
+  //   double current_time = glfwGetTime();
+  //   if (current_time - (int) current_time > 0.5)
+  //     draw_cursor = false;
+  //  
+  //   if (draw_cursor) 
+  //     Text::GetInstance().DrawText(lines_[i] + ((char) 150), 2, height);
+  //   else
+  //     Text::GetInstance().DrawText(lines_[i], 2, height);
+  //   height -= LINE_HEIGHT;
+  // }
+  ifstream f(opened_document_);
+  if (!f.is_open()) return;
+
+  string line;
+  int height = WINDOW_HEIGHT - 60 - LINE_HEIGHT;
+  while (getline(f, line)) {
+    Text::GetInstance().DrawText(line, 102, height);
+    height -= LINE_HEIGHT;
+  }
+
+  glUseProgram(shader2_.program_id());
+
+  glm::mat4 projection = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT);
+  glUniformMatrix4fv(shader2_.GetUniformId("projection"), 1, GL_FALSE, &projection[0][0]);
+
+  shader_.BindBuffer(quad_vbo_, 0, 3);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+
+  shader_.Clear();
 }
 
 } // End of namespace.

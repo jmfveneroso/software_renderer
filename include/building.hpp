@@ -65,6 +65,18 @@ class Object {
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
 };
 
+class Scroll {
+  Object object_;
+
+ public:
+  glm::vec3 position;
+  string filename;
+
+  Scroll(glm::vec3, GLfloat, const string&);
+  
+  Object& object() { return object_; }
+};
+
 class Floor {
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
@@ -89,16 +101,20 @@ class Floor {
 };
 
 class Building {
+  double debounce_timer_ = glfwGetTime();
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
   GLuint element_buffer_;
+  GLuint quad_vbo_;
   std::vector<glm::vec3> vertices_;
   std::vector<unsigned int> indices_;
   float sx_, sz_;
+  std::string opened_document_;
 
   std::vector<Floor> floors_;
   vector<WallPainting> paintings_;
-  Object platform_;
+  std::vector<Object> objects_;
+  std::vector<Scroll> scrolls_;
 
  protected:
   glm::vec3 position_;
@@ -111,8 +127,25 @@ class Building {
 
   Building(float, float, glm::vec3);
 
+  void Interact(Player&, GameState&);
+  void DrawTxt();
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
+
+  bool SetTextMode(GameState& state, bool enabled) { 
+    double current_time = glfwGetTime();
+    if (current_time <= debounce_timer_) {
+      debounce_timer_ = current_time + DEBOUNCE_DELAY; 
+      return false;
+    }
+  
+    if (enabled) 
+      state = TXT; 
+    else
+      state = FREE;
+    debounce_timer_ = current_time + DEBOUNCE_DELAY; 
+    return true;
+  }
 };
 
 } // End of namespace.

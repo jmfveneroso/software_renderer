@@ -123,7 +123,7 @@ void WallPainting::DrawLine(
 
   shader2_.BindBuffer(vbo, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 6);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDrawArrays(GL_TRIANGLES, 0, 6); // Why does not work correctly without doing it twice?
 }
 
 void WallPainting::DrawArrow(
@@ -151,7 +151,7 @@ void WallPainting::DrawArrow(
 
   shader2_.BindBuffer(vbo, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 3);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+  glDrawArrays(GL_TRIANGLES, 0, 3); // Why does not work correctly without doing it twice?
 }
 
 void WallPainting::DrawPoint(
@@ -174,15 +174,15 @@ void WallPainting::DrawPoint(
 
   shader2_.BindBuffer(vbo, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 6);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDrawArrays(GL_TRIANGLES, 0, 6); // Why does not work correctly without doing it twice?
 }
 
 void WallPainting::DrawText(
   string text, vec2 point, vec3 color
 ) {
-  Text::GetInstance().SetProjection(512, 512);
+  Text::GetInstance().set_projection(glm::ortho(-texture_size_.x/2, texture_size_.x/2, texture_size_.y/2, -texture_size_.y/2));
   Text::GetInstance().DrawText(text, point.x, point.y, color);
-  Text::GetInstance().SetProjection();
+  Text::GetInstance().set_projection();
 }
 
 void WallPainting::DrawGrid() {
@@ -211,7 +211,7 @@ void WallPainting::BeginDraw() {
 
   glUseProgram(shader2_.program_id());
 
-  glm::mat4 projection = glm::ortho(-texture_size_.x/2, texture_size_.x/2, -texture_size_.y/2, texture_size_.y/2);
+  glm::mat4 projection = glm::ortho(-texture_size_.x/2, texture_size_.x/2, texture_size_.y/2, -texture_size_.y/2);
   glUniformMatrix4fv(shader2_.GetUniformId("projection"), 1, GL_FALSE, &projection[0][0]);
 
   DrawGrid();

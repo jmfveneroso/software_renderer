@@ -65,6 +65,7 @@ class Engine {
   void CreateEntities();
   void ProcessGameInput();
   void ProcessTerminalInput();
+  void ProcessTextInput();
   void Render();
   void UpdateForces();
 

@@ -50,7 +50,11 @@ class Text {
   void operator=(Text const&) = delete;
   static Text& GetInstance();
 
-  void SetProjection(GLfloat width = WINDOW_WIDTH, GLfloat height = WINDOW_HEIGHT);
+  inline void set_projection(
+    const glm::mat4& projection = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT)
+  ) { 
+    projection_ = projection; 
+  }
   void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0});
   void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0});
 };
