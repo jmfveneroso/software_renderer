@@ -12,7 +12,6 @@
 
 #include "terrain.hpp"
 #include "sky_dome.hpp"
-#include "cube.hpp"
 #include "building.hpp"
 #include "texture.hpp"
 #include "terminal.hpp"
@@ -57,7 +56,6 @@ class Engine {
   TextureMap textures_;
   std::shared_ptr<Terrain> terrain_;
   std::shared_ptr<SkyDome> sky_dome_;
-  std::shared_ptr<Cube> cube_;
   std::shared_ptr<Building> building_;
   std::shared_ptr<Terminal> terminal_;
 

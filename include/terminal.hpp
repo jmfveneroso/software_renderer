@@ -19,19 +19,11 @@
 #include <glm/gtx/rotate_vector.hpp> 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include "text.hpp"
 #include "shaders.h"
 #include "config.h"
-#include <ft2build.h>
-#include FT_FREETYPE_H
 
 namespace Sibyl {
-
-struct Character {
-  GLuint     TextureID; // ID handle of the glyph texture
-  glm::ivec2 Size;      // Size of glyph
-  glm::ivec2 Bearing;   // Offset from baseline to left/top of glyph
-  GLuint     Advance;   // Offset to advance to next glyph
-};
 
 class Terminal {
   vector<string> history_;
@@ -40,13 +32,6 @@ class Terminal {
   GLuint element_buffer_;
   std::vector<glm::vec3> vertices_;
   std::vector<unsigned int> indices_;
-  unordered_map<GLchar, Character> characters_;
-  Character cursor_character_;
-  GLuint VAO, VBO;
-
-  void LoadFonts();
-  void DrawChar(Character&, float, float, glm::vec3 color = {1.0, 1.0, 1.0});
-  void DrawText(const string&, float, float, bool, glm::vec3 color = {1.0, 1.0, 1.0});
 
  protected:
   Shader shader_;
@@ -58,7 +43,7 @@ class Terminal {
   static string write_buffer;
   static void PressKey(GLFWwindow*, unsigned);
 
-  Terminal(Shader, Shader);
+  Terminal();
   void Draw(glm::vec3);
   void Update();
 

@@ -68,10 +68,10 @@ set(
   src/clipmap.cpp
   src/terrain.cpp
   src/subregion.cpp
-  src/cube.cpp 
   src/building.cpp 
   src/terminal.cpp 
   src/wall_painting.cpp 
+  src/text.cpp 
 )
 
 add_executable(main ${SRC})

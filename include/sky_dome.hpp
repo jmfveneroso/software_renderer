@@ -35,9 +35,7 @@ class SkyDome {
   void CreateMesh();
 
  public:
-  SkyDome(
-    Shader shader
-  );
+  SkyDome();
 
   void Draw(glm::mat4, glm::mat4, glm::vec3, glm::vec3);
 };

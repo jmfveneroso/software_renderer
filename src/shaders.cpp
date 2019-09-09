@@ -13,6 +13,32 @@ Shader::Shader(
 }
 
 Shader::Shader(
+  const std::string& name
+) : available_texture_slot_(GL_TEXTURE0) {
+  string dir = "shaders/";
+
+  string v_filename = dir + "v_" + name.c_str();
+  ifstream v_shader(v_filename);
+  if (!v_shader.good()) {
+    throw runtime_error(string("Vertex shader ") + v_filename + string(" does not exist."));
+  }
+
+  string f_filename = dir + "f_" + name.c_str();
+  ifstream f_shader(f_filename);
+  if (!f_shader.good()) {
+    throw runtime_error(string("Fragment shader ") + f_filename + string(" does not exist."));
+  }
+
+  string g_filename = dir + "g_" + name.c_str();
+  ifstream g_shader(g_filename);
+  if (g_shader.good()) {
+    Load(name, v_filename, f_filename, g_filename);
+  } else {
+    Load(name, v_filename, f_filename);
+  }
+}
+
+Shader::Shader(
   const std::string& name,  
   const std::string& vertex_file_path, 
   const std::string& fragment_file_path,

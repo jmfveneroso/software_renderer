@@ -6,12 +6,10 @@ using namespace glm;
 namespace Sibyl {
 
 WallPainting::WallPainting(
-  Shader shader,
   glm::vec3 position,
   GLfloat rotation
 ) : shader_("painting", "v_painting", "f_painting"), 
-    // shader2_("lines", "v_lines", "f_lines"), 
-    shader2_(shader),
+    shader2_("lines", "v_lines", "f_lines"), 
     position_(position),
     rotation_(rotation),
     texture_size_(512, 512) {
@@ -57,12 +55,12 @@ void WallPainting::Init() {
   };
 
   vector<glm::vec2> uvs {
-    u[0], u[0], u[0], u[0], u[0], u[0],   // Top.
-    u[0], u[0], u[0], u[0], u[0], u[0],   // Back.
-    u[0], u[0], u[0], u[0], u[0], u[0],   // Left.
-    u[0], u[0], u[0], u[0], u[0], u[0],   // Right.
+    u[0], u[0], u[0], u[0], u[0], u[0], // Top.
+    u[0], u[0], u[0], u[0], u[0], u[0], // Back.
+    u[0], u[0], u[0], u[0], u[0], u[0], // Left.
+    u[0], u[0], u[0], u[0], u[0], u[0], // Right.
     u[0], u[1], u[2], u[2], u[1], u[3], // Front.
-    u[0], u[0], u[0], u[0], u[0], u[0],   // Bottom.
+    u[0], u[0], u[0], u[0], u[0], u[0], // Bottom.
   };
 
   for (int i = 0; i < 36; i++) indices_.push_back(i);
@@ -177,6 +175,14 @@ void WallPainting::DrawPoint(
   shader2_.BindBuffer(vbo, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 6);
   glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void WallPainting::DrawText(
+  string text, vec2 point, vec3 color
+) {
+  Text::GetInstance().SetProjection(512, 512);
+  Text::GetInstance().DrawText(text, point.x, point.y, color);
+  Text::GetInstance().SetProjection();
 }
 
 void WallPainting::DrawGrid() {

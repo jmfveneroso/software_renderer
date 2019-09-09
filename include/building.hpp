@@ -59,7 +59,7 @@ class Object {
 
  public:
   Object() {}
-  Object(Shader shader, glm::vec3, GLfloat, const string&);
+  Object(glm::vec3, GLfloat, const string&);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
@@ -82,7 +82,7 @@ class Floor {
    void Init();
 
  public:
-  Floor(Shader shader, glm::vec3, float, float, float);
+  Floor(glm::vec3, float, float, float);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
@@ -109,7 +109,7 @@ class Building {
 
  public:
 
-  Building(Shader, Shader, float, float, glm::vec3);
+  Building(float, float, glm::vec3);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);

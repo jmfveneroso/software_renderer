@@ -23,7 +23,6 @@ namespace Sibyl {
 
 class Terrain {
   Clipmap clipmaps_[CLIPMAP_LEVELS]; 
-  // float* height_map_;
   vector< vector<float> > height_map_;
 
   Shader shader_;
@@ -35,8 +34,6 @@ class Terrain {
 
  public:
   Terrain(
-    Shader shader, 
-    Shader water_shader, 
     GLuint grass_texture_id, 
     GLuint sand_texture_id,
     GLuint water_diffuse_texture_id,

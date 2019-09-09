@@ -2,9 +2,8 @@
 
 namespace Sibyl {
 
-SkyDome::SkyDome(
-  Shader shader
-) : shader_(shader) {
+SkyDome::SkyDome() 
+  : shader_("sky", "v_sky", "f_sky") {
   glGenBuffers(1, &vertex_buffer_);
   glGenBuffers(1, &uv_buffer_);
   glGenBuffers(1, &element_buffer_);

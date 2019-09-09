@@ -5,14 +5,12 @@ using namespace std;
 namespace Sibyl {
 
 Terrain::Terrain(
-  Shader shader, 
-  Shader water_shader, 
   GLuint grass_texture_id, 
   GLuint sand_texture_id,
   GLuint water_diffuse_texture_id,
   GLuint water_normal_texture_id
-) : shader_(shader),
-    water_shader_(water_shader),
+) : shader_("terrain", "v_terrain", "f_terrain", "g_terrain"),
+    water_shader_("water", "v_water", "f_water"),
     grass_texture_id_(grass_texture_id), 
     sand_texture_id_(sand_texture_id),
     water_diffuse_texture_id_(water_diffuse_texture_id),

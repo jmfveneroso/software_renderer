@@ -6,11 +6,10 @@ using namespace glm;
 namespace Sibyl {
 
 Object::Object(
-  Shader shader,
   glm::vec3 position,
   GLfloat rotation,
   const string& filename
-) : shader_("object", "v_object", "f_object"), 
+) : shader_("object"), 
     position_(position),
     rotation_(rotation) {
   Load(filename);
@@ -127,12 +126,11 @@ void Object::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, 
 }
 
 Floor::Floor(
-  Shader shader,
   glm::vec3 position,
   float width,
   float height,
   float length
-) : shader_(shader), 
+) : shader_("building"), 
     position_(position), 
     width_(width), 
     height_(height),
@@ -285,12 +283,10 @@ void Floor::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, g
 }
 
 Building::Building(
-  Shader shader,
-  Shader shader2,
   float sx, 
   float sz,
   glm::vec3 position
-) : shader_(shader), shader2_(shader2), position_(position), sx_(sx), sz_(sz) {
+) : shader_("building"), position_(position), sx_(sx), sz_(sz) {
   float s = 14.0f;
   float t = 0.25f;
   CreateFloor(vec3(1995, 205,   1995), s, true );
@@ -298,18 +294,18 @@ Building::Building(
   CreateFloor(vec3(1995, 218,   1995), s, false);
 
   vec3 pos = vec3(1995, 205, 1995);
-  floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, -t  ), s+1+2*t, 1, t  ));
-  floors_.push_back(Floor(shader_, pos + vec3(s+1, 19.5, 0   ), t,       1, s+1));
-  floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, s+1 ), s+1+2*t, 1, t  ));
-  floors_.push_back(Floor(shader_, pos + vec3(-t,  19.5, 0   ), t,       1, s+1));
+  floors_.push_back(Floor(pos + vec3(-t,  19.5, -t  ), s+1+2*t, 1, t  ));
+  floors_.push_back(Floor(pos + vec3(s+1, 19.5, 0   ), t,       1, s+1));
+  floors_.push_back(Floor(pos + vec3(-t,  19.5, s+1 ), s+1+2*t, 1, t  ));
+  floors_.push_back(Floor(pos + vec3(-t,  19.5, 0   ), t,       1, s+1));
 
-  floors_.push_back(Floor(shader_, pos + vec3(4.25,  0, 2), 6.75, 1, 0.5));
-  floors_.push_back(Floor(shader_, pos + vec3(4,  0, 2), 0.25, 4, 13));
+  floors_.push_back(Floor(pos + vec3(4.25,  0, 2), 6.75, 1, 0.5));
+  floors_.push_back(Floor(pos + vec3(4,  0, 2), 0.25, 4, 13));
 
-  platform_ = Object(shader_, vec3(2009, 205, 1996), radians(-90.0f), "meshes/book_stand.obj");
-  paintings_.push_back(WallPainting(shader2_, vec3(1995.75, 208, 1995), 0.0f));
-  paintings_.push_back(WallPainting(shader2_, vec3(1995, 208, 1998), radians(90.0f)));
-  paintings_.push_back(WallPainting(shader2_, vec3(1995, 208, 2001), radians(90.0f)));
+  platform_ = Object(vec3(2009, 205, 1996), radians(-90.0f), "meshes/book_stand.obj");
+  paintings_.push_back(WallPainting(vec3(1995.75, 208, 1995), 0.0f));
+  paintings_.push_back(WallPainting(vec3(1995, 208, 1998), radians(90.0f)));
+  paintings_.push_back(WallPainting(vec3(1995, 208, 2001), radians(90.0f)));
 
   for (auto& p : paintings_) {
     p.BeginDraw();
@@ -335,6 +331,7 @@ Building::Building(
   paintings_[2].DrawArrow(vec2(0, 0), vec2(64, -128), 3, vec3(1, 0, 0));
   paintings_[2].DrawArrow(vec2(64, -128), vec2(160, -192), 3, vec3(0, 1, 0));
   paintings_[2].DrawArrow(vec2(0, 0), vec2(160, -192), 3, vec3(0, 1, 1));
+  paintings_[2].DrawText("Le ble ble", vec2(64, 64), vec3(1, 0, 1));
   paintings_[2].EndDraw();
 }
 
@@ -342,35 +339,35 @@ void Building::CreateFloor(glm::vec3 position, float s, bool door) {
   float t = 0.25;
 
   if (door) {
-    floors_.push_back(Floor(shader_, position + vec3(-t,    0, -t), s/2+t, 6, t));
-    floors_.push_back(Floor(shader_, position + vec3(s/2+1, 0, -t), s/2+t, 6, t));
-    floors_.push_back(Floor(shader_, position + vec3(s/2,   2, -t), 1,     4, t));
+    floors_.push_back(Floor(position + vec3(-t,    0, -t), s/2+t, 6, t));
+    floors_.push_back(Floor(position + vec3(s/2+1, 0, -t), s/2+t, 6, t));
+    floors_.push_back(Floor(position + vec3(s/2,   2, -t), 1,     4, t));
   } else {
-    floors_.push_back(Floor(shader_, position + vec3(-t, 0, -t), s+1+2*t, 6, t));
+    floors_.push_back(Floor(position + vec3(-t, 0, -t), s+1+2*t, 6, t));
   }
 
-  floors_.push_back(Floor(shader_, position + vec3(s+1, 0, 0),     t, 6, s/2));
-  floors_.push_back(Floor(shader_, position + vec3(s+1, 0, s/2+1), t, 6, s/2));
-  floors_.push_back(Floor(shader_, position + vec3(s+1, 4, s/2),   t, 2, 1  ));
-  floors_.push_back(Floor(shader_, position + vec3(s+1, 0, s/2),   t, 1, 1  ));
+  floors_.push_back(Floor(position + vec3(s+1, 0, 0),     t, 6, s/2));
+  floors_.push_back(Floor(position + vec3(s+1, 0, s/2+1), t, 6, s/2));
+  floors_.push_back(Floor(position + vec3(s+1, 4, s/2),   t, 2, 1  ));
+  floors_.push_back(Floor(position + vec3(s+1, 0, s/2),   t, 1, 1  ));
 
-  floors_.push_back(Floor(shader_, position + vec3(-t, 0, s+1), s+1+2*t, 6, t));
+  floors_.push_back(Floor(position + vec3(-t, 0, s+1), s+1+2*t, 6, t));
 
-  floors_.push_back(Floor(shader_, position + vec3(-t, 0, 0    ), t, 6, s/2));
-  floors_.push_back(Floor(shader_, position + vec3(-t, 0, s/2+1), t, 6, s/2));
-  floors_.push_back(Floor(shader_, position + vec3(-t, 4, s/2  ), t, 2, 1  ));
-  floors_.push_back(Floor(shader_, position + vec3(-t, 0, s/2  ), t, 1, 1  ));
+  floors_.push_back(Floor(position + vec3(-t, 0, 0    ), t, 6, s/2));
+  floors_.push_back(Floor(position + vec3(-t, 0, s/2+1), t, 6, s/2));
+  floors_.push_back(Floor(position + vec3(-t, 4, s/2  ), t, 2, 1  ));
+  floors_.push_back(Floor(position + vec3(-t, 0, s/2  ), t, 1, 1  ));
 
-  floors_.push_back(Floor(shader_, position + vec3(-t,    6, -t   ), s+1+2*t, 0.5, s-1+t));
-  floors_.push_back(Floor(shader_, position + vec3(-t,    6, s-1-t), s-1-6+t, 0.5, 2+2*t));
-  floors_.push_back(Floor(shader_, position + vec3(s-1-6, 6, s-1+2), 6,       0.5, t    ));
-  floors_.push_back(Floor(shader_, position + vec3(s-1,   6, s-1  ), 2+t,     0.5, 2+t  ));
+  floors_.push_back(Floor(position + vec3(-t,    6, -t   ), s+1+2*t, 0.5, s-1+t));
+  floors_.push_back(Floor(position + vec3(-t,    6, s-1-t), s-1-6+t, 0.5, 2+2*t));
+  floors_.push_back(Floor(position + vec3(s-1-6, 6, s-1+2), 6,       0.5, t    ));
+  floors_.push_back(Floor(position + vec3(s-1,   6, s-1  ), 2+t,     0.5, 2+t  ));
  
   // Stairs.
   float x = 0;
   for (int i = 0; i < 12; i++) {
     x += 0.5;
-    floors_.push_back(Floor(shader_, position + vec3(s-1 - x, 6 - x, s-1), 0.5, 0.5, 2));
+    floors_.push_back(Floor(position + vec3(s-1 - x, 6 - x, s-1), 0.5, 0.5, 2));
   }
 }
 

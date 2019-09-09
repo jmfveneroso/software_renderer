@@ -60,42 +60,23 @@ GLuint Engine::LoadTexture(
 }
 
 void Engine::CreateEntities() {
-  // GLSL shaders.
-  shaders_["static_screen"] = Shader("static_screen", "v_static_screen", "f_static_screen");
-  shaders_["terrain"] = Shader("terrain", "v_terrain", "f_terrain", "g_terrain");
-  shaders_["water"] = Shader("water", "v_water", "f_water");
-  shaders_["sky"] = Shader("sky", "v_sky", "f_sky");
-  shaders_["cube"] = Shader("cube", "v_cube", "f_cube", "g_cube");
-  shaders_["terminal"] = Shader("terminal", "v_terminal", "f_terminal");
-  shaders_["text"] = Shader("text", "v_text", "f_text");
-  shaders_["lines"] = Shader("lines", "v_lines", "f_lines");
-
-  // Procedural terrain.
   GLuint diffuse_texture_id = LoadTexture("diffuse_terrain", "textures/dirt.bmp");
   GLuint sand_texture_id = LoadTexture("sand_terrain", "textures/sand.bmp");
   GLuint w_diffuse_texture_id = LoadTexture("water_dudv", "textures/water_dudv.bmp");
   GLuint w_normal_texture_id = LoadTexture("water_normal", "textures/water_normal.bmp");
 
   // Sky.
-  sky_dome_ = make_shared<SkyDome>(shaders_["sky"]);
+  sky_dome_ = make_shared<SkyDome>();
 
   terrain_ = make_shared<Terrain>(
-    shaders_["terrain"],
-    shaders_["water"],
     diffuse_texture_id, 
     sand_texture_id,
     w_diffuse_texture_id, 
     w_normal_texture_id
   );
 
-  cube_ = make_shared<Cube>(shaders_["cube"]);
-  building_ = make_shared<Building>(shaders_["cube"], shaders_["lines"], 0.125f, 5.0f, glm::vec3(2000.125f, 205.0f, 2000.0f));
-  float sx = 0.125f;
-  float sz = 5.0f;
-
-  terminal_ = make_shared<Terminal>(
-    shaders_["terminal"], shaders_["text"]
-  );
+  building_ = make_shared<Building>(0.125f, 5.0f, glm::vec3(2000.125f, 205.0f, 2000.0f));
+  terminal_ = make_shared<Terminal>();
 }
 
 void Engine::Render() {
@@ -138,7 +119,6 @@ void Engine::Render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   sky_dome_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
   terrain_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
-  cube_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
   building_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
   terminal_->Draw(player_.position);
 }

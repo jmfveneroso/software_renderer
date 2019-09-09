@@ -19,6 +19,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "texture.hpp"
+#include "text.hpp"
 #include "shaders.h"
 #include "config.h"
 
@@ -27,7 +28,6 @@ namespace Sibyl {
 class WallPainting {
   GLuint frame_buffer_;
   GLuint texture_;
-  // Texture texture_;
   Shader shader_;
   Shader shader2_;
   glm::vec3 position_;
@@ -46,13 +46,14 @@ class WallPainting {
 
  public:
   WallPainting() {}
-  WallPainting(Shader, glm::vec3, GLfloat);
+  WallPainting(glm::vec3, GLfloat);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void DrawToTexture();
   void DrawLine(glm::vec2, glm::vec2, GLfloat, glm::vec3);
   void DrawArrow(glm::vec2, glm::vec2, GLfloat, glm::vec3);
   void DrawPoint(glm::vec2, GLfloat, glm::vec3);
+  void DrawText(string, glm::vec2, glm::vec3);
   void BeginDraw();
   void EndDraw();
 };

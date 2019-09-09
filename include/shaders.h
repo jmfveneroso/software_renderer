@@ -15,12 +15,6 @@ using namespace std;
 
 namespace Sibyl {
 
-enum UniformType { 
-  red, 
-  green, 
-  blue 
-};
-
 class Shader {
   GLuint program_id_;
   std::map<std::string, GLuint> glsl_variables_;
@@ -29,6 +23,7 @@ class Shader {
 
  public:
   Shader() {}
+  Shader(const std::string&);
   Shader(const std::string&, const std::string&, const std::string&);
   Shader(const std::string&, const std::string&, const std::string&, const std::string&);
   void Load(const std::string&, const std::string&, const std::string&);
