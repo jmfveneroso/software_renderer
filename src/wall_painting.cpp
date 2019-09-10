@@ -119,11 +119,10 @@ void WallPainting::DrawLine(
     vec3(v[0], 0), vec3(v[1], 0), vec3(v[2], 0), vec3(v[2], 0), vec3(v[1], 0), vec3(v[3], 0)
   };
 
+  shader2_.BindBuffer(vbo, 0, 3);
   glBufferSubData(GL_ARRAY_BUFFER, 0, lines.size() * sizeof(glm::vec3), &lines[0]); 
 
-  shader2_.BindBuffer(vbo, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 6);
-  glDrawArrays(GL_TRIANGLES, 0, 6); // Why does not work correctly without doing it twice?
 }
 
 void WallPainting::DrawArrow(
@@ -147,11 +146,10 @@ void WallPainting::DrawArrow(
     vec3(v[0], 0), vec3(v[1], 0), vec3(v[2], 0)
   };
 
+  shader2_.BindBuffer(vbo, 0, 3);
   glBufferSubData(GL_ARRAY_BUFFER, 0, lines.size() * sizeof(glm::vec3), &lines[0]); 
 
-  shader2_.BindBuffer(vbo, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 3);
-  glDrawArrays(GL_TRIANGLES, 0, 3); // Why does not work correctly without doing it twice?
 }
 
 void WallPainting::DrawPoint(
@@ -170,19 +168,18 @@ void WallPainting::DrawPoint(
     vec3(v[2], 0), vec3(v[1], 0), vec3(v[3], 0)
   };
 
+  shader2_.BindBuffer(vbo, 0, 3);
   glBufferSubData(GL_ARRAY_BUFFER, 0, verts.size() * sizeof(glm::vec3), &verts[0]); 
 
-  shader2_.BindBuffer(vbo, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 6);
-  glDrawArrays(GL_TRIANGLES, 0, 6); // Why does not work correctly without doing it twice?
 }
 
 void WallPainting::DrawText(
   string text, vec2 point, vec3 color
 ) {
-  Text::GetInstance().set_projection(glm::ortho(-texture_size_.x/2, texture_size_.x/2, texture_size_.y/2, -texture_size_.y/2));
-  Text::GetInstance().DrawText(text, point.x, point.y, color);
-  Text::GetInstance().set_projection();
+  Graphics::GetInstance().set_projection(glm::ortho(-texture_size_.x/2, texture_size_.x/2, texture_size_.y/2, -texture_size_.y/2));
+  Graphics::GetInstance().DrawText(text, point.x, point.y, color);
+  Graphics::GetInstance().set_projection();
 }
 
 void WallPainting::DrawGrid() {

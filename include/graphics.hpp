@@ -1,5 +1,5 @@
-#ifndef _TEXT_HPP_
-#define _TEXT_HPP_
+#ifndef _GRAPHICS_HPP_
+#define _GRAPHICS_HPP_
 
 #include <algorithm>
 #include <vector>
@@ -36,19 +36,45 @@ struct Character {
   GLuint     Advance;   // Offset to advance to next glyph
 };
 
-class Text {
+class Mesh {
+  Shader shader_;
+  GLuint vertex_buffer_;
+  GLuint uv_buffer_;
+  GLuint normal_buffer_;
+  GLuint element_buffer_;
+  std::vector<glm::vec3> vertices_;
+  std::vector<glm::vec3> normals_;
+  std::vector<unsigned int> indices_;
+
+  void Load(const string& filename);
+
+ public:
+  Mesh() {}
+  Mesh(const string&);
+
+  void Draw(glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat);
+};
+
+class Graphics {
   Shader shader_;
   GLuint vbo_;
+  unordered_map<string, Shader> shaders_;
+  unordered_map<string, GLuint> vbos_;
+  unordered_map<string, Mesh> meshes_;
   unordered_map<GLchar, Character> characters_;
   glm::mat4 projection_;
 
+  void CreateShaders();
+  void CreateVBOs();
   void LoadFonts();
+  void LoadMeshes();
+  void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0});
 
  public:
-  Text();
-  Text(Text const&) = delete;
-  void operator=(Text const&) = delete;
-  static Text& GetInstance();
+  Graphics();
+  Graphics(Graphics const&) = delete;
+  void operator=(Graphics const&) = delete;
+  static Graphics& GetInstance();
 
   inline void set_projection(
     const glm::mat4& projection = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT)
@@ -56,7 +82,9 @@ class Text {
     projection_ = projection; 
   }
   void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0});
-  void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0});
+  void DrawMesh(string, glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat);
+  void Rectangle(GLfloat, GLfloat, GLfloat, GLfloat, vec3);
+  void Cube(mat4, mat4, vec3, vec3, vec3, GLfloat);
 };
 
 } // End of namespace.

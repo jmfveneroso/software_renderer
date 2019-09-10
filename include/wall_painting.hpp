@@ -19,7 +19,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "texture.hpp"
-#include "text.hpp"
+#include "graphics.hpp"
 #include "shaders.h"
 #include "config.h"
 
