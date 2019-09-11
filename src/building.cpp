@@ -8,121 +8,14 @@ namespace Sibyl {
 Object::Object(
   glm::vec3 position,
   GLfloat rotation,
-  const string& filename
-) : shader_("object"), 
-    position_(position),
-    rotation_(rotation) {
-  Load(filename);
-}
-
-void Object::Load(const string& filename) {
-  glGenBuffers(1, &vertex_buffer_);
-  glGenBuffers(1, &uv_buffer_);
-  glGenBuffers(1, &normal_buffer_);
-  glGenBuffers(1, &element_buffer_);
-
-  ifstream f(filename);
-  if (!f.is_open()) return;
-
-  vector<glm::vec3> vertex_lookup;
-  vector<glm::vec2> uv_lookup;
-  vector<glm::vec3> normal_lookup;
-  vector<glm::vec2> uvs;
-
-  string line;
-  while (getline(f, line)) {
-    vector<string> tokens;
-    boost::split(tokens, line, boost::is_any_of(" "));
-    if (!tokens.size()) continue;
-
-    string type = tokens[0];
-    if (type == "v") {
-      glm::vec3 vertex;
-      vertex.x = boost::lexical_cast<float>(tokens[1]); 
-      vertex.y = boost::lexical_cast<float>(tokens[2]);
-      vertex.z = boost::lexical_cast<float>(tokens[3]);
-      vertex_lookup.push_back(vertex);
-    } else if (type == "vt") {
-      glm::vec2 uv_coordinate;
-      uv_coordinate.x = boost::lexical_cast<float>(tokens[1]); 
-      uv_coordinate.y = boost::lexical_cast<float>(tokens[2]);
-      uv_lookup.push_back(uv_coordinate);
-    } else if (type == "vn") {
-      glm::vec3 normal;
-      normal.x = boost::lexical_cast<float>(tokens[1]); 
-      normal.y = boost::lexical_cast<float>(tokens[2]);
-      normal.z = boost::lexical_cast<float>(tokens[3]);
-      normal_lookup.push_back(normal);
-    } else if (type == "f") {
-      vector<unsigned int> vertex_ids;
-      vector<unsigned int> uv_ids;
-      vector<unsigned int> normal_ids;
-      for (int i = 1; i < tokens.size(); i++) {
-        string& s = tokens[i];
-        size_t j = s.find_first_of("/", 0);
-        vertex_ids.push_back(boost::lexical_cast<unsigned int>(s.substr(0, j)) - 1); 
-
-        size_t k = s.find_first_of("/", j+1);
-        uv_ids.push_back(boost::lexical_cast<unsigned int>(s.substr(j+1, k-j-1)) - 1); 
-
-        normal_ids.push_back(boost::lexical_cast<unsigned int>(s.substr(k+1)) - 1); 
-      }
-  
-      for (int i = 0; i < 3; i++) { 
-        vertices_.push_back(vertex_lookup[vertex_ids[i]]);
-        uvs.push_back(uv_lookup[uv_ids[i]]);
-        normals_.push_back(vertex_lookup[normal_ids[i]]);
-        indices_.push_back(vertices_.size()-1);
-      }
-    }
-  }
-  f.close();
-
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3), &vertices_[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ARRAY_BUFFER, normal_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, normals_.size() * sizeof(glm::vec3), &normals_[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_); glBufferData(
-    GL_ELEMENT_ARRAY_BUFFER, 
-    indices_.size() * sizeof(unsigned int), 
-    &indices_[0], 
-    GL_STATIC_DRAW
-  );
+  const string& mesh_name 
+) : position_(position),
+    rotation_(rotation),
+    mesh_name_(mesh_name) {
 }
 
 void Object::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
-  glUseProgram(shader_.program_id());
-
-  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
-  ModelMatrix *= glm::rotate(glm::mat4(1.0f), rotation_, glm::vec3(0.0, 1.0, 0.0));
-  glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
-  glm::mat4 MVP = ProjectionMatrix * ModelViewMatrix;
-
-  glUniformMatrix4fv(shader_.GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
-  glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
-  glUniformMatrix4fv(shader_.GetUniformId("V"),     1, GL_FALSE, &ViewMatrix[0][0]);
-
-  shader_.BindBuffer(vertex_buffer_, 0, 3);
-  shader_.BindBuffer(uv_buffer_, 1, 2);
-  shader_.BindBuffer(normal_buffer_, 2, 3);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
-  glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
-
-  shader_.Clear();
-}
-
-void Object::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {
-  for (int i = 0; i < indices_.size(); i += 3) {
-    vec3 v[3];
-    v[0] = vertices_[indices_[i]];
-    v[1] = vertices_[indices_[i+1]];
-    v[2] = vertices_[indices_[i+2]];
-  }
+  Graphics::GetInstance().DrawMesh(mesh_name_, ProjectionMatrix, ViewMatrix, camera, position_, rotation_);
 }
 
 Scroll::Scroll(
@@ -130,7 +23,7 @@ Scroll::Scroll(
   GLfloat rotation,
   const std::string& filename
 ) : position(position),
-    object_(position, rotation, "meshes/scroll.obj"), 
+    object_(position, rotation, "scroll"), 
     filename(filename) {
 }
 
@@ -139,87 +32,15 @@ Floor::Floor(
   float width,
   float height,
   float length
-) : shader_("building"), 
-    position_(position), 
+) : position_(position), 
     width_(width), 
     height_(height),
     length_(length) {
-  Init();
-}
-
-void Floor::Init() {
-  glGenBuffers(1, &vertex_buffer_);
-  glGenBuffers(1, &uv_buffer_);
-  glGenBuffers(1, &element_buffer_);
-
-  float w = width_;
-  float l = length_;
-  float h = height_;
- 
-  vector<vec3> v {
-    // Back face.
-    vec3(0, h, 0), vec3(w, h, 0), vec3(0, 0, 0), vec3(w, 0, 0),
-    // Front face.
-    vec3(0, h, l), vec3(w, h, l), vec3(0, 0, l), vec3(w, 0, l),
-  };
-
-  vertices_ = {
-    v[0], v[4], v[1], v[1], v[4], v[5], // Top.
-    v[1], v[3], v[0], v[0], v[3], v[2], // Back.
-    v[0], v[2], v[4], v[4], v[2], v[6], // Left.
-    v[5], v[7], v[1], v[1], v[7], v[3], // Right.
-    v[4], v[6], v[5], v[5], v[6], v[7], // Front.
-    v[6], v[2], v[7], v[7], v[2], v[3]  // Bottom.
-  };
-
-  vector<vec2> u = {
-    vec2(0, 0), vec2(0, l), vec2(w, 0), vec2(w, l), // Top.
-    vec2(0, 0), vec2(0, h), vec2(w, 0), vec2(w, h), // Back.
-    vec2(0, 0), vec2(0, h), vec2(l, 0), vec2(l, h)  // Left.
-  };
-
-  vector<glm::vec2> uvs {
-    u[0], u[1], u[2],  u[2],  u[1], u[3],  // Top.
-    u[4], u[5], u[6],  u[6],  u[5], u[7],  // Back.
-    u[8], u[9], u[10], u[10], u[9], u[11], // Left.
-    u[8], u[9], u[10], u[10], u[9], u[11], // Right.
-    u[4], u[5], u[6],  u[6],  u[5], u[7],  // Front.
-    u[0], u[1], u[2],  u[2],  u[1], u[3]   // Bottom.
-  };
-
-  for (int i = 0; i < 36; i++) indices_.push_back(i);
-
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3), &vertices_[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
-  glBufferData(
-    GL_ELEMENT_ARRAY_BUFFER, 
-    indices_.size() * sizeof(unsigned int), 
-    &indices_[0], 
-    GL_STATIC_DRAW
-  );
 }
 
 void Floor::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
-  glUseProgram(shader_.program_id());
-
-  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
-
-  glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
-  glm::mat4 MVP = ProjectionMatrix * ModelViewMatrix;
-
-  glUniformMatrix4fv(shader_.GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
-  glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
-
-  shader_.BindBuffer(vertex_buffer_, 0, 3);
-  shader_.BindBuffer(uv_buffer_, 1, 2);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
-  glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
-  shader_.Clear();
+  vec3 dimensions(width_, length_, height_);
+  Graphics::GetInstance().Cube(ProjectionMatrix, ViewMatrix, camera, position_, dimensions, 0.0);
 }
 
 void Floor::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {
@@ -313,13 +134,7 @@ Building::Building(
 
   floors_.push_back(Floor(pos + vec3(14, 0, 5), 1, 1, 9));
 
-  objects_.push_back(Object(vec3(2009, 205, 1996), radians(-90.0f), "meshes/book_stand.obj"));
-  // objects_.push_back(Object(vec3(2009.25, 206, 2000.5), radians(-90.0f), "meshes/scroll.obj"));
-  // objects_.push_back(Object(vec3(2009.25, 206, 2001.5), radians(-90.0f), "meshes/scroll.obj"));
-  // objects_.push_back(Object(vec3(2009.25, 206, 2002.5), radians(-90.0f), "meshes/scroll.obj"));
-  // objects_.push_back(Object(vec3(2009.25, 206, 2003.5), radians(-90.0f), "meshes/scroll.obj"));
-  // objects_.push_back(Object(vec3(2009.25, 206, 2004.5), radians(-90.0f), "meshes/scroll.obj"));
-
+  objects_.push_back(Object(vec3(2009, 205, 1996), radians(-90.0f), "book_stand"));
   scrolls_.push_back(Scroll(vec3(2009.25, 206, 2000.5), radians(-90.0f), "txt/scroll_1.txt"));
   scrolls_.push_back(Scroll(vec3(2009.25, 206, 2001.5), radians(-90.0f), "txt/scroll_2.txt"));
   scrolls_.push_back(Scroll(vec3(2009.25, 206, 2002.5), radians(-90.0f), "txt/scroll_3.txt"));
@@ -425,9 +240,6 @@ void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 
 void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {
   for (auto& f : floors_)
     f.Collide(player_pos, prev_pos, can_jump, speed);
-
-  // for (auto& o : objects_)
-  //   o.Collide(player_pos, prev_pos, can_jump, speed);
 }
 
 void Building::Interact(Player& player, GameState& state) {
@@ -444,43 +256,17 @@ void Building::Interact(Player& player, GameState& state) {
 }
 
 void Building::DrawTxt() {
-  stringstream ss;
-  // ss << "Position: " << position.x << " " << position.y << " " << position.z;
-  // lines_[1] = ss.str();
-
-  // int height = WINDOW_HEIGHT - LINE_HEIGHT;
-  // for (int i = 0; i < lines_.size(); ++i) {
-  //   bool draw_cursor = i == (lines_.size() - 1);
-
-  //   double current_time = glfwGetTime();
-  //   if (current_time - (int) current_time > 0.5)
-  //     draw_cursor = false;
-  //  
-  //   if (draw_cursor) 
-  //     Text::GetInstance().DrawText(lines_[i] + ((char) 150), 2, height);
-  //   else
-  //     Text::GetInstance().DrawText(lines_[i], 2, height);
-  //   height -= LINE_HEIGHT;
-  // }
   ifstream f(opened_document_);
   if (!f.is_open()) return;
 
   string line;
   int height = WINDOW_HEIGHT - 60 - LINE_HEIGHT;
   while (getline(f, line)) {
-    Text::GetInstance().DrawText(line, 102, height);
+    Graphics::GetInstance().DrawText(line, 102, height);
     height -= LINE_HEIGHT;
   }
 
-  glUseProgram(shader2_.program_id());
-
-  glm::mat4 projection = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT);
-  glUniformMatrix4fv(shader2_.GetUniformId("projection"), 1, GL_FALSE, &projection[0][0]);
-
-  shader_.BindBuffer(quad_vbo_, 0, 3);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
-
-  shader_.Clear();
+  Graphics::GetInstance().Rectangle(200, WINDOW_HEIGHT - 100, WINDOW_WIDTH - 400, WINDOW_HEIGHT - 200, vec3(0.0, 1.0, 0.0));
 }
 
 } // End of namespace.

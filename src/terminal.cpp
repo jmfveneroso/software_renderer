@@ -18,28 +18,6 @@ void Terminal::PressKey(GLFWwindow* window, unsigned char_code) {
 
 Terminal::Terminal() 
   : shader_("terminal") {
-  glGenBuffers(1, &vertex_buffer_);
-  glGenBuffers(1, &element_buffer_);
-
-  vertices_ = {
-    { 0, WINDOW_HEIGHT, 0 },
-    { 0, WINDOW_HEIGHT-300, 0 },
-    { WINDOW_WIDTH, WINDOW_HEIGHT, 0 },
-    { WINDOW_WIDTH, WINDOW_HEIGHT-300, 0 }
-  };
-  indices_ = { 0, 1, 2, 2, 1, 3 };
-
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
-  glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(glm::vec3), &vertices_[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
-  glBufferData(
-    GL_ELEMENT_ARRAY_BUFFER, 
-    indices_.size() * sizeof(unsigned int), 
-    &indices_[0], 
-    GL_STATIC_DRAW
-  );
-
   lines_.push_back("Terminal for Sybil 1.0");
   lines_.push_back("Player position...");
   NewLine(true);
@@ -99,7 +77,6 @@ void Terminal::Execute(GameState& game_state, Player& player) {
     lines_.push_back(string("Invalid command: ") + command);
   }
 
-  history_.push_back(line);
   NewLine(true);
 }
 
@@ -134,23 +111,13 @@ void Terminal::Draw(glm::vec3 position) {
       draw_cursor = false;
    
     if (draw_cursor) 
-      Text::GetInstance().DrawText(lines_[i] + ((char) 150), 2, height);
+      Graphics::GetInstance().DrawText(lines_[i] + ((char) 150), 2, height);
     else
-      Text::GetInstance().DrawText(lines_[i], 2, height);
+      Graphics::GetInstance().DrawText(lines_[i], 2, height);
     height -= LINE_HEIGHT;
   }
 
-  glUseProgram(shader_.program_id());
-
-  glm::mat4 projection = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT);
-  glUniformMatrix4fv(shader_.GetUniformId("projection"), 1, GL_FALSE, &projection[0][0]);
-
-  shader_.BindBuffer(vertex_buffer_, 0, 3);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
-  glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
-
-  shader_.Clear();
-
+  Graphics::GetInstance().Rectangle(0.0, WINDOW_HEIGHT, WINDOW_WIDTH, 300, vec3(0, 1, 0));
   glDisable(GL_BLEND);
 }
 

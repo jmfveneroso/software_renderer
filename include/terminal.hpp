@@ -19,19 +19,14 @@
 #include <glm/gtx/rotate_vector.hpp> 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include "text.hpp"
+#include "graphics.hpp"
 #include "shaders.h"
 #include "config.h"
 
 namespace Sibyl {
 
 class Terminal {
-  vector<string> history_;
   vector<string> lines_;
-  GLuint vertex_buffer_;
-  GLuint element_buffer_;
-  std::vector<glm::vec3> vertices_;
-  std::vector<unsigned int> indices_;
 
  protected:
   Shader shader_;

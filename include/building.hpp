@@ -19,6 +19,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "wall_painting.hpp"
+#include "graphics.hpp"
 #include "shaders.h"
 #include "config.h"
 
@@ -42,27 +43,15 @@ struct BoundingBox {
 };
 
 class Object {
-  GLuint vertex_buffer_;
-  GLuint uv_buffer_;
-  GLuint normal_buffer_;
-  GLuint element_buffer_;
-  std::vector<glm::vec3> vertices_;
-  std::vector<glm::vec3> normals_;
-  std::vector<unsigned int> indices_;
+  glm::vec3 position_;
   GLfloat rotation_;
-
-  protected:
-   glm::vec3 position_;
-   Shader shader_;
-
-   void Load(const string& filename);
+  string mesh_name_;
 
  public:
   Object() {}
   Object(glm::vec3, GLfloat, const string&);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
-  void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
 };
 
 class Scroll {
@@ -78,20 +67,10 @@ class Scroll {
 };
 
 class Floor {
-  GLuint vertex_buffer_;
-  GLuint uv_buffer_;
-  GLuint element_buffer_;
-  std::vector<glm::vec3> vertices_;
-  std::vector<unsigned int> indices_;
-
-  protected:
-   glm::vec3 position_;
-   float width_;
-   float height_;
-   float length_;
-   Shader shader_;
-
-   void Init();
+  glm::vec3 position_;
+  float width_;
+  float height_;
+  float length_;
 
  public:
   Floor(glm::vec3, float, float, float);

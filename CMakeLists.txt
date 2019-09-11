@@ -71,7 +71,7 @@ set(
   src/building.cpp 
   src/terminal.cpp 
   src/wall_painting.cpp 
-  src/text.cpp 
+  src/graphics.cpp 
 )
 
 add_executable(main ${SRC})
