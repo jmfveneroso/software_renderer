@@ -172,21 +172,42 @@ void Graphics::LoadFonts() {
         continue;
     }
 
-    // Generate texture
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(
-      GL_TEXTURE_2D,
-      0,
-      GL_RED,
-      face->glyph->bitmap.width,
-      face->glyph->bitmap.rows,
-      0,
-      GL_RED,
-      GL_UNSIGNED_BYTE,
-      face->glyph->bitmap.buffer
-    );
+
+    if (c == 150) {
+      unsigned char buffer[14 * 7];
+      for (int y = 0; y < 14; y++)
+        for (int x = 0; x < 7; x++)
+          buffer[y * 7 + x] = 255;
+
+      face->glyph->bitmap_top = 12;
+      glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RED,
+        7,
+        14,
+        0,
+        GL_RED,
+        GL_UNSIGNED_BYTE,
+        &buffer
+      );
+    } else {
+      // Generate texture
+      glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RED,
+        face->glyph->bitmap.width,
+        face->glyph->bitmap.rows,
+        0,
+        GL_RED,
+        GL_UNSIGNED_BYTE,
+        face->glyph->bitmap.buffer
+      );
+    }
 
     // Set texture options
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -206,8 +227,8 @@ void Graphics::LoadFonts() {
   FT_Done_Face(face);
   FT_Done_FreeType(ft);
 
-  glGenBuffers(1, &vbo_);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+  glGenBuffers(1, &text_vbo_);
+  glBindBuffer(GL_ARRAY_BUFFER, text_vbo_);
   glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
@@ -216,6 +237,16 @@ void Graphics::LoadFonts() {
 }
 
 void Graphics::DrawChar(char c, float x, float y, vec3 color) {
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glDisable(GL_DEPTH_TEST);
+  glUseProgram(shader_.program_id());
+
+  // Activate corresponding render state	
+  glUniform3f(glGetUniformLocation(shader_.program_id(), "textColor"), color.x, color.y, color.z);
+  glUniformMatrix4fv(shader_.GetUniformId("projection"), 1, GL_FALSE, &projection_[0][0]);
+  glActiveTexture(GL_TEXTURE0);
+
   Character& ch = characters_[c];
 
   GLfloat scale = 1.0f;
@@ -240,23 +271,18 @@ void Graphics::DrawChar(char c, float x, float y, vec3 color) {
   glBindTexture(GL_TEXTURE_2D, ch.TextureID);
 
   // Update content of VBO memory
-  shader_.BindBuffer(vbo_, 0, 4);
+  shader_.BindBuffer(text_vbo_, 0, 4);
   glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
 
   // Render quad
   glDrawArrays(GL_TRIANGLES, 0, 6);
+
+  shader_.Clear();
+  glDisable(GL_BLEND);
+  glEnable(GL_DEPTH_TEST);
 }
 
 void Graphics::DrawText(const string& text, float x, float y, vec3 color) {
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glUseProgram(shader_.program_id());
-
-  // Activate corresponding render state	
-  glUniform3f(glGetUniformLocation(shader_.program_id(), "textColor"), color.x, color.y, color.z);
-  glUniformMatrix4fv(shader_.GetUniformId("projection"), 1, GL_FALSE, &projection_[0][0]);
-  glActiveTexture(GL_TEXTURE0);
-
   // Iterate through all characters
   for (const auto& c : text) {
     DrawChar(c, x, y, color);
@@ -265,29 +291,29 @@ void Graphics::DrawText(const string& text, float x, float y, vec3 color) {
     float scale = 1.0;
     x += (characters_[c].Advance >> 6) * scale;
   }
-
-  shader_.Clear();
-  glDisable(GL_BLEND);
 }
 
 void Graphics::Rectangle(GLfloat x, GLfloat y, GLfloat width, GLfloat height, vec3 color) {
+  glDisable(GL_DEPTH_TEST);
   glUseProgram(shaders_["polygon"].program_id());
 
   vector<vec3> vertices = {
-    { x        , y         , 0 },
-    { x        , y - height, 0 },
-    { x + width, y         , 0 },
-    { x + width, y         , 0 },
-    { x        , y - height, 0 },
-    { x + width, y - height, 0 }
+    { x        , y         , 0.0 },
+    { x        , y - height, 0.0 },
+    { x + width, y         , 0.0 },
+    { x + width, y         , 0.0 },
+    { x        , y - height, 0.0 },
+    { x + width, y - height, 0.0 }
   };
 
   glUniformMatrix4fv(shaders_["polygon"].GetUniformId("projection"), 1, GL_FALSE, &projection_[0][0]);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
   glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(glm::vec3), &vertices[0]); 
 
   shaders_["polygon"].BindBuffer(vbo_, 0, 3);
   glDrawArrays(GL_TRIANGLES, 0, 6);
   shaders_["polygon"].Clear();
+  glEnable(GL_DEPTH_TEST);
 }
 
 void Graphics::DrawMesh(

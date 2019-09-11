@@ -126,7 +126,7 @@ void Engine::Render() {
       terminal_->Draw(player_.position);
       break;
     case TXT:
-      building_->DrawTxt();
+      TextEditor::GetInstance().Draw();
       break;
     default:
       break;
@@ -253,8 +253,17 @@ void Engine::ProcessTerminalInput(){
 
 void Engine::ProcessTextInput() {
   if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS) {
-    building_->SetTextMode(game_state_, false);
+    TextEditor::GetInstance().Enable(game_state_, false);
   }
+
+  if (glfwGetKey(window_, GLFW_KEY_H) == GLFW_PRESS)
+    TextEditor::GetInstance().MoveCursor(-1, 0);
+  if (glfwGetKey(window_, GLFW_KEY_J) == GLFW_PRESS)
+    TextEditor::GetInstance().MoveCursor(0, 1);
+  if (glfwGetKey(window_, GLFW_KEY_K) == GLFW_PRESS)
+    TextEditor::GetInstance().MoveCursor(0, -1);
+  if (glfwGetKey(window_, GLFW_KEY_L) == GLFW_PRESS)
+    TextEditor::GetInstance().MoveCursor(1, 0);
 }
 
 void Engine::UpdateForces() {

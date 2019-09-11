@@ -72,6 +72,7 @@ set(
   src/terminal.cpp 
   src/wall_painting.cpp 
   src/graphics.cpp 
+  src/text_editor.cpp 
 )
 
 add_executable(main ${SRC})

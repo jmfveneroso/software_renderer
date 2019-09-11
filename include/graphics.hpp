@@ -57,6 +57,7 @@ class Mesh {
 
 class Graphics {
   Shader shader_;
+  GLuint text_vbo_;
   GLuint vbo_;
   unordered_map<string, Shader> shaders_;
   unordered_map<string, GLuint> vbos_;
@@ -68,7 +69,6 @@ class Graphics {
   void CreateVBOs();
   void LoadFonts();
   void LoadMeshes();
-  void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0});
 
  public:
   Graphics();
@@ -81,6 +81,7 @@ class Graphics {
   ) { 
     projection_ = projection; 
   }
+  void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0});
   void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0});
   void DrawMesh(string, glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat);
   void Rectangle(GLfloat, GLfloat, GLfloat, GLfloat, vec3);

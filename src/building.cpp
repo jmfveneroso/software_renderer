@@ -248,25 +248,15 @@ void Building::Interact(Player& player, GameState& state) {
       cout << s.filename << endl;
 
       // Open document.
-      SetTextMode(state, true);
-      opened_document_ = s.filename;
-      return;
+      if (TextEditor::GetInstance().Enable(state, true)) {
+        ifstream f(s.filename);
+        if (!f.is_open()) return;
+        string content((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
+        TextEditor::GetInstance().set_content(content);
+        return;
+      }
     }
   }
-}
-
-void Building::DrawTxt() {
-  ifstream f(opened_document_);
-  if (!f.is_open()) return;
-
-  string line;
-  int height = WINDOW_HEIGHT - 60 - LINE_HEIGHT;
-  while (getline(f, line)) {
-    Graphics::GetInstance().DrawText(line, 102, height);
-    height -= LINE_HEIGHT;
-  }
-
-  Graphics::GetInstance().Rectangle(200, WINDOW_HEIGHT - 100, WINDOW_WIDTH - 400, WINDOW_HEIGHT - 200, vec3(0.0, 1.0, 0.0));
 }
 
 } // End of namespace.

@@ -95,8 +95,7 @@ void Terminal::Draw(glm::vec3 position) {
   if (!enabled)
     return;
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  Graphics::GetInstance().Rectangle(0.0, WINDOW_HEIGHT, WINDOW_WIDTH, 300, vec3(0, 1, 0));
 
   stringstream ss;
   ss << "Position: " << position.x << " " << position.y << " " << position.z;
@@ -116,9 +115,6 @@ void Terminal::Draw(glm::vec3 position) {
       Graphics::GetInstance().DrawText(lines_[i], 2, height);
     height -= LINE_HEIGHT;
   }
-
-  Graphics::GetInstance().Rectangle(0.0, WINDOW_HEIGHT, WINDOW_WIDTH, 300, vec3(0, 1, 0));
-  glDisable(GL_BLEND);
 }
 
 } // End of namespace.

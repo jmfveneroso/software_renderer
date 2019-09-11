@@ -8,6 +8,7 @@
 #include <fstream>
 #include <cstring>
 #include <sstream>
+#include <streambuf>
 #include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -20,6 +21,7 @@
 #include <boost/lexical_cast.hpp>
 #include "wall_painting.hpp"
 #include "graphics.hpp"
+#include "text_editor.hpp"
 #include "shaders.h"
 #include "config.h"
 
@@ -107,24 +109,8 @@ class Building {
   Building(float, float, glm::vec3);
 
   void Interact(Player&, GameState&);
-  void DrawTxt();
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
-
-  bool SetTextMode(GameState& state, bool enabled) { 
-    double current_time = glfwGetTime();
-    if (current_time <= debounce_timer_) {
-      debounce_timer_ = current_time + DEBOUNCE_DELAY; 
-      return false;
-    }
-  
-    if (enabled) 
-      state = TXT; 
-    else
-      state = FREE;
-    debounce_timer_ = current_time + DEBOUNCE_DELAY; 
-    return true;
-  }
 };
 
 } // End of namespace.
