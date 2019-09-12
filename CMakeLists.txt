@@ -10,6 +10,7 @@ if (APPLE)
     glfw
     glew
     freetype
+    boost_regex-mt
   )
 
   set(INCLUDE_DIRS

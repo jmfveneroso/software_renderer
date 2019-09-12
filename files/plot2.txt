@@ -1,0 +1,6 @@
+Arrow 0 0 64 127 3 red
+Arrow 64.0 128.0 160 192 3 green
+Arrow 0 0 160 192 3 yellow
+Text "Le ble ble" 64 64 magenta
+Arrow 0 0 -100 -100 3 blue
+

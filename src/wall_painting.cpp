@@ -6,9 +6,11 @@ using namespace glm;
 namespace Sibyl {
 
 WallPainting::WallPainting(
+  string filename,
   glm::vec3 position,
   GLfloat rotation
-) : shader_("painting", "v_painting", "f_painting"), 
+) : filename_(filename),
+    shader_("painting", "v_painting", "f_painting"), 
     shader2_("lines", "v_lines", "f_lines"), 
     position_(position),
     rotation_(rotation),
@@ -100,6 +102,93 @@ void WallPainting::Init() {
     throw;
 
   glGenBuffers(1, &vbo);
+
+  BeginDraw();
+  EndDraw();
+}
+
+vec3 WallPainting::GetColor(string color_name) {
+  unordered_map<string, vec3> colors {
+    { "red",  vec3(1, 0, 0) },
+    { "green",  vec3(0, 1, 0) },
+    { "blue",  vec3(0, 0, 1) },
+    { "yellow",  vec3(1, 1, 0) },
+    { "magenta",  vec3(1, 0, 1) }
+  };
+  return colors[color_name];
+}
+
+void WallPainting::LoadFile() {
+  cout << filename_ << endl;
+  ifstream f(filename_);
+  if (!f.is_open()) return;
+  string content((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
+
+  vector<string> lines;
+  boost::split(lines, content, boost::is_any_of("\n"));
+
+  BeginDraw();
+  boost::regex re("(\"[^\"]+\")|[#A-Za-z0-9.-]+");
+  for (int i = 0; i < lines.size(); i++) {
+    boost::sregex_token_iterator j(lines[i].begin(), lines[i].end(), re, 0);
+    boost::sregex_token_iterator k;
+ 
+    vector<string> tkns;
+    while (j != k) {
+      tkns.push_back(*j++);
+    }
+
+    if (tkns.size() == 0) continue;
+
+    string command = tkns[0];
+    if (command == "#") continue;
+    if (command == "Arrow" || command == "Line") {
+      vec2 p1; 
+      vec2 p2;
+      GLfloat thickness;
+      vec3 color;
+
+      p1.x = boost::lexical_cast<float>(tkns[1]); 
+      p1.y = boost::lexical_cast<float>(tkns[2]);
+
+      p2.x = boost::lexical_cast<float>(tkns[3]); 
+      p2.y = boost::lexical_cast<float>(tkns[4]);
+
+      thickness = boost::lexical_cast<float>(tkns[5]);
+
+      color = GetColor(tkns[6]);
+      if (command == "Arrow")
+        DrawArrow(p1, p2, thickness, color);
+      else
+        DrawLine(p1, p2, thickness, color);
+    }
+
+    if (command == "Point") {
+      vec2 point; 
+      GLfloat thickness;
+      vec3 color;
+
+      point.x = boost::lexical_cast<float>(tkns[1]); 
+      point.y = boost::lexical_cast<float>(tkns[2]);
+      thickness = boost::lexical_cast<float>(tkns[3]);
+      color = GetColor(tkns[4]);
+      DrawPoint(point, thickness, color);
+    }
+
+    if (command == "Text") {
+      string text;
+      vec2 point; 
+      vec3 color;
+
+      text = tkns[1].substr(1, tkns[1].size() - 2);
+      point.x = boost::lexical_cast<float>(tkns[2]); 
+      point.y = boost::lexical_cast<float>(tkns[3]);
+      color = GetColor(tkns[4]);
+
+      DrawText(text, point, color);
+    }
+  }
+  EndDraw();
 }
 
 void WallPainting::DrawLine(

@@ -42,12 +42,15 @@ void Engine::CreateWindow() {
   glEnable(GL_CULL_FACE);
   glEnable(GL_CLIP_PLANE0);
 
-  // Why is this necessary? Should look on shaders.
+  // Why is this necessary? Should look on shaders. 
+  // Vertex arrays group VBOs.
   GLuint VertexArrayID;
   glGenVertexArrays(1, &VertexArrayID);
   glBindVertexArray(VertexArrayID);
 
   glfwSetCharCallback(window_, terminal_->PressKey);
+  glfwSetCharCallback(window_, TextEditor::PressCharCallback);
+  glfwSetKeyCallback(window_, TextEditor::PressKeyCallback);
 }
 
 GLuint Engine::LoadTexture(
@@ -126,7 +129,10 @@ void Engine::Render() {
       terminal_->Draw(player_.position);
       break;
     case TXT:
-      TextEditor::GetInstance().Draw();
+      if (TextEditor::Close())
+        game_state_ = FREE;
+      else
+        TextEditor::Draw();
       break;
     default:
       break;
@@ -186,8 +192,21 @@ void Engine::ProcessGameInput(){
   if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS)
     Move(LEFT, delta_time);
 
-  if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS)
-    building_->Interact(player_, game_state_);
+  if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS) {
+    if (building_->Interact(player_)) {
+      game_state_ = TXT;
+    }
+  }
+
+  float mouse_sensitivity = 0.005f;
+  if (glfwGetKey(window_, GLFW_KEY_H) == GLFW_PRESS)
+    player_.h_angle += mouse_sensitivity * 5;
+  if (glfwGetKey(window_, GLFW_KEY_J) == GLFW_PRESS)
+    player_.v_angle -= mouse_sensitivity * 5;
+  if (glfwGetKey(window_, GLFW_KEY_K) == GLFW_PRESS)
+    player_.v_angle += mouse_sensitivity * 5;
+  if (glfwGetKey(window_, GLFW_KEY_L) == GLFW_PRESS)
+    player_.h_angle -= mouse_sensitivity * 5;
 
   if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS) {
     if (player_.can_jump) {
@@ -207,7 +226,6 @@ void Engine::ProcessGameInput(){
   glfwSetCursorPos(window_, 0, 0);
 
   // Change orientation.
-  float mouse_sensitivity = 0.005f;
   player_.h_angle += mouse_sensitivity * float(-x_pos);
   player_.v_angle += mouse_sensitivity * float(-y_pos);
   if (player_.v_angle < -1.57f) player_.v_angle = -1.57f;
@@ -240,10 +258,10 @@ void Engine::ProcessTerminalInput(){
   if (glfwGetKey(window_, GLFW_KEY_ENTER) == GLFW_PRESS) {
     double current_time = glfwGetTime();
     if (pressed_enter_at_ == 0.0) {
-      terminal_->Execute(game_state_, player_);
+      terminal_->Execute(player_);
       pressed_enter_at_ = current_time;
     } else if (current_time > pressed_enter_at_ + TYPE_DELAY) {
-      terminal_->Execute(game_state_, player_);
+      terminal_->Execute(player_);
       pressed_enter_at_ += TYPE_SPEED;
     }
   } else {
@@ -252,18 +270,9 @@ void Engine::ProcessTerminalInput(){
 }
 
 void Engine::ProcessTextInput() {
-  if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS) {
-    TextEditor::GetInstance().Enable(game_state_, false);
-  }
-
-  if (glfwGetKey(window_, GLFW_KEY_H) == GLFW_PRESS)
-    TextEditor::GetInstance().MoveCursor(-1, 0);
-  if (glfwGetKey(window_, GLFW_KEY_J) == GLFW_PRESS)
-    TextEditor::GetInstance().MoveCursor(0, 1);
-  if (glfwGetKey(window_, GLFW_KEY_K) == GLFW_PRESS)
-    TextEditor::GetInstance().MoveCursor(0, -1);
-  if (glfwGetKey(window_, GLFW_KEY_L) == GLFW_PRESS)
-    TextEditor::GetInstance().MoveCursor(1, 0);
+  // if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS) {
+  //   TextEditor::GetInstance().Enable(game_state_, false);
+  // }
 }
 
 void Engine::UpdateForces() {
@@ -334,7 +343,8 @@ void Engine::Run() {
     // Swap buffers.
     glfwSwapBuffers(window_);
     glfwPollEvents();
-  } while (glfwGetKey(window_, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window_) == 0);
+  // } while (glfwGetKey(window_, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window_) == 0);
+  } while (glfwWindowShouldClose(window_) == 0);
 
   // Cleanup VBO and shader.
   for (auto it : shaders_)

@@ -45,7 +45,7 @@ class Terminal {
   void Backspace();
   void Write(std::string);
   void NewLine(bool);
-  void Execute(GameState&, Player&);
+  void Execute(Player&);
   void Clear();
   bool Move(Player&, vector<string>&);
 

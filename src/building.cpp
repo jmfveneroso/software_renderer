@@ -135,42 +135,19 @@ Building::Building(
   floors_.push_back(Floor(pos + vec3(14, 0, 5), 1, 1, 9));
 
   objects_.push_back(Object(vec3(2009, 205, 1996), radians(-90.0f), "book_stand"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2000.5), radians(-90.0f), "txt/scroll_1.txt"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2001.5), radians(-90.0f), "txt/scroll_2.txt"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2002.5), radians(-90.0f), "txt/scroll_3.txt"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2003.5), radians(-90.0f), "txt/scroll_4.txt"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2004.5), radians(-90.0f), "txt/scroll_5.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2000.5), radians(-90.0f), "files/scroll_1.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2001.5), radians(-90.0f), "files/scroll_2.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2002.5), radians(-90.0f), "files/scroll_3.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2003.5), radians(-90.0f), "files/scroll_4.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2004.5), radians(-90.0f), "files/scroll_5.txt"));
 
-  paintings_.push_back(WallPainting(vec3(1995.75, 208, 1995), 0.0f));
-  paintings_.push_back(WallPainting(vec3(1995, 208, 1998), radians(90.0f)));
-  paintings_.push_back(WallPainting(vec3(1995, 208, 2001), radians(90.0f)));
+  paintings_.push_back(WallPainting("files/plot1.txt", vec3(1995.75, 208, 1995), 0.0f));
+  paintings_.push_back(WallPainting("files/plot2.txt", vec3(1995, 208, 1998), radians(90.0f)));
+  paintings_.push_back(WallPainting("files/plot3.txt", vec3(1995, 208, 2001), radians(90.0f)));
 
-  for (auto& p : paintings_) {
-    p.BeginDraw();
-    p.EndDraw();
-  }
-
-  vector<vec2> points {
-    { 1, 2 }, { 4, 6 }, { 2, 1 }, { 2, 3 },
-    { 5, 5 }, { 2, 4 }, { 5, 2 }, { 6, 4 },
-    { -1, -2 }, { -4, -6 }, { -2, -1 }, { -2, -3 },
-    { -5, -5 }, { -2, -4 }, { -5, -2 }, { -6, -4 },
-    { 2, -1 }, { -1, 1 }
-  };
-
-  paintings_[1].BeginDraw();
-  paintings_[1].DrawLine(vec2(-256, -256), vec2(256, 256), 3, vec3(0, 0, 1));
-  for (auto& p : points) {
-    paintings_[1].DrawPoint(vec2(32 * p.x, 32 * p.y), 10, vec3(1, 0, 0));
-  }
-  paintings_[1].EndDraw();
-
-  paintings_[2].BeginDraw();
-  paintings_[2].DrawArrow(vec2(0, 0), vec2(64, 128), 3, vec3(1, 0, 0));
-  paintings_[2].DrawArrow(vec2(64, 128), vec2(160, 192), 3, vec3(0, 1, 0));
-  paintings_[2].DrawArrow(vec2(0, 0), vec2(160, 192), 3, vec3(0, 1, 1));
-  paintings_[2].DrawText("Le ble ble", vec2(64, 64), vec3(1, 0, 1));
-  paintings_[2].EndDraw();
+  paintings_[0].LoadFile();
+  paintings_[1].LoadFile();
+  paintings_[2].LoadFile();
 
   glGenBuffers(1, &quad_vbo_);
 
@@ -242,21 +219,24 @@ void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump
     f.Collide(player_pos, prev_pos, can_jump, speed);
 }
 
-void Building::Interact(Player& player, GameState& state) {
+bool Building::Interact(Player& player) {
   for (auto& s : scrolls_) {
     if (distance2(player.position, s.position) < 1.0) {
-      cout << s.filename << endl;
-
-      // Open document.
-      if (TextEditor::GetInstance().Enable(state, true)) {
-        ifstream f(s.filename);
-        if (!f.is_open()) return;
-        string content((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
-        TextEditor::GetInstance().set_content(content);
-        return;
-      }
+      TextEditor::Enable();
+      TextEditor::OpenFile(s.filename);
+      return true;
     }
   }
+
+  for (auto& p : paintings_) {
+    if (distance2(player.position, p.position()) < 4.0) {
+      p.LoadFile();
+      TextEditor::Enable();
+      TextEditor::OpenFile(p.filename());
+      return true;
+    }
+  }
+  return false;
 }
 
 } // End of namespace.

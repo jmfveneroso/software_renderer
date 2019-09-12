@@ -44,8 +44,8 @@ class Engine {
   int window_height_ = WINDOW_HEIGHT;
   double pressed_backspace_at_ = 0.0;
   double pressed_enter_at_ = 0.0;
-
   GameState game_state_ = FREE;
+
   Player player_;
 
   glm::mat4 ProjectionMatrix;

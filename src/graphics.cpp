@@ -125,7 +125,8 @@ Graphics& Graphics::GetInstance() {
 }
 
 void Graphics::CreateShaders() {
-  shaders_["polygon"] = Shader("terminal", "v_terminal", "f_terminal");
+  // shaders_["polygon"] = Shader("terminal", "v_terminal", "f_terminal");
+  shaders_["polygon"] = Shader("polygon", "v_lines", "f_lines"), 
   shaders_["building"] = Shader("building");
 }
 
@@ -306,6 +307,7 @@ void Graphics::Rectangle(GLfloat x, GLfloat y, GLfloat width, GLfloat height, ve
     { x + width, y - height, 0.0 }
   };
 
+  glUniform3f(shaders_["polygon"].GetUniformId("lineColor"), color.x, color.y, color.z);
   glUniformMatrix4fv(shaders_["polygon"].GetUniformId("projection"), 1, GL_FALSE, &projection_[0][0]);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_);
   glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(glm::vec3), &vertices[0]); 

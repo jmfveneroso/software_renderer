@@ -27,6 +27,8 @@
 
 namespace Sibyl {
 
+extern GameState game_state;
+
 struct BoundingBox {
   float x, y, z;
   float width, height, length;
@@ -108,7 +110,7 @@ class Building {
 
   Building(float, float, glm::vec3);
 
-  void Interact(Player&, GameState&);
+  bool Interact(Player&);
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
 };

@@ -18,6 +18,7 @@
 #include <glm/gtx/rotate_vector.hpp> 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 #include "texture.hpp"
 #include "graphics.hpp"
 #include "shaders.h"
@@ -40,14 +41,17 @@ class WallPainting {
   double size_ = 2.0f;
   GLuint vbo;
   GLfloat rotation_;
+  string filename_;
 
   void Init();
   void DrawGrid();
+  vec3 GetColor(string);
 
  public:
   WallPainting() {}
-  WallPainting(glm::vec3, GLfloat);
+  WallPainting(string, glm::vec3, GLfloat);
 
+  void LoadFile();
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void DrawToTexture();
   void DrawLine(glm::vec2, glm::vec2, GLfloat, glm::vec3);
@@ -56,6 +60,9 @@ class WallPainting {
   void DrawText(string, glm::vec2, glm::vec3);
   void BeginDraw();
   void EndDraw();
+
+  string filename() { return filename_; }
+  vec3 position() { return position_; }
 };
 
 } // End of namespace.

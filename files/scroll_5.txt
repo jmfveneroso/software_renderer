@@ -1,0 +1,9 @@
+Goals:
+
+VIM:
+
+1 - Implement W and B.
+2 - Implement dw, db, d$ and d^.
+
+END
+

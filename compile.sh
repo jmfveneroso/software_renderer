@@ -1,3 +1,5 @@
+set -e
+
 if [ $# -eq 0 ]; then
   key=""
 else

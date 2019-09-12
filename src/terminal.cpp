@@ -50,7 +50,7 @@ bool Terminal::Move(Player& player, vector<string>& tokens) {
   return true;
 }
 
-void Terminal::Execute(GameState& game_state, Player& player) {
+void Terminal::Execute(Player& player) {
   if (lines_.size() <= 2) {
     NewLine(true);
     return;
@@ -70,7 +70,6 @@ void Terminal::Execute(GameState& game_state, Player& player) {
     Clear();
   } else if (command == "exit") {
     enabled = false;
-    game_state = FREE;
   } else if (command == "move") {
     Move(player, tokens);
   } else {

@@ -27,24 +27,33 @@ namespace Sibyl {
 
 class TextEditor {
  public:
+  static bool on_g;
+  static bool on_delete;
+  static double repeat_wait;
+  static bool ignore;
+  static int mode;
+  static vector<string> content_;
+  static string command;
   static bool enabled;
   static double debounce_timer;
   static string write_buffer;
-  static void PressKey(GLFWwindow*, unsigned);
+  static int cursor_row_;
+  static int cursor_col_;
   static TextEditor& GetInstance();
-
-  string content_;
-  int cursor_row_ = 0;
-  int cursor_col_ = 0;
-  double cursor_debounce_timer_;
-  double draw_cursor = 0.0;
+  static void PressCharCallback(GLFWwindow*, unsigned);
+  static void PressKeyCallback(GLFWwindow*, int, int, int, int);
+  static double cursor_debounce_timer_;
+  static double cursor_timer;
+  static string filename;
+  static int start_line;
 
   TextEditor() {}
-  void Draw();
-  bool Enable(GameState&, bool);
-  void MoveCursor(int, int);
-
-  void set_content(string content) { content_ = content; }
+  static void Draw();
+  static void SetContent(string);
+  static void OpenFile(string);
+  static void WriteFile();
+  static void Enable() { enabled = true; cursor_row_ = 0; cursor_col_ = 0; }
+  static bool Close() { return !enabled; }
 };
 
 } // End of namespace.
