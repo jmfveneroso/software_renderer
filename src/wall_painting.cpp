@@ -217,14 +217,19 @@ void WallPainting::DrawLine(
 void WallPainting::DrawArrow(
   vec2 p1, vec2 p2, GLfloat thickness, vec3 color
 ) {
-  GLfloat height = 15.0f;
-  GLfloat width = 7.5f;
+  p1 *= pixels_per_step_;
+  p2 *= pixels_per_step_;
+
+  GLfloat height = 12.0f;
+  GLfloat width = 5.0f;
+  GLfloat steepness = 0.75f;
 
   vec2 step = normalize(p2 - p1);
-  DrawLine(p1, p2 - step * height, thickness, color);
+  DrawLine(p1, p2 - step * (height * steepness), thickness, color);
 
   vector<vec2> v {
     p2, 
+    (p2 - step * (height * steepness)),
     (p2 - step * height) + (width * vec2(-step.y, step.x)),
     (p2 - step * height) + (width * vec2(step.y, -step.x))
   };
@@ -232,13 +237,14 @@ void WallPainting::DrawArrow(
   glUniform3f(shader2_.GetUniformId("lineColor"), color.x, color.y, color.z);
 
   std::vector<glm::vec3> lines = {
-    vec3(v[0], 0), vec3(v[1], 0), vec3(v[2], 0)
+    vec3(v[0], 0), vec3(v[1], 0), vec3(v[2], 0),
+    vec3(v[0], 0), vec3(v[1], 0), vec3(v[3], 0)
   };
 
   shader2_.BindBuffer(vbo, 0, 3);
   glBufferSubData(GL_ARRAY_BUFFER, 0, lines.size() * sizeof(glm::vec3), &lines[0]); 
 
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void WallPainting::DrawPoint(
@@ -276,19 +282,23 @@ void WallPainting::DrawCartesianGrid(
 ) {
   vec3 color = vec3(0.8, 0.8, 0.8);
 
-  int width = 800;
-  int height = 800;
+  int size = 400;
 
-  DrawLine(vec2(0, -400), vec2(0, 400), 1, vec3(0));
-  DrawLine(vec2(-400, 0), vec2(400, 0), 1, vec3(0));
+  DrawLine(vec2(0, -size), vec2(0, size), 1, vec3(0));
+  DrawLine(vec2(-size, 0), vec2(size, 0), 1, vec3(0));
 
-  int step = (400 / max_value);
+  int step = (size / max_value);
+  pixels_per_step_ = step;
+
   for (int y = -max_value; y <= max_value; y += tick_step) {
     DrawLine(vec2(y * step, -5), vec2(y * step, 4), 1, vec3(0));
     DrawLine(vec2(-5, y * step), vec2(4, y * step), 1, vec3(0));
   }
 
   for (int y = -max_value; y <= max_value; y += big_tick_step) {
+    DrawLine(vec2(-size, y*step), vec2(size, y*step), 1, vec3(0.8));
+    DrawLine(vec2(y*step, -size), vec2(y*step, size), 1, vec3(0.8));
+
     DrawLine(vec2(y*step, -10), vec2(y*step, 9), 1, vec3(0));
     DrawLine(vec2(-10, y*step), vec2(9, y*step), 1, vec3(0));
 
@@ -296,18 +306,8 @@ void WallPainting::DrawCartesianGrid(
     stringstream ss;
     ss << y;
     DrawText(ss.str(), vec2(y * step -10, -30), vec3(0));
-
     DrawText(ss.str(), vec2(-40, y * step - 5), vec3(0));
   }
- 
-  // Horizontal lines.
-  // for (int y = 256; y >= -256; y -= 32)
-  //   DrawLine(vec2(-256, y), vec2(256, y), 1, color);
-
-  // // Vertical lines.
-  // for (int x = -256; x <= 256; x += 32)
-  //   DrawLine(vec2(x, -256), vec2(x, 256), 1, color);
-
 }
 
 void WallPainting::BeginDraw() {
@@ -324,7 +324,7 @@ void WallPainting::BeginDraw() {
   glm::mat4 projection = glm::ortho(-texture_size_.x/2, texture_size_.x/2, texture_size_.y/2, -texture_size_.y/2);
   glUniformMatrix4fv(shader2_.GetUniformId("projection"), 1, GL_FALSE, &projection[0][0]);
 
-  DrawCartesianGrid(20, 1, 5);
+  DrawCartesianGrid(6, 1, 2);
 }
 
 void WallPainting::EndDraw() {

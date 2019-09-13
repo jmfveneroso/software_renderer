@@ -1,6 +1,6 @@
-Arrow 0 0 64 127 1 red
-Arrow 64.0 128.0 160 192 1 green
-Arrow 0 0 160 192 1 blue 
+Arrow 0 0 2 4 1 red
+Arrow 2.0 4.0 5 6 1 green
+Arrow 0 0 5 6 1 blue 
 
 
 

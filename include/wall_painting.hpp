@@ -42,6 +42,7 @@ class WallPainting {
   GLuint vbo;
   GLfloat rotation_;
   string filename_;
+  GLfloat pixels_per_step_;
 
   void Init();
   void DrawCartesianGrid(int, int, int);
