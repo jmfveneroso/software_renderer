@@ -42,10 +42,11 @@ class WallPainting {
   GLuint vbo;
   GLfloat rotation_;
   string filename_;
-  GLfloat pixels_per_step_;
+  GLfloat pixels_per_step_ = 1.0;
 
   void Init();
   void DrawCartesianGrid(int, int, int);
+  void DrawOneDimensionalSpace(int, int, int);
   vec3 GetColor(string);
 
  public:

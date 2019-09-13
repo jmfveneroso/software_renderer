@@ -142,6 +142,22 @@ void WallPainting::LoadFile() {
 
     string command = tkns[0];
     if (command == "#") continue;
+    if (command == "2D" || command == "1D") {
+      int max_value;
+      int tick_step;
+      int big_tick_step;
+      
+      max_value = boost::lexical_cast<int>(tkns[1]); 
+      tick_step = boost::lexical_cast<int>(tkns[2]);
+      big_tick_step = boost::lexical_cast<int>(tkns[3]);
+
+      if (command == "2D") {
+        DrawCartesianGrid(max_value, tick_step, big_tick_step);
+      } else {
+        DrawOneDimensionalSpace(max_value, tick_step, big_tick_step);
+      }
+    }
+
     if (command == "Arrow" || command == "Line") {
       vec2 p1; 
       vec2 p2;
@@ -155,6 +171,9 @@ void WallPainting::LoadFile() {
       p2.y = boost::lexical_cast<float>(tkns[4]);
 
       thickness = boost::lexical_cast<float>(tkns[5]);
+
+      p1 *= pixels_per_step_;
+      p2 *= pixels_per_step_;
 
       color = GetColor(tkns[6]);
       if (command == "Arrow")
@@ -172,6 +191,8 @@ void WallPainting::LoadFile() {
       point.y = boost::lexical_cast<float>(tkns[2]);
       thickness = boost::lexical_cast<float>(tkns[3]);
       color = GetColor(tkns[4]);
+
+      point *= pixels_per_step_;
       DrawPoint(point, thickness, color);
     }
 
@@ -180,11 +201,13 @@ void WallPainting::LoadFile() {
       vec2 point; 
       vec3 color;
 
+      point *= pixels_per_step_;
       text = tkns[1].substr(1, tkns[1].size() - 2);
       point.x = boost::lexical_cast<float>(tkns[2]); 
       point.y = boost::lexical_cast<float>(tkns[3]);
       color = GetColor(tkns[4]);
 
+      point *= pixels_per_step_;
       DrawText(text, point, color);
     }
   }
@@ -217,9 +240,6 @@ void WallPainting::DrawLine(
 void WallPainting::DrawArrow(
   vec2 p1, vec2 p2, GLfloat thickness, vec3 color
 ) {
-  p1 *= pixels_per_step_;
-  p2 *= pixels_per_step_;
-
   GLfloat height = 12.0f;
   GLfloat width = 5.0f;
   GLfloat steepness = 0.75f;
@@ -277,6 +297,33 @@ void WallPainting::DrawText(
   Graphics::GetInstance().set_projection();
 }
 
+void WallPainting::DrawOneDimensionalSpace(
+  int max_value, int tick_step, int big_tick_step
+) {
+  vec3 color = vec3(0.8, 0.8, 0.8);
+
+  int size = 400;
+
+  DrawLine(vec2(0, -size), vec2(0, size), 1, vec3(0));
+  DrawLine(vec2(-size, 0), vec2(size, 0), 1, vec3(0));
+
+  int step = (size / max_value);
+  pixels_per_step_ = step;
+
+  for (int y = -max_value; y <= max_value; y += tick_step) {
+    DrawLine(vec2(y * step, -5), vec2(y * step, 4), 1, vec3(0));
+  }
+
+  for (int y = -max_value; y <= max_value; y += big_tick_step) {
+    // DrawLine(vec2(y*step, -size), vec2(y*step, size), 1, vec3(0.8));
+    DrawLine(vec2(y*step, -10), vec2(y*step, 9), 1, vec3(0));
+
+    stringstream ss;
+    ss << y;
+    DrawText(ss.str(), vec2(y * step -10, -30), vec3(0));
+  }
+}
+
 void WallPainting::DrawCartesianGrid(
   int max_value, int tick_step, int big_tick_step
 ) {
@@ -323,8 +370,6 @@ void WallPainting::BeginDraw() {
 
   glm::mat4 projection = glm::ortho(-texture_size_.x/2, texture_size_.x/2, texture_size_.y/2, -texture_size_.y/2);
   glUniformMatrix4fv(shader2_.GetUniformId("projection"), 1, GL_FALSE, &projection[0][0]);
-
-  DrawCartesianGrid(6, 1, 2);
 }
 
 void WallPainting::EndDraw() {

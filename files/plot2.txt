@@ -1,9 +1,13 @@
-Arrow 0 0 2 4 1 red
-Arrow 2.0 4.0 5 6 1 green
-Arrow 0 0 5 6 1 blue 
+1D 20 1 5
+# Arrow 0 0 2 4 1 red
+# Arrow 2.0 4.0 5 6 1 green
+# Arrow 0 0 5 6 1 blue 
 
+Arrow 0 0 10 0 3 red
+Arrow 0 0 -5 0 3 blue
 
-
+Text "Red: 10" 10 10 red
+Text "Blue: 3" 10 8 blue
 
 
 

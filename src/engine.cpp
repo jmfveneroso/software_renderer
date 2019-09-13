@@ -309,7 +309,6 @@ void Engine::Run() {
 
   double last_time = glfwGetTime();
   int frames = 0;
-  // std::this_thread::sleep_for(std::chrono::seconds(1));
   do {
     // Measure speed.
     double current_time = glfwGetTime();
@@ -343,7 +342,6 @@ void Engine::Run() {
     // Swap buffers.
     glfwSwapBuffers(window_);
     glfwPollEvents();
-  // } while (glfwGetKey(window_, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window_) == 0);
   } while (glfwWindowShouldClose(window_) == 0);
 
   // Cleanup VBO and shader.
