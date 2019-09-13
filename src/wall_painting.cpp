@@ -14,7 +14,7 @@ WallPainting::WallPainting(
     shader2_("lines", "v_lines", "f_lines"), 
     position_(position),
     rotation_(rotation),
-    texture_size_(512, 512) {
+    texture_size_(1024, 1024) {
   Init();
 }
 
@@ -271,19 +271,43 @@ void WallPainting::DrawText(
   Graphics::GetInstance().set_projection();
 }
 
-void WallPainting::DrawGrid() {
+void WallPainting::DrawCartesianGrid(
+  int max_value, int tick_step, int big_tick_step
+) {
   vec3 color = vec3(0.8, 0.8, 0.8);
+
+  int width = 800;
+  int height = 800;
+
+  DrawLine(vec2(0, -400), vec2(0, 400), 1, vec3(0));
+  DrawLine(vec2(-400, 0), vec2(400, 0), 1, vec3(0));
+
+  int step = (400 / max_value);
+  for (int y = -max_value; y <= max_value; y += tick_step) {
+    DrawLine(vec2(y * step, -5), vec2(y * step, 4), 1, vec3(0));
+    DrawLine(vec2(-5, y * step), vec2(4, y * step), 1, vec3(0));
+  }
+
+  for (int y = -max_value; y <= max_value; y += big_tick_step) {
+    DrawLine(vec2(y*step, -10), vec2(y*step, 9), 1, vec3(0));
+    DrawLine(vec2(-10, y*step), vec2(9, y*step), 1, vec3(0));
+
+    if (y == 0) continue;
+    stringstream ss;
+    ss << y;
+    DrawText(ss.str(), vec2(y * step -10, -30), vec3(0));
+
+    DrawText(ss.str(), vec2(-40, y * step - 5), vec3(0));
+  }
  
   // Horizontal lines.
-  for (int y = 256; y >= -256; y -= 32)
-    DrawLine(vec2(-256, y), vec2(256, y), 2, color);
+  // for (int y = 256; y >= -256; y -= 32)
+  //   DrawLine(vec2(-256, y), vec2(256, y), 1, color);
 
-  // Vertical lines.
-  for (int x = -256; x <= 256; x += 32)
-    DrawLine(vec2(x, -256), vec2(x, 256), 2, color);
+  // // Vertical lines.
+  // for (int x = -256; x <= 256; x += 32)
+  //   DrawLine(vec2(x, -256), vec2(x, 256), 1, color);
 
-  DrawLine(vec2(0, -256), vec2(0, 256), 5, vec3(0));
-  DrawLine(vec2(-256, 0), vec2(256, 0), 5, vec3(0));
 }
 
 void WallPainting::BeginDraw() {
@@ -300,7 +324,7 @@ void WallPainting::BeginDraw() {
   glm::mat4 projection = glm::ortho(-texture_size_.x/2, texture_size_.x/2, texture_size_.y/2, -texture_size_.y/2);
   glUniformMatrix4fv(shader2_.GetUniformId("projection"), 1, GL_FALSE, &projection[0][0]);
 
-  DrawGrid();
+  DrawCartesianGrid(20, 1, 5);
 }
 
 void WallPainting::EndDraw() {

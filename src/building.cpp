@@ -141,9 +141,9 @@ Building::Building(
   scrolls_.push_back(Scroll(vec3(2009.25, 206, 2003.5), radians(-90.0f), "files/scroll_4.txt"));
   scrolls_.push_back(Scroll(vec3(2009.25, 206, 2004.5), radians(-90.0f), "files/scroll_5.txt"));
 
-  paintings_.push_back(WallPainting("files/plot1.txt", vec3(1995.75, 208, 1995), 0.0f));
-  paintings_.push_back(WallPainting("files/plot2.txt", vec3(1995, 208, 1998), radians(90.0f)));
-  paintings_.push_back(WallPainting("files/plot3.txt", vec3(1995, 208, 2001), radians(90.0f)));
+  paintings_.push_back(WallPainting("files/plot1.txt", vec3(1995.75, 207.5, 1995), 0.0f));
+  paintings_.push_back(WallPainting("files/plot2.txt", vec3(1995, 207.5, 1998), radians(90.0f)));
+  paintings_.push_back(WallPainting("files/plot3.txt", vec3(1995, 207.5, 2001), radians(90.0f)));
 
   paintings_[0].LoadFile();
   paintings_[1].LoadFile();

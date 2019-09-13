@@ -44,7 +44,7 @@ class WallPainting {
   string filename_;
 
   void Init();
-  void DrawGrid();
+  void DrawCartesianGrid(int, int, int);
   vec3 GetColor(string);
 
  public:
