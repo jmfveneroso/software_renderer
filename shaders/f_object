@@ -10,6 +10,7 @@ in VertexData {
 layout(location = 0) out vec3 color;
 
 uniform mat4 V;
+uniform float highlight;
 
 void main(){
   float weight = 0.01f;
@@ -32,4 +33,5 @@ void main(){
   vec3 l = normalize(light_cameraspace);
   float cos_theta = clamp(dot(n, l), 0, 1);
   color = ambient_color + color * light_color * light_power * cos_theta;
+  color = mix(color, vec3(1, 0.69, 0.23), highlight);
 }

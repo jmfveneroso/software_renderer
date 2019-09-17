@@ -27,10 +27,13 @@
 namespace Sibyl {
 
 class WallPainting {
+  static GLuint id_counter;
   GLuint frame_buffer_;
   GLuint texture_;
   Shader shader_;
   Shader shader2_;
+  Shader shader3_;
+  Shader shader4_;
   glm::vec3 position_;
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
@@ -40,9 +43,11 @@ class WallPainting {
   std::vector<unsigned int> indices_;
   double size_ = 2.0f;
   GLuint vbo;
+  GLuint vbo2;
   GLfloat rotation_;
   string filename_;
   GLfloat pixels_per_step_ = 1.0;
+  GLuint id_ = 0;
 
   void Init();
   void DrawCartesianGrid(int, int, int);
@@ -50,16 +55,19 @@ class WallPainting {
   vec3 GetColor(string);
 
  public:
+  bool highlighted = false;
+
   WallPainting() {}
   WallPainting(string, glm::vec3, GLfloat);
 
   void LoadFile();
-  void Draw(glm::mat4, glm::mat4, glm::vec3);
+  void Draw(glm::mat4, glm::mat4, glm::vec3, GLuint, GLuint, GLuint);
   void DrawToTexture();
   void DrawLine(glm::vec2, glm::vec2, GLfloat, glm::vec3);
   void DrawArrow(glm::vec2, glm::vec2, GLfloat, glm::vec3);
   void DrawPoint(glm::vec2, GLfloat, glm::vec3);
   void DrawText(string, glm::vec2, glm::vec3);
+  void DrawMatrix(glm::vec2, vector< vector<string> >, glm::vec3);
   void BeginDraw();
   void EndDraw();
 

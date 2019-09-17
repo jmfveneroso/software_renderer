@@ -18,11 +18,7 @@ Point -64  -128 10 red
 Point -160 -64 10 red 
 Point -192 -128 10 red 
 Point 0 0 10 red
-
-
-
-
-
+Point 300 300 10 red
 
 
 

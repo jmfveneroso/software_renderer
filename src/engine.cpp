@@ -2,6 +2,8 @@
 
 namespace Sibyl {
 
+Engine::Engine() {}
+
 void Engine::CreateWindow() {
   if (!glfwInit()) throw "Failed to initialize GLFW";
 
@@ -13,7 +15,7 @@ void Engine::CreateWindow() {
   // To make MacOS happy; should not be needed.
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); 
 
-  window_ = glfwCreateWindow(window_width_, window_height_, APP_NAME, NULL, NULL);
+  window_ = glfwCreateWindow(window_width_, window_height_, APP_NAME, glfwGetPrimaryMonitor(), NULL);
   if (window_ == NULL) {
     glfwTerminate();
     throw "Failed to open GLFW window";
@@ -51,6 +53,81 @@ void Engine::CreateWindow() {
   glfwSetCharCallback(window_, terminal_->PressKey);
   glfwSetCharCallback(window_, TextEditor::PressCharCallback);
   glfwSetKeyCallback(window_, TextEditor::PressKeyCallback);
+
+  // FRAME BUFFER.
+  glGenTextures(1, &screen_texture_);
+  glBindTexture(GL_TEXTURE_2D, screen_texture_);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, window_width_, window_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // Depth Render Buffer.
+  GLuint depth_rbo_;
+  glGenRenderbuffers(1, &depth_rbo_);
+  glBindRenderbuffer(GL_RENDERBUFFER, depth_rbo_);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, window_width_, window_height_);
+  glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+  glGenFramebuffers(1, &screen_fb_);
+  glBindFramebuffer(GL_FRAMEBUFFER, screen_fb_);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen_texture_, 0);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo_);  
+  
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    throw;
+
+  shader_ = Shader("screen");
+  vector<vec3> vertices = {
+    { -1, -1, 0.0 },
+    { -1, 1 , 0.0 },
+    { 1, -1, 0.0 },
+    { 1, -1, 0.0 },
+    { -1, 1, 0.0 },
+    { 1, 1, 0.0 }
+  };
+
+  glGenBuffers(1, &vbo_);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+ 
+  vector<vec2> uvs = {
+    { 0, 0 }, { 0, 1 },
+    { 1, 0 }, { 1, 0 },
+    { 0, 1 }, { 1, 1 }
+  };
+  glGenBuffers(1, &uv_);
+  glBindBuffer(GL_ARRAY_BUFFER, uv_);
+  glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+
+  // Intersect.
+  glGenTextures(1, &intersect_texture_);
+  glBindTexture(GL_TEXTURE_2D, intersect_texture_);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, window_width_, window_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  cout << window_width_ << endl;
+  cout << window_height_ << endl;
+
+  glGenFramebuffers(1, &intersect_fb_);
+  glBindFramebuffer(GL_FRAMEBUFFER, intersect_fb_);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, intersect_texture_, 0);
+  
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    throw;
+
+  paintings_.push_back(WallPainting("files/plot1.txt", vec3(1996.5, 206.5, 1995.075), 0.0f));
+  paintings_.push_back(WallPainting("files/plot2.txt", vec3(1995, 206.5, 1998), radians(90.0f)));
+  paintings_.push_back(WallPainting("files/plot3.txt", vec3(1995, 206.5, 2001), radians(90.0f)));
+
+  paintings_[0].LoadFile();
+  paintings_[1].LoadFile();
+  paintings_[2].LoadFile();
 }
 
 GLuint Engine::LoadTexture(
@@ -78,7 +155,7 @@ void Engine::CreateEntities() {
     w_normal_texture_id
   );
 
-  building_ = make_shared<Building>(0.125f, 5.0f, glm::vec3(2000.125f, 205.0f, 2000.0f));
+  building_ = make_shared<Building>(0.125f, 5.0f, glm::vec3(2000.125f, 205.0f, 2000.0f), intersect_fb_);
   terminal_ = make_shared<Terminal>();
 }
 
@@ -116,13 +193,41 @@ void Engine::Render() {
     camera.up                           // Head is up (set to 0,-1,0 to look upside-down)
   );
 
-  // Draw.
-  glViewport(0, 0, window_width_, window_height_);
-  glClearColor(0.3f, 0.5f, 0.6f, 0.0f);
+  glBindFramebuffer(GL_FRAMEBUFFER, intersect_fb_);
+  glViewport(0, 0, 10, 10);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  sky_dome_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
-  terrain_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
-  building_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
+
+  // Draw.
+  if (game_state_ == FREE) {
+    glBindFramebuffer(GL_FRAMEBUFFER, screen_fb_);
+    glViewport(0, 0, window_width_, window_height_);
+    glClearColor(0.3f, 0.5f, 0.6f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    sky_dome_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
+    terrain_->Draw(ProjectionMatrix, ViewMatrix, camera.position, player_.position);
+    building_->Draw(ProjectionMatrix, ViewMatrix, camera.position);
+
+    for (auto& p : paintings_)
+      p.Draw(ProjectionMatrix, ViewMatrix, camera.position, intersect_fb_, screen_fb_, intersect_texture_);
+  }
+
+  GLubyte x = 0;
+  glBindFramebuffer(GL_FRAMEBUFFER, intersect_fb_);
+  glReadPixels(0, 0, 1, 1, GL_RED, GL_UNSIGNED_BYTE, &x);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, window_width_, window_height_);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glDisable(GL_CULL_FACE);
+
+  glUseProgram(shader_.program_id());
+  glUniform1f(glGetUniformLocation(shader_.program_id(), "blur"), (game_state_ != FREE) ? 1.0 : 0.0);
+  shader_.BindTexture("TextureSampler", screen_texture_);
+  shader_.BindBuffer(vbo_, 0, 3);
+  shader_.BindBuffer(uv_, 1, 2);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  shader_.Clear();
+  glEnable(GL_CULL_FACE);
 
   switch (game_state_) {
     case TERMINAL:
@@ -195,6 +300,16 @@ void Engine::ProcessGameInput(){
   if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS) {
     if (building_->Interact(player_)) {
       game_state_ = TXT;
+    }
+
+    for (auto& p : paintings_) {
+      if (p.highlighted) {
+        p.LoadFile();
+        TextEditor::Enable();
+        TextEditor::OpenFile(p.filename());
+        game_state_ = TXT;
+        break;
+      }
     }
   }
 

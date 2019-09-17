@@ -1,0 +1,14 @@
+#version 330 core
+
+layout(location = 0) in vec2 pos;
+
+out FragData {
+  vec2 uv;
+} out_data;
+
+void main() {
+    out_data.uv = pos;
+    // Texture coordinates where (0, 0) is bot left and (1, 1) is top right to
+    // OpenGL coordinates where (-1, -1) is bot left and (1, 1) is top right.
+    gl_Position = vec4(2.0 * pos.x - 1.0, 2.0 * pos.y - 1.0, 0.0, 1.0);
+}

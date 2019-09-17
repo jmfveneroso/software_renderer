@@ -5,16 +5,21 @@ using namespace glm;
 
 namespace Sibyl {
 
+GLuint WallPainting::id_counter = 99;
+
 WallPainting::WallPainting(
   string filename,
   glm::vec3 position,
   GLfloat rotation
 ) : filename_(filename),
-    shader_("painting", "v_painting", "f_painting"), 
-    shader2_("lines", "v_lines", "f_lines"), 
+    shader_("painting"), 
+    shader2_("lines"), 
+    shader3_("intersect"), 
+    shader4_("mask"), 
     position_(position),
     rotation_(rotation),
     texture_size_(1024, 1024) {
+  id_ = id_counter++;
   Init();
 }
 
@@ -29,19 +34,12 @@ void WallPainting::Init() {
 
   vector<vec3> v {
     // Back face.
-    vec3(0, 0, 0), vec3(w, 0, 0), vec3(0, -h, 0), vec3(w, -h, 0),
+    vec3(-w/2, h/2, -t/2), vec3(w/2, h/2, -t/2), vec3(-w/2, -h/2, -t/2), vec3(w/2, -h/2, -t/2),
     // Front face.
-    vec3(0, 0, t), vec3(w, 0, t), vec3(0, -h, t), vec3(w, -h, t),
+    vec3(-w/2, h/2, t/2), vec3(w/2, h/2, t/2), vec3(-w/2, -h/2, t/2), vec3(w/2, -h/2, t/2),
   };
 
   glUseProgram(shader_.program_id());
-
-  glm::mat4 ModelMatrix = glm::rotate(glm::mat4(1.0f), rotation_, glm::vec3(0.0, 1.0, 0.0));
-
-  for (size_t i = 0; i < v.size(); ++i) {
-    vec4 aux = ModelMatrix * vec4(v[i], 1.0f);
-    v[i] = vec3(aux);
-  }
 
   vertices_ = {
     v[0], v[4], v[1], v[1], v[4], v[5], // Top.
@@ -103,6 +101,15 @@ void WallPainting::Init() {
 
   glGenBuffers(1, &vbo);
 
+  glGenBuffers(1, &vbo2);
+  vector<vec2> vertices { 
+    vec2(0, 0),  vec2(1, 0),
+    vec2(1, 1),  vec2(1, 1),
+    vec2(0, 1),  vec2(0, 0)
+  };
+  glBindBuffer(GL_ARRAY_BUFFER, vbo2);
+  glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(glm::vec2), &vertices[0], GL_STATIC_DRAW);
+
   BeginDraw();
   EndDraw();
 }
@@ -113,7 +120,9 @@ vec3 WallPainting::GetColor(string color_name) {
     { "green",  vec3(0, 1, 0) },
     { "blue",  vec3(0, 0, 1) },
     { "yellow",  vec3(1, 1, 0) },
-    { "magenta",  vec3(1, 0, 1) }
+    { "magenta",  vec3(1, 0, 1) },
+    { "white",  vec3(1, 1, 1) },
+    { "black",  vec3(0, 0, 0) }
   };
   return colors[color_name];
 }
@@ -201,7 +210,6 @@ void WallPainting::LoadFile() {
       vec2 point; 
       vec3 color;
 
-      point *= pixels_per_step_;
       text = tkns[1].substr(1, tkns[1].size() - 2);
       point.x = boost::lexical_cast<float>(tkns[2]); 
       point.y = boost::lexical_cast<float>(tkns[3]);
@@ -210,8 +218,70 @@ void WallPainting::LoadFile() {
       point *= pixels_per_step_;
       DrawText(text, point, color);
     }
+
+    if (command == "Matrix") {
+      int num_rows;
+      int num_cols;
+      vector< vector<string> > rows;
+      vec2 point; 
+
+      num_rows = boost::lexical_cast<int>(tkns[1]); 
+      num_cols = boost::lexical_cast<int>(tkns[2]);
+      point.x = boost::lexical_cast<int>(tkns[3]); 
+      point.y = boost::lexical_cast<int>(tkns[4]);
+      vec3 color = GetColor(tkns[5]);
+
+      for (++i; i < lines.size(); ++i) {
+        boost::sregex_token_iterator j(lines[i].begin(), lines[i].end(), re, 0);
+        boost::sregex_token_iterator k;
+ 
+        vector<string> tkns;
+        while (j != k) {
+          string tkn = *j++;
+          if (tkn[0] == '"') tkn = tkn.substr(1, tkn.size()-2);
+          tkns.push_back(tkn);
+        }
+
+        if (tkns.size() == 0) continue;
+        string command = tkns[0];
+        if (command == "#") continue;
+
+        if (command == "EndMatrix") {
+          point *= pixels_per_step_;
+          DrawMatrix(point, rows, color);
+          break;
+        } else {
+          rows.push_back(tkns);
+        }
+      }
+    }
   }
+
   EndDraw();
+}
+
+void WallPainting::DrawMatrix(glm::vec2 point, vector< vector<string> > rows, glm::vec3 color) {
+  vec2 p1(point + vec2(-10, 20));
+  vec2 p2(point + vec2(-10, 10 - 20.0f * rows.size()));
+  vec2 p3(point + vec2(rows[0].size() * 20, 20));
+  vec2 p4(point + vec2(rows[0].size() * 20, 10 - 20.0f * rows.size()));
+
+  DrawLine(p1, p2, 1, color); 
+  DrawLine(p3, p4, 1, color); 
+  DrawLine(p1, p1 + vec2(10, 0), 1, color); 
+  DrawLine(p2, p2 + vec2(10, 0), 1, color); 
+  DrawLine(p3, p3 - vec2(10, 0), 1, color); 
+  DrawLine(p4, p4 - vec2(10, 0), 1, color); 
+
+  vec2 offset = vec2(0);
+  for (auto& r : rows) {
+    offset.x = 0;
+    for (auto& c : r) {
+      DrawText(c, point + offset, color);
+      offset.x += 20;
+    }
+    offset.y -= 20;
+  }
 }
 
 void WallPainting::DrawLine(
@@ -315,7 +385,6 @@ void WallPainting::DrawOneDimensionalSpace(
   }
 
   for (int y = -max_value; y <= max_value; y += big_tick_step) {
-    // DrawLine(vec2(y*step, -size), vec2(y*step, size), 1, vec3(0.8));
     DrawLine(vec2(y*step, -10), vec2(y*step, 9), 1, vec3(0));
 
     stringstream ss;
@@ -378,23 +447,53 @@ void WallPainting::EndDraw() {
   glEnable(GL_CULL_FACE);
 }
 
-void WallPainting::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
-  glUseProgram(shader_.program_id());
-
-  shader_.BindTexture("TextureSampler", texture_);
-
-  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
+void WallPainting::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera, GLuint intersect_fb, GLuint screen_fb, GLuint inter_texture) {
+  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_) * glm::rotate(glm::mat4(1.0f), rotation_, glm::vec3(0.0, 1.0, 0.0));
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
   glm::mat4 MVP = ProjectionMatrix * ModelViewMatrix;
 
-  glUniformMatrix4fv(shader_.GetUniformId("MVP"),   1, GL_FALSE, &MVP[0][0]);
-  glUniformMatrix4fv(shader_.GetUniformId("M"),     1, GL_FALSE, &ModelMatrix[0][0]);
+  vec3 pos_on_screen = ProjectionMatrix * ViewMatrix * ModelMatrix * vec4(0, 0, 0, 1);
+  highlighted = (abs(pos_on_screen.x) < 2.0 && abs(pos_on_screen.y) < 2.0);
 
+  if (highlighted) {
+    // Draw mask.
+    glBindFramebuffer(GL_FRAMEBUFFER, intersect_fb);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glUseProgram(shader3_.program_id());
+    glUniformMatrix4fv(shader3_.GetUniformId("MVP"), 1, GL_FALSE, &MVP[0][0]);
+    shader3_.BindBuffer(vertex_buffer_, 0, 3);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
+    glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
+    shader3_.Clear();
+
+    // Draw outline.
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, screen_fb);
+    glUseProgram(shader4_.program_id());
+
+    vec2 pixel_size(1.0 / 1200, 1.0 / 800);
+    glUniform2f(shader4_.GetUniformId("pixel_size"), pixel_size.x, pixel_size.y);
+    glUniform3f(shader4_.GetUniformId("outline_color"), 1.0, 0.69, 0.23);
+  }
+
+  shader4_.BindBuffer(vbo2, 0, 2);
+  shader4_.BindTexture("TextureSampler", inter_texture);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  shader4_.Clear();
+  glDisable(GL_BLEND);
+  glEnable(GL_DEPTH_TEST);
+
+  glUseProgram(shader_.program_id());
+  glUniformMatrix4fv(shader_.GetUniformId("MVP"), 1, GL_FALSE, &MVP[0][0]);
+  glUniformMatrix4fv(shader_.GetUniformId("M"), 1, GL_FALSE, &ModelMatrix[0][0]);
+  shader_.BindTexture("TextureSampler", texture_);
   shader_.BindBuffer(vertex_buffer_, 0, 3);
   shader_.BindBuffer(uv_buffer_, 1, 2);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);
   glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, (void*) 0);
-
   shader_.Clear();
 }
 

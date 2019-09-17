@@ -115,8 +115,14 @@ void Floor::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, g
 Building::Building(
   float sx, 
   float sz,
-  glm::vec3 position
-) : shader_("building"), shader2_("terminal"), position_(position), sx_(sx), sz_(sz) {
+  glm::vec3 position,
+  GLuint intersect_fb
+) : shader_("building"), 
+    shader2_("terminal"), 
+    position_(position), 
+    sx_(sx), 
+    sz_(sz), 
+    intersect_fb_(intersect_fb) {
   float s = 14.0f;
   float t = 0.25f;
   CreateFloor(vec3(1995, 205,   1995), s, true );
@@ -140,14 +146,6 @@ Building::Building(
   scrolls_.push_back(Scroll(vec3(2009.25, 206, 2002.5), radians(-90.0f), "files/scroll_3.txt"));
   scrolls_.push_back(Scroll(vec3(2009.25, 206, 2003.5), radians(-90.0f), "files/scroll_4.txt"));
   scrolls_.push_back(Scroll(vec3(2009.25, 206, 2004.5), radians(-90.0f), "files/scroll_5.txt"));
-
-  paintings_.push_back(WallPainting("files/plot1.txt", vec3(1995.75, 207.5, 1995), 0.0f));
-  paintings_.push_back(WallPainting("files/plot2.txt", vec3(1995, 207.5, 1998), radians(90.0f)));
-  paintings_.push_back(WallPainting("files/plot3.txt", vec3(1995, 207.5, 2001), radians(90.0f)));
-
-  paintings_[0].LoadFile();
-  paintings_[1].LoadFile();
-  paintings_[2].LoadFile();
 
   glGenBuffers(1, &quad_vbo_);
 
@@ -201,9 +199,6 @@ void Building::CreateFloor(glm::vec3 position, float s, bool door) {
 }
 
 void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
-  for (auto& p : paintings_)
-    p.Draw(ProjectionMatrix, ViewMatrix, camera);
-
   for (auto& f : floors_)
     f.Draw(ProjectionMatrix, ViewMatrix, camera);
 
@@ -224,15 +219,6 @@ bool Building::Interact(Player& player) {
     if (distance2(player.position, s.position) < 1.0) {
       TextEditor::Enable();
       TextEditor::OpenFile(s.filename);
-      return true;
-    }
-  }
-
-  for (auto& p : paintings_) {
-    if (distance2(player.position, p.position()) < 4.0) {
-      p.LoadFile();
-      TextEditor::Enable();
-      TextEditor::OpenFile(p.filename());
       return true;
     }
   }

@@ -7,7 +7,24 @@ Arrow 0 0 10 0 3 red
 Arrow 0 0 -5 0 3 blue
 
 Text "Red: 10" 10 10 red
-Text "Blue: 3" 10 8 blue
+Text "Blue: -5" 10 8 blue
+
+Text "A = " -17.5 14 black
+
+Matrix 2 2 -15 15 black 
+1 2 3 "|" 1
+4 5 6 "|" 2
+7 8 9 "|" 4
+EndMatrix
+
+Matrix 1 1 -15 8 black
+10 -5
+EndMatrix
+
+
+
+
+
 
 
 

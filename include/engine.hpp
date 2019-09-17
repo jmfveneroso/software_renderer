@@ -14,6 +14,7 @@
 #include "sky_dome.hpp"
 #include "building.hpp"
 #include "texture.hpp"
+#include "graphics.hpp"
 #include "terminal.hpp"
 #include "shaders.h"
 #include "config.h"
@@ -45,6 +46,8 @@ class Engine {
   double pressed_backspace_at_ = 0.0;
   double pressed_enter_at_ = 0.0;
   GameState game_state_ = FREE;
+  GLuint screen_fb_, screen_texture_, vbo_, uv_, intersect_texture_, intersect_fb_, intersect_rbo_;
+  Shader shader_;
 
   Player player_;
 
@@ -54,6 +57,7 @@ class Engine {
 
   ShaderMap shaders_;
   TextureMap textures_;
+  vector<WallPainting> paintings_;
   std::shared_ptr<Terrain> terrain_;
   std::shared_ptr<SkyDome> sky_dome_;
   std::shared_ptr<Building> building_;
@@ -70,7 +74,7 @@ class Engine {
   void UpdateForces();
 
  public:
-  Engine() {}
+  Engine();
 
   void Run();
 };

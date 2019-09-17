@@ -62,6 +62,8 @@ class Scroll {
   Object object_;
 
  public:
+  bool highlighted = false;
+
   glm::vec3 position;
   string filename;
 
@@ -98,6 +100,7 @@ class Building {
   vector<WallPainting> paintings_;
   std::vector<Object> objects_;
   std::vector<Scroll> scrolls_;
+  GLuint intersect_fb_;
 
  protected:
   glm::vec3 position_;
@@ -108,7 +111,7 @@ class Building {
 
  public:
 
-  Building(float, float, glm::vec3);
+  Building(float, float, glm::vec3, GLuint);
 
   bool Interact(Player&);
   void Draw(glm::mat4, glm::mat4, glm::vec3);

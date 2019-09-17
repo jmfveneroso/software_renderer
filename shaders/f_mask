@@ -1,0 +1,75 @@
+#version 330 core
+
+in FragData {
+  vec2 uv;
+} in_data;
+
+// Output data
+layout(location = 0) out vec4 color;
+uniform sampler2D TextureSampler;
+uniform vec3 outline_color;
+uniform vec2 pixel_size;
+
+void main() {
+  const int width = 5;
+  float alpha = 0.0; 
+  for (int y = -1; y <= 1; ++y) {
+    for (int x = -1; x <= 1; ++x) {
+      vec2 duv = vec2(float(x*width) * pixel_size.x, float(y*width) * pixel_size.y);
+      float mask = texture(TextureSampler, in_data.uv + duv).r;
+      if (mask >= 0.5) { 
+        alpha = 1.0;
+        break;
+      } 
+    }
+  }
+
+  color = vec4(outline_color, alpha);
+}
+
+// in FragData {
+//   vec2 uv;
+// } in_data;
+// 
+// // Output data
+// layout(location = 0) out vec4 color;
+// uniform sampler2D TextureSampler;
+// uniform vec3 outline_color;
+// uniform vec2 pixel_size;
+// 
+// void main() {
+//   const int width = 5;
+//   bool is_inside = false;
+//   int count = 0;
+//   float coverage = 0.0;
+//   float dist = 1e6; 
+//   for (int y = -width; y <= width; ++y) {
+//     for (int x = -width; x <= width; ++x) {
+//       vec2 duv = vec2(float(x) * pixel_size.x, float(y) * pixel_size.y);
+//       float mask = texture(TextureSampler, in_data.uv + duv).r;
+//       coverage += mask; 
+// 
+//       if (mask >= 0.5) { 
+//         dist = min(dist, sqrt(float(x*x+y*y))); 
+//       } 
+// 
+//       if (x == 0 && y == 0) {
+//         is_inside = mask > 0.5;
+//       }
+//       count++;
+//     }
+//   }
+// 
+//   coverage /= float(count); 
+// 
+//   float alpha = 0.0;
+//   if (is_inside) { 
+//     alpha = min(1.0, (1.0 - coverage) / 0.75); 
+//   } else { 
+//     float solid = 0.3 * float(width); 
+//     float fuzzy = float(width) - solid; 
+//     alpha = 1.0 - min(1.0, max(0.0, dist - solid) / fuzzy); 
+//   }
+// 
+//   color = vec4(outline_color, alpha);
+// }
