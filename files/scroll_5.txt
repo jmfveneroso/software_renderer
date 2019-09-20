@@ -4,42 +4,34 @@ VIM:
 
 1 - Implement W and B.
 2 - Implement dw, db, d$ and d^.
-3 - Implement undo.
+3 - Implement undo (u).
 4 - Implement yank (yy), paste (p).
 5 - Resetar posicao da linha e do cursor quando abrir novo documento.
 6 - Adds new line every time you close the file.
 
 2D Plots:
-- [ ] Mudar de tab no plot com gt e gT.
-- [ ] Fazer explicacao de Row Eschelon Form.
-- [ ] Atualizar plot toda vez depois de fechar o arquivo.
-- [ ] Poder mudar tamanho do texto no comando Text.
+[ ] Mudar de tab no plot com gt e gT.
+[ ] Fazer explicacao de Row Eschelon Form.
+[ ] Atualizar plot toda vez depois de fechar o arquivo.
+[ ] Poder mudar tamanho do texto no comando Text.
 
 Ideias gerais:
-- [ ] corrigir bug do quadrado preto em cima desse scroll.
-- [ ] highlight somente um objeto por vez.
-- [ ] highlight de scroll.
-- [ ] fazer plot 3d.
-- [ ] seguir link dentro do VIM usando a tecla "e".
-- [ ] mudar internamente o mapa da casa. (Pensar melhor como fazer).
-- [ ] adicionar objetos na casa e criar novos arquivos.
-- [ ] fazer highlight de scrolls.
-- [ ] fazer book de pdf.
-- [ ] fazer uma estatua.
+[ ] corrigir bug do quadrado preto em cima desse scroll.
+[ ] highlight somente um objeto por vez.
+[ ] highlight de scroll.
+[ ] fazer plot 3d.
+[ ] seguir link dentro do VIM usando a tecla "e".
+[ ] mudar internamente o mapa da casa. (Pensar melhor como fazer).
+[ ] adicionar objetos na casa e criar novos arquivos.
+[ ] fazer highlight de scrolls.
+[ ] fazer book de pdf.
+[ ] fazer uma estatua.
 
 Week Planning:
 
-- [ ] Chamar Alberto, Paula e Xico para almoco sabado.
-- [ ] Ler os filhos de Anansi.
-- [ ] Fazer um desenho.
-- [ ] Fazer carteira de trabalho.
-- [ ] Fazer planejamento do forro.
-- [X] Convidar Marlon segunda.
-- [ ] Ir na Marta na Quinta, 19, 9h30.
-- [ ] Ir no JinLon com o Xico. Chamar Saraiva.
-- [ ] Almocar com o Saraiva.
-- [ ] Olhar aula de Yoga.
-- [ ] Chamar Iara para sair na sexta.
-
-
+[ ] Ler os filhos de Anansi.
+[ ] Fazer carteira de trabalho.
+[ ] Fazer planejamento do forro.
+[ ] Olhar aula de Yoga.
+[ ] Ir na Marta na terca-feira.
 

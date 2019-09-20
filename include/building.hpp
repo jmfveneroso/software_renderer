@@ -55,7 +55,7 @@ class Object {
   Object() {}
   Object(glm::vec3, GLfloat, const string&);
 
-  void Draw(glm::mat4, glm::mat4, glm::vec3);
+  void Draw(glm::mat4, glm::mat4, glm::vec3, bool);
 };
 
 class Scroll {
@@ -64,10 +64,12 @@ class Scroll {
  public:
   bool highlighted = false;
 
-  glm::vec3 position;
+  glm::vec3 position_;
+  GLfloat rotation_;
   string filename;
 
   Scroll(glm::vec3, GLfloat, const string&);
+  void Draw(glm::mat4, glm::mat4, glm::vec3);
   
   Object& object() { return object_; }
 };
@@ -97,9 +99,6 @@ class Building {
   std::string opened_document_;
 
   std::vector<Floor> floors_;
-  vector<WallPainting> paintings_;
-  std::vector<Object> objects_;
-  std::vector<Scroll> scrolls_;
   GLuint intersect_fb_;
 
  protected:
@@ -110,10 +109,8 @@ class Building {
   void CreateFloor(glm::vec3, float, bool);
 
  public:
-
   Building(float, float, glm::vec3, GLuint);
 
-  bool Interact(Player&);
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
 };

@@ -1,0 +1,108 @@
+Classes:
+- GameState
+  {
+    GameMode FREE, TEXT_EDITOR, TERRAIN_EDITOR, BUILDING_EDITOR, TERMINAL
+    Player: position, v_angle, h_angle, next_position, speed, can_jump, PLAYER_HEIGHT, PLAYER_FOV
+    SelectedObject 0 (none), int (otherwise)
+  }
+  LoadGameState()
+  SaveGameState()
+
+- Shaders
+
+- Textures
+
+- Renderer
+  * DrawScene
+
+- Entity Manager
+  * Object
+  * Scroll
+  * Book
+  * 2D Plot
+  * 3D Plot
+  * Art
+  * Spreadsheet (postpone)
+
+- Terrain
+  * Render
+  * Collision
+
+- Building
+  * Draw
+  * Collision
+
+- BuildingEditor
+  * InsertWall
+  * InsertWindow
+  * InsertDoor
+  * InsertStairs
+  * Draw
+  * Load
+  * Save
+
+- TerrainEditor (postpone)
+  * Draw
+  * Load
+  * Save
+
+- TextEditor
+  * Draw
+
+- SpreadsheetEditor (postpone)
+  * Draw
+
+- Engine
+  * Create Window
+  * Load Shaders
+  * Load Textures
+  * Load Objects
+  * Process Input (Depending on game mode)
+  * Update Forces (Depending on game mode)
+  * Render (Depending on game mode)
+
+# Wall painting should be two objects. A plate with the dynamic texture coordinates
+# and one with the frame coordinates. They should be drawn as two different shaders.
+
+# Renderer should allow to set render target. It should manage the framebuffers.
+
+# The renderer should draw certain objects based on the game mode.
+
+# The entity manager should store data about all the objects in the game.
+
+# The renderer should acquire the objects to be drawn from the 
+# entity manager according to the player position.
+
+# All objects should have a unique id.
+
+# The input data should be handled differently depending on the game mode and 
+# the selected object(s).
+
+# All the editors should allow a OnCloseHandler action.
+
+# There should be objects to allow editing the current room and terrain.
+
+# The 2D Plot should have multiple different tabs.
+
+# An object should also have collision data to allow proper handling.
+
+# The shaders and the static textures should only be loaded once.
+
+# There should be undo commands in the Text Editor.
+
+# The spreadsheet should allow editing simple tabular data.
+
+# The building editor should allow editing the floors, by adding walls, 
+# windows, doors and stairs in orthographical mode.
+
+# The terrain editor should allow editing the terrain in orthographical mode.
+
+# When pressing enter in front of a 2D Plot, the player should be aligned 
+# to see the antialised texture.
+
+# The engine should run in each loop: 
+#   - Check game mode
+#   - Acquire input
+#   - Update forces
+#   - Render
+

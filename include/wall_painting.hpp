@@ -29,7 +29,7 @@ namespace Sibyl {
 class WallPainting {
   static GLuint id_counter;
   GLuint frame_buffer_;
-  GLuint texture_;
+  vector<GLuint> textures_;
   Shader shader_;
   Shader shader2_;
   Shader shader3_;

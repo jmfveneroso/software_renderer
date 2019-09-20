@@ -52,6 +52,7 @@ else()
     Xxf86vm 
     pthread
     freetype
+    boost_regex
   )
 endif()
 

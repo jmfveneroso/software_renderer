@@ -83,8 +83,12 @@ void WallPainting::Init() {
 
   // texture_ = Texture("textures/dirt.bmp");
 
-  glGenTextures(1, &texture_);
-  glBindTexture(GL_TEXTURE_2D, texture_);
+  for (int i = 0; i < 5; i++) {
+    textures_ = { 0, 0, 0, 0, 0 };
+  }
+
+  glGenTextures(1, &textures_[0]);
+  glBindTexture(GL_TEXTURE_2D, textures_[0]);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -94,7 +98,7 @@ void WallPainting::Init() {
 
   glGenFramebuffers(1, &frame_buffer_);
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textures_[0], 0);
   
   if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     throw;
@@ -112,6 +116,8 @@ void WallPainting::Init() {
 
   BeginDraw();
   EndDraw();
+
+  LoadFile();
 }
 
 vec3 WallPainting::GetColor(string color_name) {
@@ -185,6 +191,10 @@ void WallPainting::LoadFile() {
       p2 *= pixels_per_step_;
 
       color = GetColor(tkns[6]);
+      cout << "color r: " << color.x << endl;
+      cout << "color g: " << color.y << endl;
+      cout << "color b: " << color.z << endl;
+
       if (command == "Arrow")
         DrawArrow(p1, p2, thickness, color);
       else
@@ -452,7 +462,9 @@ void WallPainting::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::v
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
   glm::mat4 MVP = ProjectionMatrix * ModelViewMatrix;
 
-  vec3 pos_on_screen = ProjectionMatrix * ViewMatrix * ModelMatrix * vec4(0, 0, 0, 1);
+  vec4 pos(0, 0, 0, 1);
+  pos = (ProjectionMatrix * ViewMatrix * ModelMatrix) * pos;
+  vec3 pos_on_screen = vec3(pos);
   highlighted = (abs(pos_on_screen.x) < 2.0 && abs(pos_on_screen.y) < 2.0);
 
   if (highlighted) {
@@ -489,7 +501,7 @@ void WallPainting::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::v
   glUseProgram(shader_.program_id());
   glUniformMatrix4fv(shader_.GetUniformId("MVP"), 1, GL_FALSE, &MVP[0][0]);
   glUniformMatrix4fv(shader_.GetUniformId("M"), 1, GL_FALSE, &ModelMatrix[0][0]);
-  shader_.BindTexture("TextureSampler", texture_);
+  shader_.BindTexture("TextureSampler", textures_[0]);
   shader_.BindBuffer(vertex_buffer_, 0, 3);
   shader_.BindBuffer(uv_buffer_, 1, 2);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer_);

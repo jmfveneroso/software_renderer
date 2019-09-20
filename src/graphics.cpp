@@ -91,7 +91,10 @@ void Mesh::Load(const string& filename) {
   );
 }
 
-void Mesh::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera, glm::vec3 position, GLfloat rotation) {
+void Mesh::Draw(
+  glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera, 
+  glm::vec3 position, GLfloat rotation, bool highlighted
+) {
   glUseProgram(shader_.program_id());
 
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position);
@@ -102,6 +105,11 @@ void Mesh::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 came
   glUniformMatrix4fv(shader_.GetUniformId("MVP"), 1, GL_FALSE, &MVP[0][0]);
   glUniformMatrix4fv(shader_.GetUniformId("M"), 1, GL_FALSE, &ModelMatrix[0][0]);
   glUniformMatrix4fv(shader_.GetUniformId("V"), 1, GL_FALSE, &ViewMatrix[0][0]);
+
+  if (highlighted)
+    glUniform1f(shader_.GetUniformId("highlight"), 1.0);
+  else
+    glUniform1f(shader_.GetUniformId("highlight"), 0.0);
 
   shader_.BindBuffer(vertex_buffer_, 0, 3);
   shader_.BindBuffer(uv_buffer_, 1, 2);
@@ -125,7 +133,6 @@ Graphics& Graphics::GetInstance() {
 }
 
 void Graphics::CreateShaders() {
-  // shaders_["polygon"] = Shader("terminal", "v_terminal", "f_terminal");
   shaders_["polygon"] = Shader("polygon", "v_lines", "f_lines"), 
   shaders_["building"] = Shader("building");
 }
@@ -320,9 +327,9 @@ void Graphics::Rectangle(GLfloat x, GLfloat y, GLfloat width, GLfloat height, ve
 
 void Graphics::DrawMesh(
   string mesh_name, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera,
-  glm::vec3 position, GLfloat rotation
+  glm::vec3 position, GLfloat rotation, bool highlighted
 ) {
-  meshes_[mesh_name].Draw(ProjectionMatrix, ViewMatrix, camera, position, rotation);
+  meshes_[mesh_name].Draw(ProjectionMatrix, ViewMatrix, camera, position, rotation, highlighted);
 }
 
 void Graphics::Cube(

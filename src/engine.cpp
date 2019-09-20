@@ -15,7 +15,11 @@ void Engine::CreateWindow() {
   // To make MacOS happy; should not be needed.
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); 
 
-  window_ = glfwCreateWindow(window_width_, window_height_, APP_NAME, glfwGetPrimaryMonitor(), NULL);
+  if (FULLSCREEN)
+    window_ = glfwCreateWindow(window_width_, window_height_, APP_NAME, glfwGetPrimaryMonitor(), NULL);
+  else
+    window_ = glfwCreateWindow(window_width_, window_height_, APP_NAME, NULL, NULL);
+
   if (window_ == NULL) {
     glfwTerminate();
     throw "Failed to open GLFW window";
@@ -42,7 +46,6 @@ void Engine::CreateWindow() {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS); 
   glEnable(GL_CULL_FACE);
-  glEnable(GL_CLIP_PLANE0);
 
   // Why is this necessary? Should look on shaders. 
   // Vertex arrays group VBOs.
@@ -82,11 +85,11 @@ void Engine::CreateWindow() {
   shader_ = Shader("screen");
   vector<vec3> vertices = {
     { -1, -1, 0.0 },
-    { -1, 1 , 0.0 },
-    { 1, -1, 0.0 },
-    { 1, -1, 0.0 },
-    { -1, 1, 0.0 },
-    { 1, 1, 0.0 }
+    { -1,  1, 0.0 },
+    {  1, -1, 0.0 },
+    {  1, -1, 0.0 },
+    { -1,  1, 0.0 },
+    {  1,  1, 0.0 }
   };
 
   glGenBuffers(1, &vbo_);
@@ -111,8 +114,6 @@ void Engine::CreateWindow() {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, window_width_, window_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
-  cout << window_width_ << endl;
-  cout << window_height_ << endl;
 
   glGenFramebuffers(1, &intersect_fb_);
   glBindFramebuffer(GL_FRAMEBUFFER, intersect_fb_);
@@ -125,9 +126,13 @@ void Engine::CreateWindow() {
   paintings_.push_back(WallPainting("files/plot2.txt", vec3(1995, 206.5, 1998), radians(90.0f)));
   paintings_.push_back(WallPainting("files/plot3.txt", vec3(1995, 206.5, 2001), radians(90.0f)));
 
-  paintings_[0].LoadFile();
-  paintings_[1].LoadFile();
-  paintings_[2].LoadFile();
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2000.5), radians(-90.0f), "files/scroll_1.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2001.5), radians(-90.0f), "files/scroll_2.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2002.5), radians(-90.0f), "files/scroll_3.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2003.5), radians(-90.0f), "files/scroll_4.txt"));
+  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2004.5), radians(-90.0f), "files/scroll_5.txt"));
+
+  objects_.push_back(Object(vec3(2009, 205, 1996), radians(-90.0f), "book_stand"));
 }
 
 GLuint Engine::LoadTexture(
@@ -209,6 +214,12 @@ void Engine::Render() {
 
     for (auto& p : paintings_)
       p.Draw(ProjectionMatrix, ViewMatrix, camera.position, intersect_fb_, screen_fb_, intersect_texture_);
+
+    for (auto& s : scrolls_)
+      s.Draw(ProjectionMatrix, ViewMatrix, camera.position);
+
+    for (auto& o : objects_)
+      o.Draw(ProjectionMatrix, ViewMatrix, camera.position, false);
   }
 
   GLubyte x = 0;
@@ -298,15 +309,20 @@ void Engine::ProcessGameInput(){
     Move(LEFT, delta_time);
 
   if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS) {
-    if (building_->Interact(player_)) {
-      game_state_ = TXT;
-    }
-
     for (auto& p : paintings_) {
       if (p.highlighted) {
         p.LoadFile();
         TextEditor::Enable();
         TextEditor::OpenFile(p.filename());
+        game_state_ = TXT;
+        break;
+      }
+    }
+
+    for (auto& s : scrolls_) {
+      if (s.highlighted) {
+        TextEditor::Enable();
+        TextEditor::OpenFile(s.filename);
         game_state_ = TXT;
         break;
       }
@@ -384,12 +400,6 @@ void Engine::ProcessTerminalInput(){
   }
 }
 
-void Engine::ProcessTextInput() {
-  // if (glfwGetKey(window_, GLFW_KEY_E) == GLFW_PRESS) {
-  //   TextEditor::GetInstance().Enable(game_state_, false);
-  // }
-}
-
 void Engine::UpdateForces() {
   glm::vec3 prev_pos = player_.position;
 
@@ -443,12 +453,10 @@ void Engine::Run() {
         ProcessTerminalInput();
         terminal_->Update();
         break;
-      case TXT:
-        ProcessTextInput();
-        break;
       case FREE:
-      default:
         ProcessGameInput();
+        break;
+      default:
         break;
     }
 

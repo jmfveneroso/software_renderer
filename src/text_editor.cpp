@@ -250,6 +250,7 @@ void TextEditor::PressKeyCallback(GLFWwindow* window, int key, int scancode, int
         on_g = false;
         break;
       case GLFW_KEY_SEMICOLON:
+      case GLFW_KEY_SLASH: // For Portuguese keyboards.
         if (mods & GLFW_MOD_SHIFT) {
           mode = 2;
           command = "";

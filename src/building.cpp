@@ -14,17 +14,27 @@ Object::Object(
     mesh_name_(mesh_name) {
 }
 
-void Object::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
-  Graphics::GetInstance().DrawMesh(mesh_name_, ProjectionMatrix, ViewMatrix, camera, position_, rotation_);
+void Object::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera, bool highlighted) {
+  Graphics::GetInstance().DrawMesh(mesh_name_, ProjectionMatrix, ViewMatrix, camera, position_, rotation_, highlighted);
 }
 
 Scroll::Scroll(
   glm::vec3 position,
   GLfloat rotation,
   const std::string& filename
-) : position(position),
+) : position_(position),
+    rotation_(rotation),
     object_(position, rotation, "scroll"), 
     filename(filename) {
+}
+
+void Scroll::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
+  glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position_);
+  ModelMatrix *= glm::rotate(glm::mat4(1.0f), rotation_, glm::vec3(0.0, 1.0, 0.0));
+  vec4 screen_coords = (ProjectionMatrix * ViewMatrix * ModelMatrix) * vec4(0, 0, 0, 1);
+  highlighted = (length2(vec2(screen_coords.x, screen_coords.y)) < 4);
+
+  object_.Draw(ProjectionMatrix, ViewMatrix, camera, highlighted);
 }
 
 Floor::Floor(
@@ -140,13 +150,6 @@ Building::Building(
 
   floors_.push_back(Floor(pos + vec3(14, 0, 5), 1, 1, 9));
 
-  objects_.push_back(Object(vec3(2009, 205, 1996), radians(-90.0f), "book_stand"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2000.5), radians(-90.0f), "files/scroll_1.txt"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2001.5), radians(-90.0f), "files/scroll_2.txt"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2002.5), radians(-90.0f), "files/scroll_3.txt"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2003.5), radians(-90.0f), "files/scroll_4.txt"));
-  scrolls_.push_back(Scroll(vec3(2009.25, 206, 2004.5), radians(-90.0f), "files/scroll_5.txt"));
-
   glGenBuffers(1, &quad_vbo_);
 
   vector<vec3> vertices = {
@@ -201,28 +204,11 @@ void Building::CreateFloor(glm::vec3 position, float s, bool door) {
 void Building::Draw(glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, glm::vec3 camera) {
   for (auto& f : floors_)
     f.Draw(ProjectionMatrix, ViewMatrix, camera);
-
-  for (auto& o : objects_)
-    o.Draw(ProjectionMatrix, ViewMatrix, camera);
-
-  for (auto& s : scrolls_)
-    s.object().Draw(ProjectionMatrix, ViewMatrix, camera);
 }
 
 void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed) {
   for (auto& f : floors_)
     f.Collide(player_pos, prev_pos, can_jump, speed);
-}
-
-bool Building::Interact(Player& player) {
-  for (auto& s : scrolls_) {
-    if (distance2(player.position, s.position) < 1.0) {
-      TextEditor::Enable();
-      TextEditor::OpenFile(s.filename);
-      return true;
-    }
-  }
-  return false;
 }
 
 } // End of namespace.

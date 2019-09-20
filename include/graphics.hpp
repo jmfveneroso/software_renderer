@@ -52,7 +52,7 @@ class Mesh {
   Mesh() {}
   Mesh(const string&);
 
-  void Draw(glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat);
+  void Draw(glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat, bool);
 };
 
 class Graphics {
@@ -83,7 +83,7 @@ class Graphics {
   }
   void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0});
   void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0});
-  void DrawMesh(string, glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat);
+  void DrawMesh(string, glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat, bool);
   void Rectangle(GLfloat, GLfloat, GLfloat, GLfloat, vec3);
   void Cube(mat4, mat4, vec3, vec3, vec3, GLfloat);
 };

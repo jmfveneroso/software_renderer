@@ -58,10 +58,13 @@ class Engine {
   ShaderMap shaders_;
   TextureMap textures_;
   vector<WallPainting> paintings_;
-  std::shared_ptr<Terrain> terrain_;
-  std::shared_ptr<SkyDome> sky_dome_;
-  std::shared_ptr<Building> building_;
-  std::shared_ptr<Terminal> terminal_;
+  vector<Scroll> scrolls_;
+  vector<Object> objects_;
+
+  shared_ptr<Terrain> terrain_;
+  shared_ptr<SkyDome> sky_dome_;
+  shared_ptr<Building> building_;
+  shared_ptr<Terminal> terminal_;
 
   GLuint LoadTexture(const std::string&, const std::string&);
   void Move(Direction, float);
