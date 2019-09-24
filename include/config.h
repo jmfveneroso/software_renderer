@@ -6,7 +6,7 @@
 #define WINDOW_HEIGHT 800
 #define WAVE_SPEED 0.01f
 #define PI 3.14159265359
-#define PLAYER_SPEED 0.6f
+#define PLAYER_SPEED 0.012f
 #define CLIPMAP_LEVELS 5
 #define MAX_HEIGHT 400.0f
 #define TILE_SIZE 1
@@ -33,23 +33,6 @@
 #define FULLSCREEN false
 
 namespace Sibyl {
-
-enum GameState {
-  FREE,
-  TERMINAL,
-  TXT
-};
-
-struct Player {
-  glm::vec3 position = glm::vec3(2002.5, 208, 1985);
-  glm::vec3 next_position = glm::vec3(0, 0, 0);
-  glm::vec3 speed = glm::vec3(0, 0, 0);
-  float h_angle = 0.0f;
-  float v_angle = 0.0f;
-  float fov = PLAYER_FOV;
-  float height = PLAYER_HEIGHT;
-  bool can_jump = false;
-};
 
 } // End of namespace.
 

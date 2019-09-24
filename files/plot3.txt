@@ -1,26 +1,21 @@
-2D 400 50 100
-Line -200 -200 200 200 3 blue
+2D 20 1 5
+Line -20 -20 20 20 3 blue
 
-Point 32 64 10 red 
-Point 128 192 10 red 
-Point 64 32 10 red 
-Point 64 96 10 red 
-Point 160 160 10 red 
-Point 64 128 10 red 
-Point 160 64 10 red 
-Point 192 128 10 red 
-Point -32  -64 10 red 
-Point -128 -192 10 red 
-Point -64  -32 10 red 
-Point -64  -96 10 red 
-Point -160 -160 10 red 
-Point -64  -128 10 red 
-Point -160 -64 10 red 
-Point -192 -128 10 red 
+Point 1 2 10 red 
+Point 4 6 10 red 
+Point 2 1 10 red 
+Point 2 3 10 red 
+Point 5 5 10 red 
+Point 2 4 10 red 
+Point 5 2 10 red 
+Point 6 4 10 red 
+Point -1  -2 10 red 
+Point -4 -6 10 red 
+Point -2  -1 10 red 
+Point -2  -3 10 red 
+Point -5 -5 10 red 
+Point -2  -4 10 red 
+Point -5 -2 10 red 
+Point -6 -4 10 red 
 Point 0 0 10 red
-Point 300 300 10 red
-
-
-
-
 

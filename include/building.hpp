@@ -19,15 +19,12 @@
 #include <glm/gtx/rotate_vector.hpp> 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include "wall_painting.hpp"
-#include "graphics.hpp"
+#include "renderer.hpp"
 #include "text_editor.hpp"
 #include "shaders.h"
 #include "config.h"
 
 namespace Sibyl {
-
-extern GameState game_state;
 
 struct BoundingBox {
   float x, y, z;
@@ -46,48 +43,27 @@ struct BoundingBox {
   }
 };
 
-class Object {
-  glm::vec3 position_;
-  GLfloat rotation_;
-  string mesh_name_;
+struct Floor {
+  glm::vec3 position;
+  float width;
+  float height;
+  float length;
 
- public:
-  Object() {}
-  Object(glm::vec3, GLfloat, const string&);
-
-  void Draw(glm::mat4, glm::mat4, glm::vec3, bool);
-};
-
-class Scroll {
-  Object object_;
-
- public:
-  bool highlighted = false;
-
-  glm::vec3 position_;
-  GLfloat rotation_;
-  string filename;
-
-  Scroll(glm::vec3, GLfloat, const string&);
-  void Draw(glm::mat4, glm::mat4, glm::vec3);
-  
-  Object& object() { return object_; }
-};
-
-class Floor {
-  glm::vec3 position_;
-  float width_;
-  float height_;
-  float length_;
-
- public:
-  Floor(glm::vec3, float, float, float);
-
-  void Draw(glm::mat4, glm::mat4, glm::vec3);
-  void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
+  Floor(
+    glm::vec3 position,
+    float width,
+    float height,
+    float length
+  ) : position(position), 
+      width(width), 
+      height(height),
+      length(length) {
+  }
 };
 
 class Building {
+  shared_ptr<Renderer> renderer_;
+ 
   double debounce_timer_ = glfwGetTime();
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
@@ -107,12 +83,16 @@ class Building {
   Shader shader2_;
 
   void CreateFloor(glm::vec3, float, bool);
+  void DrawFloor(glm::mat4, glm::mat4, glm::vec3);
+  void CollideFloor(Floor&, glm::vec3&, glm::vec3, bool&, glm::vec3&, BoundingBox&);
 
  public:
-  Building(float, float, glm::vec3, GLuint);
+  Building(shared_ptr<Renderer>);
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
-  void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
+  void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&, BoundingBox&);
+
+  std::vector<Floor>& floors() { return floors_; }
 };
 
 } // End of namespace.

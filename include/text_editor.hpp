@@ -19,41 +19,60 @@
 #include <glm/gtx/rotate_vector.hpp> 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include "graphics.hpp"
+#include "game_state.hpp"
+#include "renderer.hpp"
 #include "shaders.h"
 #include "config.h"
 
 namespace Sibyl {
 
 class TextEditor {
- public:
-  static bool on_g;
-  static bool on_delete;
-  static double repeat_wait;
-  static bool ignore;
-  static int mode;
-  static vector<string> content_;
-  static string command;
-  static bool enabled;
-  static double debounce_timer;
-  static string write_buffer;
-  static int cursor_row_;
-  static int cursor_col_;
-  static TextEditor& GetInstance();
-  static void PressCharCallback(GLFWwindow*, unsigned);
-  static void PressKeyCallback(GLFWwindow*, int, int, int, int);
-  static double cursor_debounce_timer_;
-  static double cursor_timer;
-  static string filename;
-  static int start_line;
+  bool on_g;
+  bool on_delete;
+  double repeat_wait;
+  bool ignore;
+  int mode;
+  vector<string> content_;
+  string command;
+  bool enabled;
+  string write_buffer;
+  int cursor_row_;
+  int cursor_col_;
+  string filename;
+  int start_line;
 
-  TextEditor() {}
-  static void Draw();
-  static void SetContent(string);
-  static void OpenFile(string);
-  static void WriteFile();
-  static void Enable() { enabled = true; cursor_row_ = 0; cursor_col_ = 0; }
-  static bool Close() { return !enabled; }
+  shared_ptr<GameState> game_state_;
+  shared_ptr<Renderer> renderer_;
+
+  void PressCharCallback(string);
+  void PressKeyCallback(int, int, int, int);
+
+ public:
+  bool update_object = false;
+
+  TextEditor(shared_ptr<GameState> game_state, shared_ptr<Renderer> renderer) 
+    : game_state_(game_state), renderer_(renderer) {
+    command = "";
+    on_g = false;
+    on_delete = false;
+    repeat_wait = 0.0f;
+    ignore = false;
+    enabled = false;
+    write_buffer = "";
+    cursor_row_ = 0;
+    cursor_col_ = 0;
+    content_ = {};
+    mode = 0;
+    start_line = 0;
+    filename = "";
+  }
+
+  void Draw();
+  void SetContent(string);
+  void OpenFile(string);
+  void WriteFile();
+  void Enable() { enabled = true; cursor_row_ = 0; cursor_col_ = 0; }
+  bool Close() { return !enabled; }
 };
 
 } // End of namespace.

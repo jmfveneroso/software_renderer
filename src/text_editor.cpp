@@ -5,27 +5,10 @@ using namespace glm;
 
 namespace Sibyl {
 
-string TextEditor::command = "";
-bool TextEditor::on_g = false;
-bool TextEditor::on_delete = false;
-double TextEditor::repeat_wait = 0.0f;
-bool TextEditor::ignore = false;
-bool TextEditor::enabled = false;
-double TextEditor::debounce_timer = 0.0f;
-string TextEditor::write_buffer = "";
-int TextEditor::cursor_row_ = 0;
-int TextEditor::cursor_col_ = 0;
-vector<string> TextEditor::content_ = {};
-double TextEditor::cursor_debounce_timer_ = 0.0;
-double TextEditor::cursor_timer = 0.0;
-int TextEditor::mode = 0;
-int TextEditor::start_line = 0;
-string TextEditor::filename = "";
-
 // Static function to process GLFW char input.
-void TextEditor::PressCharCallback(GLFWwindow* window, unsigned char_code) {
+void TextEditor::PressCharCallback(string buffer) {
   if (!enabled) return;
-  if (char_code > 128) return;
+  if (buffer.size() == 0) return;
   if (mode == 0) return;
   if (ignore) { 
     ignore = false;
@@ -35,18 +18,18 @@ void TextEditor::PressCharCallback(GLFWwindow* window, unsigned char_code) {
   switch (mode) {
     case 1:
       if (cursor_col_ == 0) {
-        content_[cursor_row_] = ((char) char_code) + content_[cursor_row_];
+        content_[cursor_row_] = buffer + content_[cursor_row_];
       } else 
-        content_[cursor_row_] = content_[cursor_row_].substr(0, cursor_col_) + ((char) char_code) + content_[cursor_row_].substr(cursor_col_);
+        content_[cursor_row_] = content_[cursor_row_].substr(0, cursor_col_) + buffer + content_[cursor_row_].substr(cursor_col_);
       cursor_col_++;
       break;
     case 2:
-      command += (char) char_code;
+      command += buffer;
       break;
   }
 }
 
-void TextEditor::PressKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+void TextEditor::PressKeyCallback(int key, int scancode, int action, int mods) {
   if (!enabled)
     return;
 
@@ -305,11 +288,13 @@ void TextEditor::PressKeyCallback(GLFWwindow* window, int key, int scancode, int
         string cmd = command.substr(1);
         if (cmd == "w") {
           WriteFile();
+          update_object = true;
         } else if (cmd == "q") {
           enabled = false; 
         } else if (cmd == "wq") {
           WriteFile();
           enabled = false; 
+          update_object = true;
         }
         break;
       }
@@ -319,8 +304,6 @@ void TextEditor::PressKeyCallback(GLFWwindow* window, int key, int scancode, int
       }
     }
   }
-
-  cursor_timer = (glfwGetTime() + 1.0);
 }
 
 void TextEditor::OpenFile(string new_filename) {
@@ -348,22 +331,24 @@ void TextEditor::SetContent(string text) {
     content_.push_back("");
 }
 
-TextEditor& TextEditor::GetInstance() {
-  static TextEditor instance; 
-  return instance;
-}
-
 void TextEditor::Draw() {
   if (!enabled)
     return;
 
-  Graphics::GetInstance().Rectangle(199, WINDOW_HEIGHT - 99, 802, 602, vec3(1, 0.69, 0.23));
-  Graphics::GetInstance().Rectangle(200, WINDOW_HEIGHT - 100, 800, 600, vec3(0.3));
+  string buffer;
+  if (game_state_->ReadBuffer(&buffer)) {
+    PressCharCallback(buffer);
+  }
+
+  KeyPress kp;
+  if (game_state_->ReadKeyPress(&kp)) {
+    PressKeyCallback(kp.key, kp.scancode, kp.action, kp.mods);
+  }
+
+  renderer_->DrawRectangle(199, WINDOW_HEIGHT - 99, 802, 602, vec3(1, 0.69, 0.23));
+  renderer_->DrawRectangle(200, WINDOW_HEIGHT - 100, 800, 600, vec3(0.3));
 
   double current_time = glfwGetTime();
-  if (current_time > cursor_timer)
-    cursor_timer = current_time + 1.0;
-
   vector<string> lines = content_;
 
   int digits = 0;
@@ -381,10 +366,10 @@ void TextEditor::Draw() {
     int digits_ = 0;
     for (int aux = y + 1; aux; aux /= 10) { digits_++; }
     int offset_x = (digits - digits_) * 9;
-    Graphics::GetInstance().DrawText(ss.str(), 200 + 2 + offset_x, base_y - height, vec3(1, 0.69, 0.23));
+    renderer_->DrawText(ss.str(), 200 + 2 + offset_x, base_y - height, vec3(1, 0.69, 0.23));
 
     if (lines[y].size() == 0 && cursor_row_ == y && mode != 2) {
-      Graphics::GetInstance().DrawChar((char) 150, base_x + 2, base_y - height);
+      renderer_->DrawChar((char) 150, base_x + 2, base_y - height);
     }
 
     for (int x = 0; x < 80; ++x) {
@@ -396,35 +381,35 @@ void TextEditor::Draw() {
       if (mode == 2) draw_cursor = false;
 
       if (draw_cursor) {
-        Graphics::GetInstance().DrawChar((char) 150, base_x + 2 + x * 9, base_y - height);
-        Graphics::GetInstance().DrawChar(lines[y][x], base_x + 2 + x * 9, base_y - height, vec3(0, 0, 0));
+        renderer_->DrawChar((char) 150, base_x + 2 + x * 9, base_y - height);
+        renderer_->DrawChar(lines[y][x], base_x + 2 + x * 9, base_y - height, vec3(0, 0, 0));
       } else {
-        Graphics::GetInstance().DrawChar(lines[y][x], base_x + 2 + x * 9, base_y - height);
+        renderer_->DrawChar(lines[y][x], base_x + 2 + x * 9, base_y - height);
       }
     }
 
     if (cursor_col_ == lines[y].size() && cursor_row_ == y && mode == 1) {
-      Graphics::GetInstance().DrawChar((char) 150, base_x + 2 + lines[y].size() * 9, base_y - height);
+      renderer_->DrawChar((char) 150, base_x + 2 + lines[y].size() * 9, base_y - height);
     }
     height += LINE_HEIGHT;
   }
 
   for (int y = lines.size(); y < 30; ++y) {
-    Graphics::GetInstance().DrawText("~", 200 + 2, base_y - height, vec3(1, 0.69, 0.23));
+    renderer_->DrawText("~", 200 + 2, base_y - height, vec3(1, 0.69, 0.23));
     height += LINE_HEIGHT;
   }
 
-  Graphics::GetInstance().Rectangle(200 + 2, base_y - LINE_HEIGHT * 29 - 3, 796, LINE_HEIGHT, vec3(1, 0.69, 0.23));
-  Graphics::GetInstance().DrawText(filename, 200 + 2, base_y - LINE_HEIGHT * 30, vec3(0.3));
+  renderer_->DrawRectangle(200 + 2, base_y - LINE_HEIGHT * 29 - 3, 796, LINE_HEIGHT, vec3(1, 0.69, 0.23));
+  renderer_->DrawText(filename, 200 + 2, base_y - LINE_HEIGHT * 30, vec3(0.3));
 
   if (mode == 1) {
-    Graphics::GetInstance().DrawText("-- INSERT --", 200 + 2, base_y - LINE_HEIGHT * 32, vec3(1, 0.69, 0.23));
+    renderer_->DrawText("-- INSERT --", 200 + 2, base_y - LINE_HEIGHT * 32, vec3(1, 0.69, 0.23));
   }
 
   // Cursor.
   if (mode == 2) {
-    Graphics::GetInstance().DrawText(command, 200 + 2, base_y - LINE_HEIGHT * 31, vec3(1, 0.69, 0.23));
-    Graphics::GetInstance().DrawChar((char) 150, 200 + 2 + command.size() * 9, base_y - LINE_HEIGHT * 31, vec3(1, 0.69, 0.23));
+    renderer_->DrawText(command, 200 + 2, base_y - LINE_HEIGHT * 31, vec3(1, 0.69, 0.23));
+    renderer_->DrawChar((char) 150, 200 + 2 + command.size() * 9, base_y - LINE_HEIGHT * 31, vec3(1, 0.69, 0.23));
   }
 }
 

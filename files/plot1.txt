@@ -1,5 +1,8 @@
-Text "Linear Algebra Room" -210 190 red
-Text "Null Space of a Matrix" -210 170 red
+Text "Linear Algebra Room Test" -21 19 red
+Text "Null Space of a Matrix" -21 17 red
+
+
+
 
 
 

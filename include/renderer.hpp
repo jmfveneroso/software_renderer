@@ -1,5 +1,5 @@
-#ifndef _GRAPHICS_HPP_
-#define _GRAPHICS_HPP_
+#ifndef _RENDERER_HPP_
+#define _RENDERER_HPP_
 
 #include <algorithm>
 #include <vector>
@@ -36,33 +36,39 @@ struct Character {
   GLuint     Advance;   // Offset to advance to next glyph
 };
 
-class Mesh {
+struct Mesh {
   Shader shader_;
   GLuint vertex_buffer_;
   GLuint uv_buffer_;
   GLuint normal_buffer_;
   GLuint element_buffer_;
   std::vector<glm::vec3> vertices_;
+  std::vector<glm::vec2> uvs_;
   std::vector<glm::vec3> normals_;
   std::vector<unsigned int> indices_;
 
-  void Load(const string& filename);
-
- public:
   Mesh() {}
-  Mesh(const string&);
-
-  void Draw(glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat, bool);
 };
 
-class Graphics {
+struct FBO {
+  GLuint framebuffer;
+  GLuint texture;
+  GLuint width;
+  GLuint height;
+  GLuint depth_rbo;
+};
+
+class Renderer {
+  unordered_map<string, Shader> shaders_;
+  unordered_map<GLchar, Character> characters_;
+  unordered_map<string, GLuint> textures_;
+  unordered_map<string, FBO> fbos_;
+
   Shader shader_;
   GLuint text_vbo_;
   GLuint vbo_;
-  unordered_map<string, Shader> shaders_;
   unordered_map<string, GLuint> vbos_;
   unordered_map<string, Mesh> meshes_;
-  unordered_map<GLchar, Character> characters_;
   glm::mat4 projection_;
 
   void CreateShaders();
@@ -71,21 +77,45 @@ class Graphics {
   void LoadMeshes();
 
  public:
-  Graphics();
-  Graphics(Graphics const&) = delete;
-  void operator=(Graphics const&) = delete;
-  static Graphics& GetInstance();
+  Renderer();
+  Renderer(Renderer const&) = delete;
+  void operator=(Renderer const&) = delete;
+  static Renderer& GetInstance();
 
   inline void set_projection(
     const glm::mat4& projection = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT)
   ) { 
     projection_ = projection; 
   }
+
+  void CreateFramebuffer(const string&, int, int);
   void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0});
   void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0});
   void DrawMesh(string, glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat, bool);
-  void Rectangle(GLfloat, GLfloat, GLfloat, GLfloat, vec3);
-  void Cube(mat4, mat4, vec3, vec3, vec3, GLfloat);
+  void DrawRectangle(GLfloat, GLfloat, GLfloat, GLfloat, vec3);
+  void DrawCube(mat4, mat4, vec3, vec3, vec3, GLfloat);
+  void DrawPoint(vec2, GLfloat, vec3);
+  void DrawLine(vec2, vec2, GLfloat, vec3);
+  void DrawArrow(vec2, vec2, GLfloat, vec3);
+  void DrawOneDimensionalSpace(int, int, int);
+  void DrawCartesianGrid(int, int, int);
+  void LoadMesh(const string&);
+  void LoadMesh(const string&, vector<glm::vec3>&, vector<glm::vec2>&, vector<unsigned int>&);
+  void LoadMesh(const string&, vector<glm::vec3>&, vector<glm::vec2>&, vector<glm::vec3>&, vector<unsigned int>&);
+  void DrawHighlightedObject(string, mat4, mat4, vec3, vec3, GLfloat, bool, GLuint);
+  FBO GetFBO(const string& name) { return fbos_[name]; }
+
+  void SetFBO(const string& name) {
+    glBindFramebuffer(GL_FRAMEBUFFER, fbos_[name].framebuffer);
+    glViewport(0, 0, fbos_[name].width, fbos_[name].height);
+  }
+
+  void Clear(GLfloat r, GLfloat g, GLfloat b) {
+    glClearColor(r, g, b, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  }
+
+  void DrawScreen(bool);
 };
 
 } // End of namespace.

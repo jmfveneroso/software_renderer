@@ -62,7 +62,7 @@ link_directories(${LINK_DIRS})
 set(
   SRC
   src/main.cpp 
-  src/engine.cpp 
+  src/game_state.cpp 
   src/shaders.cpp 
   src/sky_dome.cpp 
   src/texture.cpp 
@@ -71,9 +71,9 @@ set(
   src/terrain.cpp
   src/subregion.cpp
   src/building.cpp 
-  src/terminal.cpp 
-  src/wall_painting.cpp 
-  src/graphics.cpp 
+  src/renderer.cpp 
+  src/engine.cpp 
+  src/entity_manager.cpp 
   src/text_editor.cpp 
 )
 

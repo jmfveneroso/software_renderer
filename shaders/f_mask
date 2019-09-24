@@ -13,14 +13,19 @@ uniform vec2 pixel_size;
 void main() {
   const int width = 5;
   float alpha = 0.0; 
-  for (int y = -1; y <= 1; ++y) {
-    for (int x = -1; x <= 1; ++x) {
-      vec2 duv = vec2(float(x*width) * pixel_size.x, float(y*width) * pixel_size.y);
-      float mask = texture(TextureSampler, in_data.uv + duv).r;
-      if (mask >= 0.5) { 
-        alpha = 1.0;
-        break;
-      } 
+  float mask = texture(TextureSampler, in_data.uv).r;
+  if (mask >= 0.5) { // Is inside.
+    alpha = 0.0;
+  } else {
+    for (int y = -1; y <= 1; y+=2) {
+      for (int x = -1; x <= 1; x+=2) {
+        vec2 duv = vec2(float(x*width) * pixel_size.x, float(y*width) * pixel_size.y);
+        float mask = texture(TextureSampler, in_data.uv + duv).r;
+        if (mask >= 0.5) { 
+          alpha = 1.0;
+          break;
+        } 
+      }
     }
   }
 
