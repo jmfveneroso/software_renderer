@@ -43,6 +43,24 @@ struct BoundingBox {
   }
 };
 
+struct PointIntersection {
+  bool valid = false;
+  vec3 point;
+  vec3 normal;
+  GLfloat distance = numeric_limits<GLfloat>::max();
+  PointIntersection() {}
+  PointIntersection(
+    bool valid, 
+    vec3 point,  
+    vec3 normal, 
+    GLfloat distance
+  ) : valid(valid), 
+      point(point), 
+      normal(normal), 
+      distance(distance) {
+  }
+};
+
 struct Floor {
   glm::vec3 position;
   float width;
@@ -91,6 +109,9 @@ class Building {
 
   void Draw(glm::mat4, glm::mat4, glm::vec3);
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&, BoundingBox&);
+  void DryCollide(vec3&, BoundingBox&);
+  PointIntersection GetPointIntersection(Floor& f, vec3, vec3);
+  PointIntersection GetPointIntersection(vec3, vec3);
 
   std::vector<Floor>& floors() { return floors_; }
 };

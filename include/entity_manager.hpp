@@ -20,9 +20,10 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
-#include "building.hpp"
 #include "renderer.hpp"
 #include "text_editor.hpp"
+#include "building.hpp"
+#include "terrain.hpp"
 #include "shaders.h"
 #include "config.h"
 
@@ -92,6 +93,7 @@ class EntityManager {
   shared_ptr<Renderer> renderer_;
   shared_ptr<TextEditor> text_editor_;
   shared_ptr<Building> building_;
+  shared_ptr<Terrain> terrain_;
 
   vector<Object> objects_;
   vector<Scroll> scrolls_;
@@ -100,8 +102,6 @@ class EntityManager {
   vec3 GetColor(const string&);
   void UpdatePlot(Plot&);
   Plot CreatePlot(const string&, vec3, GLfloat);
-  void CollideWithFloor(Floor&, vec3&, BoundingBox&);
-  vec3 GetCollisionPointWithFloor(vec3&, vec3&, Floor&, int&);
   void Init();
 
  public:
@@ -111,6 +111,7 @@ class EntityManager {
   void Interact();
   void Draw();
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
+  void set_terrain(shared_ptr<Terrain> terrain) { terrain_ = terrain; cout << "mymy" << endl; } 
 };
 
 } // End of namespace.

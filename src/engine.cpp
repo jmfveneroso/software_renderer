@@ -43,6 +43,8 @@ void Engine::CreateEntities() {
     w_diffuse_texture_id, 
     w_normal_texture_id
   );
+
+  entity_manager_->set_terrain(terrain_);
 }
 
 void Engine::Render() {

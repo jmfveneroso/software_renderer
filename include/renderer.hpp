@@ -102,7 +102,7 @@ class Renderer {
   void LoadMesh(const string&);
   void LoadMesh(const string&, vector<glm::vec3>&, vector<glm::vec2>&, vector<unsigned int>&);
   void LoadMesh(const string&, vector<glm::vec3>&, vector<glm::vec2>&, vector<glm::vec3>&, vector<unsigned int>&);
-  void DrawHighlightedObject(string, mat4, mat4, vec3, vec3, GLfloat, bool, GLuint);
+  void DrawHighlightedObject(string, mat4, mat4, vec3, vec3, GLfloat, bool, GLuint, GLfloat alpha = 1.0);
   FBO GetFBO(const string& name) { return fbos_[name]; }
 
   void SetFBO(const string& name) {

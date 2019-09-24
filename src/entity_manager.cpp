@@ -200,134 +200,6 @@ void EntityManager::Update() {
   }
 }
 
-void EntityManager::CollideWithFloor(Floor& f, vec3& pos, BoundingBox& p) {
-  // AABB collision.
-  if (
-      p.x >= f.position.x + f.width  || p.x + p.width  <= f.position.x ||
-      p.y >= f.position.y + f.height || p.y + p.height <= f.position.y ||
-      p.z >= f.position.z + f.length || p.z + p.length <= f.position.z
-  ) return;
-
-  // Collision vector.
-  vec3 collision = vec3(pos.x + p.width/2, pos.y + p.height/2, pos.z + p.length/2);
-  collision -= f.position + vec3(f.width, f.height, f.length);
-
-  vector<GLfloat> components {
-    (collision.y > 0) ? collision.y : numeric_limits<GLfloat>::max(),
-    (collision.y < 0) ? -collision.y : numeric_limits<GLfloat>::max(),
-    (collision.x > 0) ? collision.x : numeric_limits<GLfloat>::max(),
-    (collision.x < 0) ? -collision.x : numeric_limits<GLfloat>::max(),
-    (collision.z > 0) ? collision.z : numeric_limits<GLfloat>::max(),
-    (collision.z < 0) ? -collision.z : numeric_limits<GLfloat>::max(),
-  };
-
-  int min_index = -1;
-  GLfloat minimum = numeric_limits<GLfloat>::max();
-  for (int i = 0; i < components.size(); i++) {
-    if (components[i] < minimum) {
-      minimum = components[i];
-      min_index = i;
-    }
-  }
-
-  switch (min_index) {
-    case 0: // Top.
-      pos.y = f.position.y + f.height;
-      break;
-    case 1: // Bottom.
-      pos.y = f.position.y - p.height;
-      break;
-    case 2: // Right.
-      pos.x = f.position.x + f.width;
-      break;
-    case 3: // Left.
-      pos.x = f.position.x - p.width;
-      break;
-    case 4: // Front.
-      pos.z = f.position.z + f.length;
-      break;
-    case 5: // Back.
-      pos.z = f.position.z - p.length;
-      break;
-  }
-}
-
-vec3 EntityManager::GetCollisionPointWithFloor(vec3& pos, vec3& direction, Floor& f, int& collision_direction) {
-  // Top:    Y = f.y
-  // Bottom: Y = f.y + f.height
-  // Left:   X = f.x
-  // Right:  X = f.x + f.width
-  // Front:  Z = f.z
-  // Back:   Z = f.z + f.length
- 
-  // vec3 A = 0, 0, 0.
-  // vec3 B = 1, 1, 1.
-  // A.x + B.x * k = 10
-  // k = (10 - A.x) / B.x
-  // Collision = A + B * k
-
-  vector<GLfloat> planes {
-    f.position.y,             // Top.
-    f.position.y + f.height,  // Bottom.
-    f.position.x,             // Left.
-    f.position.x + f.width,   // Right.
-    f.position.z,             // Front.
-    f.position.z + f.length   // Back.
-  };
-
-  vector<GLfloat> collisions {
-    (planes[0] - pos.y) / direction.y,
-    (planes[1] - pos.y) / direction.y,
-    (planes[2] - pos.x) / direction.x,
-    (planes[3] - pos.x) / direction.x,
-    (planes[4] - pos.z) / direction.z,
-    (planes[5] - pos.z) / direction.z
-  };
-
-  vector<vec3> collision_points {
-    pos + direction * collisions[0],
-    pos + direction * collisions[1],
-    pos + direction * collisions[2],
-    pos + direction * collisions[3],
-    pos + direction * collisions[4],
-    pos + direction * collisions[5]
-  };
-
-  if (collision_points[0].x < f.position.x || collision_points[0].x > f.position.x + f.width  || collision_points[0].z < f.position.z || collision_points[0].z > f.position.z + f.length)
-    collisions[0] = -1;
-
-  if (collision_points[1].x < f.position.x || collision_points[1].x > f.position.x + f.width  || collision_points[1].z < f.position.z || collision_points[1].z > f.position.z + f.length)
-    collisions[1] = -1;
-
-  if (collision_points[2].y < f.position.y || collision_points[2].y > f.position.y + f.height || collision_points[2].z < f.position.z || collision_points[2].z > f.position.z + f.length)
-    collisions[2] = -1;
-
-  if (collision_points[3].y < f.position.y || collision_points[3].y > f.position.y + f.height || collision_points[3].z < f.position.z || collision_points[3].z > f.position.z + f.length)
-    collisions[3] = -1;
-
-  if (collision_points[4].x < f.position.x || collision_points[4].x > f.position.x + f.width  || collision_points[4].y < f.position.y || collision_points[4].y > f.position.y + f.height)
-    collisions[4] = -1;
-
-  if (collision_points[5].x < f.position.x || collision_points[5].x > f.position.x + f.width  || collision_points[5].y < f.position.y || collision_points[5].y > f.position.y + f.height)
-    collisions[5] = -1;
-
-  int min_index = -1;
-  GLfloat minimum = numeric_limits<GLfloat>::max();
-  for (int i = 0; i < 6; i++) {
-    if (collisions[i] < 0) continue;
-    if (collisions[i] < minimum) {
-      minimum = collisions[i];
-      min_index = i;
-    } 
-  }
-
-  if (min_index == -1) 
-    return vec3(0, 0, 0);
-
-  collision_direction = min_index;
-  return collision_points[min_index] - pos;
-}
-
 void EntityManager::Draw() {
   mat4 ProjectionMatrix = game_state_->projection_matrix();
   mat4 ViewMatrix = game_state_->view_matrix();
@@ -353,58 +225,44 @@ void EntityManager::Draw() {
   }
 
   // Collide plot.
+  vec3 player_pos = game_state_->player().position;
   vec3 direction = game_state_->camera().direction;
 
-  vec3 point(0);
-  GLfloat min_distance = 10.0f;
-  Floor* colliding_floor = nullptr;
-  int collision_direction = -1;
-  for (auto& f : building_->floors()) {
-    vec3 player_pos = game_state_->player().position;
-   
-    int cur_collision_direction = -1; 
-    vec3 cur_point = GetCollisionPointWithFloor(player_pos, direction, f, cur_collision_direction);
-    if (cur_point.x < 0.01f && cur_point.y < 0.01f && cur_point.z < 0.01f) continue;
+  PointIntersection intersection = building_->GetPointIntersection(player_pos, direction);
 
-    GLfloat distance = glm::length(cur_point);
-    if (distance < min_distance) {
-      min_distance = distance;
-      point = cur_point;
-      colliding_floor = &f;
-      collision_direction = cur_collision_direction;
-    }
-  }
-
-  direction /= glm::length(direction);
-
-  if (colliding_floor) {
-    switch (collision_direction) {
-      case 0:
-      case 1:
-        min_distance -= 1.0 / direction.y;
-        break;
-      case 2:
-      case 3:
-        min_distance += 1.0 / direction.x;
-        break;
-      case 4:
-      case 5: 
-        min_distance -= (0.1 / direction.z);
-        break;
-    }
-  }
-
-  vec3 next_pos = game_state_->player().position + direction * min_distance;
-
-  // next_pos, p.rotation_, p.highlighted, fbo.texture
-  // Get floor and plane that collided. Adjust bounds accordingly.
   GLfloat rotation = glm::radians(int(4 * game_state_->player().h_angle / (PI * 2)) * 90.0f);
+  GLfloat distance = 10.0f;
+  bool collision = false;
+  if (intersection.distance < 10.0f) {
+    distance = intersection.distance;
+    if (intersection.normal.z > 0)
+      rotation = glm::radians(0.0f);
+    else if (intersection.normal.x > 0) 
+      rotation = glm::radians(-90.0f);
+    else if (intersection.normal.z < 0) 
+      rotation = glm::radians(-180.0f);
+    else if (intersection.normal.x < 0) 
+      rotation = glm::radians(-270.0f);
+    collision = true;
+  }
 
   auto& p = plots_[3];
+  vec3 next_pos = player_pos + direction * distance;
+  
+  if (collision)
+    next_pos += intersection.normal * 0.05f;
+
+  if (terrain_) {
+    float height = terrain_->GetHeight(next_pos.x, next_pos.z);
+    if (next_pos.y - 1.0f < height) {
+      next_pos.y = height + 1.0f;
+    }
+  }
+
   FBO fbo = renderer_->GetFBO(p.filename);
   renderer_->DrawHighlightedObject(
     "2d_plot", ProjectionMatrix, ViewMatrix, camera, 
-    next_pos, rotation, p.highlighted, fbo.texture
+    next_pos, rotation, collision, fbo.texture, 0.8
   );
 }
 

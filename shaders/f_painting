@@ -6,14 +6,13 @@ in FragData {
 } in_data;
 
 uniform sampler2D TextureSampler;
-uniform float highlight;
+uniform float alpha;
 
 // Output data
-layout(location = 0) out vec3 color;
+layout(location = 0) out vec4 color;
 
 void main(){
   vec2 uv = in_data.UV - ivec2(in_data.UV);
 
-  color = texture(TextureSampler, in_data.UV).rgb;
-  color = mix(color, vec3(1, 0.69, 0.23), highlight * 0.3);
+  color = vec4(texture(TextureSampler, in_data.UV).rgb, alpha);
 }

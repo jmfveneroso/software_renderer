@@ -121,9 +121,131 @@ void Building::CollideFloor(Floor& f, glm::vec3& player_pos, glm::vec3 prev_pos,
   }
 }
 
+/*
+Returns the point intersection between a ray (defined by a point and a direction)
+and a floor. The floor is aligned with the grid, so each of the six planes can
+be described by an equation such as X = 10, Y = 5 or Z = 15. Therefore, the
+scaling factor k, that determines the position of the intersection along the 
+direction vector for a plane with equation X = 1O can be calculated with:
+
+point.x + direction.x * k = 10
+k = (10 - point.x) / direction.x
+vec3 intersection = point + direction * k
+
+*/
+PointIntersection Building::GetPointIntersection(Floor& f, vec3 point, vec3 direction) {
+  // The direction must be a unit vector. 
+  direction /= length(direction); 
+
+  vec3 dimensions(f.width, f.height, f.length);
+  
+  // (LBB) Left, Bottom, Back plane equations.
+  vec3 lbb = f.position;          
+
+  // (RTF) Right, Top, Front plane equations.
+  vec3 rtf = lbb + dimensions;
+
+  // Calculate intersection scaling factor k.
+  vec3 k_lbb = (lbb - point) / direction;
+  vec3 k_rtf = (rtf - point) / direction;
+  float k[6] = { k_lbb.x, k_lbb.y, k_lbb.z, k_rtf.x, k_rtf.y, k_rtf.z };
+
+  vector<vec3> normals = { 
+    vec3(-1, 0, 0), vec3(0, -1, 0), vec3(0, 0, -1),
+    vec3(+1, 0, 0), vec3(0, +1, 0), vec3(0, 0, +1) 
+  };
+
+  bool intersection_found = false;
+  vec3 normal;
+  GLfloat min_distance = numeric_limits<GLfloat>::max();
+  for (int i = 0; i < 6; i++) {
+    if (k[i] < 0.0) continue; 
+
+    vec3 overlap = (point + direction * k[i]) - lbb;
+    if (any(lessThan(overlap, vec3(0)))) continue;
+    if (any(greaterThan(overlap, dimensions))) continue;
+
+    if (k[i] < min_distance) {
+      min_distance = k[i];
+      normal = normals[i];
+      intersection_found = true;
+    }
+  }
+
+  if (intersection_found) {
+    return { true, point + direction * min_distance, normal, min_distance };
+  } else {
+    return { false, vec3(0, 0, 0), vec3(0, 0, 0), numeric_limits<GLfloat>::max() };
+  }
+}
+
+PointIntersection Building::GetPointIntersection(vec3 point, vec3 direction) {
+  PointIntersection p;
+  for (auto& f : floors_) {
+    PointIntersection aux = GetPointIntersection(f, point, direction);
+    if (!aux.valid) continue;
+    if (aux.distance < p.distance) p = aux;
+  }
+  return p;
+}
+
 void Building::Collide(glm::vec3& player_pos, glm::vec3 prev_pos, bool& can_jump, glm::vec3& speed, BoundingBox& p) {
   for (auto& f : floors_) {
     CollideFloor(f, player_pos, prev_pos, can_jump, speed, p);
+  }
+}
+
+void Building::DryCollide(vec3& pos, BoundingBox& p) {
+  for (auto& f : floors_) {
+    // AABB collision.
+    if (
+        p.x >= f.position.x + f.width  || p.x + p.width  <= f.position.x ||
+        p.y >= f.position.y + f.height || p.y + p.height <= f.position.y ||
+        p.z >= f.position.z + f.length || p.z + p.length <= f.position.z
+    ) continue;
+
+    // Collision vector.
+    vec3 collision = vec3(pos.x + p.width/2, pos.y + p.height/2, pos.z + p.length/2);
+    collision -= f.position + vec3(f.width, f.height, f.length);
+
+    vector<GLfloat> components {
+      (collision.y > 0) ? collision.y : numeric_limits<GLfloat>::max(),
+      (collision.y < 0) ? -collision.y : numeric_limits<GLfloat>::max(),
+      (collision.x > 0) ? collision.x : numeric_limits<GLfloat>::max(),
+      (collision.x < 0) ? -collision.x : numeric_limits<GLfloat>::max(),
+      (collision.z > 0) ? collision.z : numeric_limits<GLfloat>::max(),
+      (collision.z < 0) ? -collision.z : numeric_limits<GLfloat>::max(),
+    };
+
+    int min_index = -1;
+    GLfloat minimum = numeric_limits<GLfloat>::max();
+    for (int i = 0; i < components.size(); i++) {
+      if (components[i] < minimum) {
+        minimum = components[i];
+        min_index = i;
+      }
+    }
+
+    switch (min_index) {
+      case 0: // Top.
+        pos.y = f.position.y + f.height;
+        break;
+      case 1: // Bottom.
+        pos.y = f.position.y - p.height;
+        break;
+      case 2: // Right.
+        pos.x = f.position.x + f.width;
+        break;
+      case 3: // Left.
+        pos.x = f.position.x - p.width;
+        break;
+      case 4: // Front.
+        pos.z = f.position.z + f.length;
+        break;
+      case 5: // Back.
+        pos.z = f.position.z - p.length;
+        break;
+    } 
   }
 }
 

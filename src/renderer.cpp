@@ -698,7 +698,8 @@ void Renderer::DrawHighlightedObject(
   vec3 position,
   GLfloat rotation,
   bool highlighted,
-  GLuint main_texture 
+  GLuint main_texture,
+  GLfloat alpha 
 ) {
   glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), position) * glm::rotate(glm::mat4(1.0f), rotation, glm::vec3(0.0, 1.0, 0.0));
   glm::mat4 ModelViewMatrix = ViewMatrix * ModelMatrix;
@@ -736,15 +737,19 @@ void Renderer::DrawHighlightedObject(
   glDisable(GL_BLEND);
   glEnable(GL_DEPTH_TEST);
 
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glUseProgram(shaders_["painting"].program_id());
   glUniformMatrix4fv(shaders_["painting"].GetUniformId("MVP"), 1, GL_FALSE, &MVP[0][0]);
   glUniformMatrix4fv(shaders_["painting"].GetUniformId("M"), 1, GL_FALSE, &ModelMatrix[0][0]);
+  glUniform1f(shaders_["painting"].GetUniformId("alpha"), alpha);
   shaders_["painting"].BindTexture("TextureSampler", main_texture);
   shaders_["painting"].BindBuffer(m.vertex_buffer_, 0, 3);
   shaders_["painting"].BindBuffer(m.uv_buffer_, 1, 2);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.element_buffer_);
   glDrawElements(GL_TRIANGLES, m.indices_.size(), GL_UNSIGNED_INT, (void*) 0);
   shaders_["painting"].Clear();
+  glDisable(GL_BLEND);
 }
 
 void Renderer::DrawScreen(bool blur) {
