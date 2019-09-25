@@ -249,6 +249,7 @@ void Renderer::CreateFramebuffer(const string& name, int width, int height) {
 
 void Renderer::LoadMeshes() {
   LoadMesh("book_stand");
+  LoadMesh("sculpture");
   LoadMesh("scroll");
 
   float w = 2.0f;
@@ -461,6 +462,8 @@ void Renderer::DrawMesh(
   string mesh_name, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix, 
   glm::vec3 camera, glm::vec3 position, GLfloat rotation, bool highlighted
 ) {
+  glEnable(GL_DEPTH_TEST);
+  glDisable(GL_CULL_FACE);
   Mesh& mesh = meshes_[mesh_name];
   glUseProgram(shaders_["object"].program_id());
 

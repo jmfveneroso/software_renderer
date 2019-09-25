@@ -10,5 +10,7 @@ Plot 1995.05 206.529 1996.77 -270 files/plot2.txt
 Plot 1995.05 206.5 2000 90 files/plot3.txt
 Plot 1995.05 206.517 2008.07 -270 files/plot11.txt
 Plot 1995.05 206.518 2005.01 -270 files/plot13.txt
+Plot 1995.05 214.473 1998.55 -270 files/plot16.txt
 
 Object 2009 205 1996 -90 book_stand
+Object 2002 211.5 2002 0 sculpture
