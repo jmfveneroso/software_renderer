@@ -375,7 +375,7 @@ void Renderer::LoadFonts() {
   projection_ = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT); 
 }
 
-void Renderer::DrawChar(char c, float x, float y, vec3 color) {
+void Renderer::DrawChar(char c, float x, float y, vec3 color, GLfloat scale) {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_DEPTH_TEST);
@@ -389,7 +389,6 @@ void Renderer::DrawChar(char c, float x, float y, vec3 color) {
 
   Character& ch = characters_[c];
 
-  GLfloat scale = 1.0f;
   GLfloat xpos = x + ch.Bearing.x * scale;
   GLfloat ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
 
@@ -422,13 +421,12 @@ void Renderer::DrawChar(char c, float x, float y, vec3 color) {
   glEnable(GL_DEPTH_TEST);
 }
 
-void Renderer::DrawText(const string& text, float x, float y, vec3 color) {
+void Renderer::DrawText(const string& text, float x, float y, vec3 color, GLfloat scale) {
   // Iterate through all characters
   for (const auto& c : text) {
-    DrawChar(c, x, y, color);
+    DrawChar(c, x, y, color, scale);
 
     // Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-    float scale = 1.0;
     x += (characters_[c].Advance >> 6) * scale;
   }
 }
@@ -555,6 +553,8 @@ void Renderer::DrawLine(
   vec2 p1, vec2 p2, GLfloat thickness, vec3 color
 ) {
   glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
+  glUseProgram(shaders_["polygon"].program_id());
   GLfloat s = thickness / 2.0f;
   vec2 step = normalize(p2 - p1);
 
@@ -564,6 +564,7 @@ void Renderer::DrawLine(
   };
 
   glUniform3f(shaders_["polygon"].GetUniformId("lineColor"), color.x, color.y, color.z);
+  glUniformMatrix4fv(shaders_["polygon"].GetUniformId("projection"), 1, GL_FALSE, &projection_[0][0]);
 
   std::vector<glm::vec3> lines = {
     vec3(v[0], 0), vec3(v[1], 0), vec3(v[2], 0), vec3(v[2], 0), vec3(v[1], 0), vec3(v[3], 0)
@@ -574,12 +575,16 @@ void Renderer::DrawLine(
 
   glDrawArrays(GL_TRIANGLES, 0, 6);
   glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+  shaders_["polygon"].Clear();
 }
 
 void Renderer::DrawPoint(
   vec2 point, GLfloat thickness, vec3 color
 ) {
   glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
+  glUseProgram(shaders_["polygon"].program_id());
   set_projection(glm::ortho(-512, 512, 512, -512));
   GLfloat s = thickness / 2.0f;
   vector<vec2> v {
@@ -600,15 +605,19 @@ void Renderer::DrawPoint(
   glDrawArrays(GL_TRIANGLES, 0, 6);
   set_projection();
   glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+  shaders_["polygon"].Clear();
 }
 
 void Renderer::DrawArrow(
   vec2 p1, vec2 p2, GLfloat thickness, vec3 color
 ) {
   glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
   GLfloat height = 12.0f;
   GLfloat width = 5.0f;
   GLfloat steepness = 0.75f;
+  glUseProgram(shaders_["polygon"].program_id());
 
   vec2 step = normalize(p2 - p1);
   DrawLine(p1, p2 - step * (height * steepness), thickness, color);
@@ -621,6 +630,7 @@ void Renderer::DrawArrow(
   };
 
   glUniform3f(shaders_["polygon"].GetUniformId("lineColor"), color.x, color.y, color.z);
+  glUniformMatrix4fv(shaders_["polygon"].GetUniformId("projection"), 1, GL_FALSE, &projection_[0][0]);
 
   std::vector<glm::vec3> lines = {
     vec3(v[0], 0), vec3(v[1], 0), vec3(v[2], 0),
@@ -632,6 +642,8 @@ void Renderer::DrawArrow(
 
   glDrawArrays(GL_TRIANGLES, 0, 6);
   glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+  shaders_["polygon"].Clear();
 }
 
 void Renderer::DrawOneDimensionalSpace(

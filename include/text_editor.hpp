@@ -26,11 +26,18 @@
 
 namespace Sibyl {
 
+enum TextEditorMode {
+  TXT_FILE,
+  CREATE_OBJECT
+};
+
 class TextEditor {
+  TextEditorMode mode_ = TXT_FILE;
   bool on_g;
   bool on_delete;
   double repeat_wait;
   bool ignore;
+  bool editable = true;
   int mode;
   vector<string> content_;
   string command;
@@ -49,6 +56,7 @@ class TextEditor {
 
  public:
   bool update_object = false;
+  int create_object = -1;
 
   TextEditor(shared_ptr<GameState> game_state, shared_ptr<Renderer> renderer) 
     : game_state_(game_state), renderer_(renderer) {

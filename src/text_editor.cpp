@@ -136,6 +136,7 @@ void TextEditor::PressKeyCallback(int key, int scancode, int action, int mods) {
         repeat_wait = glfwGetTime() + 0.5;
         break;
       case GLFW_KEY_I: {
+        if (!editable) break;
         if (mods & GLFW_MOD_SHIFT) {
           cursor_col_ = 0;
           if (content_.size() > 0) {
@@ -154,11 +155,13 @@ void TextEditor::PressKeyCallback(int key, int scancode, int action, int mods) {
         break;
       }
       case GLFW_KEY_X:
+        if (!editable) break;
         if (cursor_col_ >= 0 && content_[cursor_row_].size()) {
           content_[cursor_row_] = content_[cursor_row_].substr(0, cursor_col_) + content_[cursor_row_].substr(cursor_col_+1);
         }
         break;
       case GLFW_KEY_S:
+        if (!editable) break;
         if (cursor_col_ >= 0 && content_[cursor_row_].size()) {
           content_[cursor_row_] = content_[cursor_row_].substr(0, cursor_col_) + content_[cursor_row_].substr(cursor_col_+1);
         }
@@ -168,6 +171,7 @@ void TextEditor::PressKeyCallback(int key, int scancode, int action, int mods) {
         mode = 1;
         break;
       case GLFW_KEY_A:
+        if (!editable) break;
         if (mods & GLFW_MOD_SHIFT) {
           if (content_.size() > 0) cursor_col_ = content_[cursor_row_].size();
           ignore = true;
@@ -181,6 +185,7 @@ void TextEditor::PressKeyCallback(int key, int scancode, int action, int mods) {
         }
         break;
       case GLFW_KEY_O:
+        if (!editable) break;
         if (mods & GLFW_MOD_SHIFT) {
           vector<string> after { "" };
           content_.insert(content_.begin() + cursor_row_, after.begin(), after.end());
@@ -215,6 +220,7 @@ void TextEditor::PressKeyCallback(int key, int scancode, int action, int mods) {
           break;
         }
 
+        if (!editable) break;
         if (on_delete) {
           content_.erase(content_.begin() + cursor_row_);
           if (content_.size() == 0)
@@ -228,6 +234,10 @@ void TextEditor::PressKeyCallback(int key, int scancode, int action, int mods) {
         }
         break;
       }  
+      case GLFW_KEY_ENTER:
+        create_object = cursor_row_;
+        enabled = false; 
+        break;
       case GLFW_KEY_ESCAPE: 
         on_delete = false;
         on_g = false;
@@ -308,10 +318,25 @@ void TextEditor::PressKeyCallback(int key, int scancode, int action, int mods) {
 
 void TextEditor::OpenFile(string new_filename) {
   filename = new_filename;
-  ifstream f(filename);
-  if (!f.is_open()) return;
+  if (new_filename == "/dev/create") {
+    SetContent("Create Scroll\nCreate 2D Plot\nCreate 3D Plot\nCreate Book\nCreate Art Object");
+    editable = false; 
+    mode_ = CREATE_OBJECT;
+    return;
+  }
+
+  mode_ = TXT_FILE;
+  editable = true; 
+
+  fstream f(filename, ios::in);
+  if (!f.is_open()) {
+    fstream f(filename, ios::app);
+    SetContent("");
+    return;
+  }
+
   string content((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
-  TextEditor::SetContent(content);
+  SetContent(content);
 }
 
 void TextEditor::WriteFile() {
@@ -358,6 +383,10 @@ void TextEditor::Draw() {
   int base_x = 200 + digits * 9 + 8;
   int base_y = WINDOW_HEIGHT - 100 - LINE_HEIGHT;
   int height = 0;
+  if (mode_ == CREATE_OBJECT) {
+    renderer_->DrawRectangle(200 + 2, base_y - LINE_HEIGHT * (cursor_row_ - 1) - 3, 796, LINE_HEIGHT, vec3(1, 1, 1));
+  }
+
   for (int y = start_line; y < start_line + 30; ++y) {
     if (y >= lines.size()) break;
     stringstream ss;
@@ -380,11 +409,16 @@ void TextEditor::Draw() {
       if (cursor_row_ == y && cursor_col_ >= lines[y].size() && x == lines[y].size() - 1 && mode == 0) draw_cursor = true;
       if (mode == 2) draw_cursor = false;
 
+      vec3 color = vec3(1);
+      if (mode_ == CREATE_OBJECT && cursor_row_ == y) {
+        color = vec3(0.3);
+      }
+
       if (draw_cursor) {
         renderer_->DrawChar((char) 150, base_x + 2 + x * 9, base_y - height);
         renderer_->DrawChar(lines[y][x], base_x + 2 + x * 9, base_y - height, vec3(0, 0, 0));
       } else {
-        renderer_->DrawChar(lines[y][x], base_x + 2 + x * 9, base_y - height);
+        renderer_->DrawChar(lines[y][x], base_x + 2 + x * 9, base_y - height, color);
       }
     }
 

@@ -11,6 +11,8 @@ if (APPLE)
     glew
     freetype
     boost_regex-mt
+    boost_system 
+    boost_filesystem
   )
 
   set(INCLUDE_DIRS
@@ -52,7 +54,9 @@ else()
     Xxf86vm 
     pthread
     freetype
-    boost_regex
+    boost_regex 
+    boost_system 
+    boost_filesystem
   )
 endif()
 

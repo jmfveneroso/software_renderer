@@ -89,8 +89,8 @@ class Renderer {
   }
 
   void CreateFramebuffer(const string&, int, int);
-  void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0});
-  void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0});
+  void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0}, GLfloat = 1.0);
+  void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0}, GLfloat = 1.0);
   void DrawMesh(string, glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat, bool);
   void DrawRectangle(GLfloat, GLfloat, GLfloat, GLfloat, vec3);
   void DrawCube(mat4, mat4, vec3, vec3, vec3, GLfloat);

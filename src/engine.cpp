@@ -82,6 +82,24 @@ void Engine::Render() {
 
 void Engine::ProcessGameInput(){
   static double last_time = glfwGetTime();
+
+  KeyPress kp;
+  while (game_state_->ReadKeyPress(&kp)) {
+    if (kp.action == GLFW_PRESS) {
+      switch (kp.key) {
+        case GLFW_KEY_Q:
+          text_editor_->Enable();
+          text_editor_->OpenFile("/dev/create");
+          game_state_->ChangeMode(TXT);
+          break;
+        // Interact with objects.
+        case GLFW_KEY_E:
+        case GLFW_KEY_ENTER:
+          entity_manager_->Interact(kp.mods & GLFW_MOD_SHIFT);
+          break;
+      }
+    }
+  }
   
   // Compute time difference between current and last frame.
   double current_time = glfwGetTime();
@@ -101,11 +119,6 @@ void Engine::ProcessGameInput(){
   // Strafe left.
   if (glfwGetKey(game_state_->window(), GLFW_KEY_A) == GLFW_PRESS)
     game_state_->MovePlayer(LEFT);
-
-  // Interact with objects.
-  if (glfwGetKey(game_state_->window(), GLFW_KEY_E) == GLFW_PRESS) {
-    entity_manager_->Interact();
-  }
 
   float mouse_sensitivity = 0.025f;
   if (glfwGetKey(game_state_->window(), GLFW_KEY_H) == GLFW_PRESS)

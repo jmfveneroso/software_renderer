@@ -1,0 +1,14 @@
+Scroll 2009.25 206 2000.5 -90 files/scroll_1.txt
+Scroll 2009.25 206 2001.5 -90 files/scroll_2.txt
+Scroll 2009.25 206 2002.5 -90 files/scroll_3.txt
+Scroll 2009.25 206 2003.5 -90 files/scroll_4.txt
+Scroll 2009.25 206 2004.5 -90 files/scroll_5.txt
+
+Plot 2002.5 208.404 1994.7 -180 files/plot9.txt
+Plot 1995.05 209.253 1996.66 -270 files/plot1.txt
+Plot 1995.05 206.529 1996.77 -270 files/plot2.txt
+Plot 1995.05 206.5 2000 90 files/plot3.txt
+Plot 1995.05 206.517 2008.07 -270 files/plot11.txt
+Plot 1995.05 206.518 2005.01 -270 files/plot13.txt
+
+Object 2009 205 1996 -90 book_stand

@@ -20,6 +20,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 #include "renderer.hpp"
 #include "text_editor.hpp"
 #include "building.hpp"
@@ -75,6 +77,7 @@ struct Scroll : public Object {
 struct Plot : public Object {
  public:
   string filename;
+  bool collision = false;
 
   Plot(
     unsigned int id,
@@ -87,6 +90,7 @@ struct Plot : public Object {
 };
 
 class EntityManager {
+  int create_object_ = -1;
   unsigned int active_object_id_ = 0;
   unsigned int id_counter = 1;
   shared_ptr<GameState> game_state_;
@@ -101,17 +105,21 @@ class EntityManager {
 
   vec3 GetColor(const string&);
   void UpdatePlot(Plot&);
-  Plot CreatePlot(const string&, vec3, GLfloat);
+  int CreatePlot(const string&, vec3, GLfloat);
+  string GetNewFilename(const string&);
   void Init();
+  void Load(const string&);
+  void Save(const string&);
 
  public:
   EntityManager(shared_ptr<GameState>, shared_ptr<Renderer>, shared_ptr<TextEditor>, shared_ptr<Building>);
 
   void Update();
-  void Interact();
+  void Interact(bool);
   void Draw();
+  void DrawCreateObject();
   void Collide(glm::vec3&, glm::vec3, bool&, glm::vec3&);
-  void set_terrain(shared_ptr<Terrain> terrain) { terrain_ = terrain; cout << "mymy" << endl; } 
+  void set_terrain(shared_ptr<Terrain> terrain) { terrain_ = terrain; } 
 };
 
 } // End of namespace.

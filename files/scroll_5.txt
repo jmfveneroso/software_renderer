@@ -12,12 +12,9 @@ VIM:
 2D Plots:
 [ ] Mudar de tab no plot com gt e gT.
 [ ] Fazer explicacao de Row Eschelon Form.
-[ ] Atualizar plot toda vez depois de fechar o arquivo.
-[ ] Poder mudar tamanho do texto no comando Text.
 
 Ideias gerais:
 [ ] corrigir bug do quadrado preto em cima desse scroll.
-[ ] highlight somente um objeto por vez.
 [ ] highlight de scroll.
 [ ] fazer plot 3d.
 [ ] seguir link dentro do VIM usando a tecla "e".
@@ -30,8 +27,7 @@ Ideias gerais:
 Week Planning:
 
 [ ] Ler os filhos de Anansi.
-[ ] Fazer carteira de trabalho.
 [ ] Fazer planejamento do forro.
 [ ] Olhar aula de Yoga.
-[ ] Ir na Marta na terca-feira.
+
 
