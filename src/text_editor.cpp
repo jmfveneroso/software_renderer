@@ -21,6 +21,7 @@ void TextEditor::PressCharCallback(string buffer) {
         content_[cursor_row_] = buffer + content_[cursor_row_];
       } else 
         content_[cursor_row_] = content_[cursor_row_].substr(0, cursor_col_) + buffer + content_[cursor_row_].substr(cursor_col_);
+
       cursor_col_++;
       break;
     case 2:

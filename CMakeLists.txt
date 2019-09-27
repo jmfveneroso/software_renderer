@@ -65,7 +65,7 @@ link_directories(${LINK_DIRS})
 
 set(
   SRC
-  src/main.cpp 
+  # src/main.cpp 
   src/game_state.cpp 
   src/shaders.cpp 
   src/sky_dome.cpp 
@@ -77,9 +77,22 @@ set(
   src/building.cpp 
   src/renderer.cpp 
   src/engine.cpp 
+  src/plot.cpp 
   src/entity_manager.cpp 
   src/text_editor.cpp 
 )
 
-add_executable(main ${SRC})
-target_link_libraries(main ${ALL_LIBS})
+# Create sybil library.
+add_library(sybil ${SRC})
+target_link_libraries(sybil ${ALL_LIBS})
+
+# Create main executable.
+add_executable(main src/main.cpp)
+target_link_libraries(main sybil)
+
+# Create tools.
+add_executable(plot_editor tools/plot_editor.cpp)
+target_link_libraries(plot_editor sybil)
+
+add_executable(text_editor tools/text_editor.cpp)
+target_link_libraries(text_editor sybil)

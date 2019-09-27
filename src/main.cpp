@@ -1,13 +1,11 @@
-#include "game_state.hpp"
 #include "ioc_container.hpp"
+#include "game_state.hpp"
 #include "renderer.hpp"
 #include "engine.hpp"
 
 using namespace Sibyl;
 
 int main() {
-  if (!glfwInit()) throw "Failed to initialize GLFW";
-
   static IoC::Container& container = IoC::Container::Get();
   container.RegisterInstance<GameState, GameState>();
   container.RegisterInstance<Renderer, Renderer>();

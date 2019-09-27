@@ -7,6 +7,11 @@ else
 fi
 
 case $key in
+  -q|--quick)
+    cd build
+    make
+    cd ..
+    ;;
   -f|--full)
     rm -r build/*
     cd build

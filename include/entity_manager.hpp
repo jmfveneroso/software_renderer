@@ -26,42 +26,13 @@
 #include "text_editor.hpp"
 #include "building.hpp"
 #include "terrain.hpp"
+#include "plot.hpp"
 #include "shaders.h"
 #include "config.h"
 
 namespace Sibyl {
 
-enum ObjectType {
-  OBJECT = 0,
-  SCROLL,
-  PLOT_2D
-};
-
-struct Object {
- public:
-  unsigned int id;
-  ObjectType type;
-  glm::vec3 position_;
-  GLfloat rotation_;
-  bool highlighted = false;
-  string mesh_name_;
-
-  Object(
-    unsigned int id,
-    glm::vec3 position,
-    GLfloat rotation,
-    const string& mesh_name,
-    ObjectType type = OBJECT
-  ) : id(id),
-      position_(position),
-      rotation_(rotation),
-      mesh_name_(mesh_name),
-      type(type) {
-  }
-};
-
 struct Scroll : public Object {
- public:
   string filename;
 
   Scroll(
@@ -69,22 +40,7 @@ struct Scroll : public Object {
     glm::vec3 position,
     GLfloat rotation,
     const std::string& filename
-  ) : Object(id, position, rotation, "scroll", SCROLL),
-      filename(filename) {
-  }
-};
-
-struct Plot : public Object {
- public:
-  string filename;
-  bool collision = false;
-
-  Plot(
-    unsigned int id,
-    const std::string& filename,
-    glm::vec3 position,
-    GLfloat rotation
-  ) : Object(id, position, rotation, "2d_plot", PLOT_2D),
+  ) : Object(id, position, rotation, "scroll"),
       filename(filename) {
   }
 };

@@ -1,7 +1,128 @@
-min_x 0
-max_x 100
-min_y 0
-max_y 100
-arrow 0 0 100 100
-line 0 100 100
+25/09/2019
 
+Estou pensando no proposito das ferramentas de organização.
+Gerar informacao e fácil, mas é difícil organizá-la. Eu tenho
+vontade de fazer três ferramentas:
+
+Sybil - organizador de ideias 3D
+Website - divulgador de ideias
+CLI - ferramenta de linha de comando com funções de auxílio ao pensamento
+
+Ainda nao sei se o Sybil tem um proposito funcional ou artistico,
+talvez seja um pouco das duas coisas. Quero pensar em um fluxo de uso
+para essa ferramenta.
+
+Uma coisa que me impede muito de evoluir esse pensamento e pensar na 
+perfeicao, o tempo todo. Talvez a ideia do Sybil seja justamente um
+ambiente de experimentcao. Um lugar para fazer o que eu estou
+fazendo agora, um lugar para gerar informacao desordenada.
+
+As ideias sao caoticas, nao adianta tentar domar elas completamente.
+E util de fato manter um registro de todos esses pensamentos?
+
+De tempos em tempos a informacao deve ser apagada. O proposito do
+Sybil e manter um registro dos meus pensamentos mais pessoais, enquanto
+o site serve para divulgar ideias.
+
+A ideia entao e que as salas do Sybil sejam repletas de widgets que 
+ajudem a potencializar um tipo de ideia especifico. O VIM me ajuda a 
+elaborar ideias textuais. Um widget de checklist pode ajudar no elaboracao
+de metas. Um widget de planilha pode ser bastante util para organizar 
+exercicios. O Plot 2D serve para elaborar ideias matematicas planares.
+O Plot3D serve para elaborar ideias tridimensionais. Acho que eu posso
+focar individualmente em cada um desses widgets por vez, sem tanto metodo.
+De tempos em tempos posso condensar esses estudos em um artigo para o site.
+
+O Sybil e um agregador de todas essas ferramentas, mas elas podem ser
+desenvolvidas individualmente. Vamos listar tres:
+
+- Editor de texto
+- PDF
+- 2D Plot
+- 3D Plot
+
+Eu quero poder abrir cada uma separadamente, com uma ferramenta de linha
+de comando. Por hora vou focar exclusivamente no 2D Plot. A ideia e 
+conseguir abrir a ferramenta e gerar rascunhos rapidamente com comandos
+simples.
+
+Eu deveria escrever minha missão em um quadro no Sybil:
+
+Usar meu potencial com equilíbrio e sabedoria para aprender, experienciar, 
+criar e compartilhar, fazendo do hoje melhor que o ontem.
+
+Compartilhar o conhecimento para fazer ele crescer e gerar harmonia. Ser 
+honesto e digno de confiança e exigir o mesmo dos outros. Expandir meu 
+alcance, meu legado. Encontrar paz e sentido quando e onde quer que eu esteja.
+
+
+É bom ter um espaço para o insights também
+
+Seja seletivo nas suas amizades e relacionamentos. Encontre pessoas que te 
+valorizam e em contrapartida dê toda a sua lealdade a elas. Amizades e 
+relacionamentos superficiais tendem a causar mais dor do que alegria.
+
+Não existe pertencimento em um grupo. Existem pessoas. O pertencimento a um 
+grupo é sempre passageiro.
+
+
+Sybil: 
+- Fazer ferramenta de linha de comando para abrir um 2D Plot.
+  - Deve ser fácil gerar um novo arquivo.
+  - Deve ser fácil gerar uma nova aba.
+  - Os gráficos gerados devem ser salvos em ".png".
+
+Site: 
+- Fazer um estrutura de blog onde seja fácil postar novos artigos.
+  - O site deve ser dinamico em Python Django e deve ter um jupyter notebook rodando.
+  - O design deve ser bastante simples, mas funcional.
+  - Escrever três artigos
+
+
+Pensamentos sobre a vida:
+
+Eu ja consegui um bom sucesso profissional com o Google e a
+Fulbright. Posso parar e relaxar, consumir um pouco de conteudo,
+tentar coisas novas. Vou começar a estudar linguística.
+
+Eu quero pensar umas metas diarias e semanais, para não ter que repensar 
+meu planejamento todos os dias. Minha vida pode ser dividida em seis
+partes:
+
+Saúde 
+Trabalho
+Finanças
+Social
+Amor
+Espiritual
+
+Posso pensar umas metas para cada uma dessas áreas.
+Ao final do dia seria bom organizar meus pensamentos em um diario. Isso
+e trabalho para o Sybil.
+
+Vou ver um pouco de One Piece.
+
+Hoje minhas metas sao:
+
+- [X] Fazer revisao do Scientometrics (Trabalho)
+- Fazer checklist do P-score (Trabalho)
+- Ler um capitulo dos filhos de Anansi (Social)
+- Fazer estudo dos signos (Amor)
+- Meditacao (Espiritual) 
+- Forro (Saude)
+- Witcher (Espiritual)
+
+Enviei as revisoes do Scientometrics. Fiquei na duvida sobre algumas coisas.
+
+Descobri o site atual do Drunkeynesian https://economia.estadao.com.br/blogs/luciano-sobral/
+
+Agora ele é do movimento Acredito (da Tábata Amaral)
+
+
+Checklist para o P-score:
+
+[] Implementar buscas iniciais com os 12 departamentos de mais renome.
+[] Apontar dominio.
+[] Alocar host.
+[] Achar venue para publicar o paper.
+[] Escrever o paper.
