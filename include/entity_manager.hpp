@@ -26,11 +26,37 @@
 #include "text_editor.hpp"
 #include "building.hpp"
 #include "terrain.hpp"
-#include "plot.hpp"
+#include "plotter.hpp"
 #include "shaders.h"
 #include "config.h"
 
 namespace Sibyl {
+
+enum ObjectType {
+  OBJECT = 0,
+  SCROLL,
+  PLOT_2D
+};
+
+struct Object {
+  unsigned int id;
+  ObjectType type;
+  glm::vec3 position_;
+  GLfloat rotation_;
+  bool highlighted = false;
+  string mesh_name_;
+
+  Object(
+    unsigned int id,
+    glm::vec3 position,
+    GLfloat rotation,
+    const string& mesh_name
+  ) : id(id),
+      position_(position),
+      rotation_(rotation),
+      mesh_name_(mesh_name) {
+  }
+};
 
 struct Scroll : public Object {
   string filename;
@@ -45,6 +71,21 @@ struct Scroll : public Object {
   }
 };
 
+struct Plot : public Object {
+ public:
+  bool collision = false;
+  string filename;
+
+  Plot(
+    unsigned int id,
+    string filename,
+    glm::vec3 position,
+    GLfloat rotation
+  ) : Object(id, position, rotation, "2d_plot"),
+      filename(filename) {
+  }
+};
+
 class EntityManager {
   int create_object_ = -1;
   unsigned int active_object_id_ = 0;
@@ -54,13 +95,12 @@ class EntityManager {
   shared_ptr<TextEditor> text_editor_;
   shared_ptr<Building> building_;
   shared_ptr<Terrain> terrain_;
+  shared_ptr<Plotter> plotter_;
 
   vector<Object> objects_;
   vector<Scroll> scrolls_;
   vector<Plot> plots_;
 
-  vec3 GetColor(const string&);
-  void UpdatePlot(Plot&);
   int CreatePlot(const string&, vec3, GLfloat);
   string GetNewFilename(const string&);
   void Init();
@@ -68,7 +108,13 @@ class EntityManager {
   void Save(const string&);
 
  public:
-  EntityManager(shared_ptr<GameState>, shared_ptr<Renderer>, shared_ptr<TextEditor>, shared_ptr<Building>);
+  EntityManager(
+    shared_ptr<GameState>, 
+    shared_ptr<Renderer>, 
+    shared_ptr<TextEditor>, 
+    shared_ptr<Building>,
+    shared_ptr<Plotter>
+  );
 
   void Update();
   void Interact(bool);

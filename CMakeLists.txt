@@ -77,7 +77,7 @@ set(
   src/building.cpp 
   src/renderer.cpp 
   src/engine.cpp 
-  src/plot.cpp 
+  src/plotter.cpp 
   src/entity_manager.cpp 
   src/text_editor.cpp 
 )

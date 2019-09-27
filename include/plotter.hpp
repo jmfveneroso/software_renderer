@@ -1,5 +1,5 @@
-#ifndef _PLOT_HPP_
-#define _PLOT_HPP_
+#ifndef _PLOTTER_HPP_
+#define _PLOTTER_HPP_
 
 #include <algorithm>
 #include <vector>
@@ -28,44 +28,19 @@
 
 namespace Sibyl {
 
-enum ObjectType {
-  OBJECT = 0,
-  SCROLL,
-  PLOT_2D
-};
+class Plotter {
+  shared_ptr<GameState> game_state_;
+  shared_ptr<Renderer> renderer_;
+  shared_ptr<TextEditor> text_editor_;
 
-struct Object {
-  unsigned int id;
-  ObjectType type;
-  glm::vec3 position_;
-  GLfloat rotation_;
-  bool highlighted = false;
-  string mesh_name_;
-
-  Object(
-    unsigned int id,
-    glm::vec3 position,
-    GLfloat rotation,
-    const string& mesh_name
-  ) : id(id),
-      position_(position),
-      rotation_(rotation),
-      mesh_name_(mesh_name) {
-  }
-};
-
-class Plot : public Object {
  public:
-  bool highlighted = false;
-  bool collision = false;
-  string filename;
-
-  Plot(
-    unsigned int id,
-    string filename,
-    glm::vec3 position,
-    GLfloat rotation
+  Plotter(
+    shared_ptr<GameState>,
+    shared_ptr<Renderer>,
+    shared_ptr<TextEditor>
   );
+
+  void UpdatePlot(const string&, const string&);
 };
 
 } // End of namespace.

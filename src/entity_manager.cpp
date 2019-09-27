@@ -10,11 +10,13 @@ EntityManager::EntityManager(
   shared_ptr<GameState> game_state,
   shared_ptr<Renderer> renderer,
   shared_ptr<TextEditor> text_editor,
-  shared_ptr<Building> building
+  shared_ptr<Building> building,
+  shared_ptr<Plotter> plotter
 ) : game_state_(game_state), 
     renderer_(renderer), 
     text_editor_(text_editor), 
-    building_(building) {
+    building_(building),
+    plotter_(plotter) {
   Init();
 }
 
@@ -117,131 +119,13 @@ void EntityManager::Save(const string& filename) {
   f.close();
 }
 
-vec3 EntityManager::GetColor(const string& color_name) {
-  unordered_map<string, vec3> colors {
-    { "red",  vec3(1, 0, 0) },
-    { "green",  vec3(0, 1, 0) },
-    { "blue",  vec3(0, 0, 1) },
-    { "yellow",  vec3(1, 1, 0) },
-    { "magenta",  vec3(1, 0, 1) },
-    { "white",  vec3(1, 1, 1) },
-    { "black",  vec3(0, 0, 0) }
-  };
-  return colors[color_name];
-}
-
 int EntityManager::CreatePlot(const string& filename, vec3 position, GLfloat rotation) {
   plots_.push_back(Plot(id_counter++, filename, position, rotation));
   renderer_->CreateFramebuffer(filename, 1024, 1024);
-  UpdatePlot(plots_[plots_.size()-1]);
+
+  Plot& p = plots_[plots_.size()-1];
+  plotter_->UpdatePlot(p.filename, p.filename);
   return id_counter-1;
-}
-
-void EntityManager::UpdatePlot(Plot& plot) {
-  std::ifstream f(plot.filename);
-  if (!f.is_open()) return;
-  string content((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
-
-  vector<string> lines;
-  boost::split(lines, content, boost::is_any_of("\n"));
-
-  renderer_->SetFBO(plot.filename);
-  renderer_->Clear(1.0, 1.0, 1.0);
-  vec2 texture_size_(1024, 1024);
-  renderer_->set_projection(glm::ortho(-texture_size_.x/2, texture_size_.x/2, texture_size_.y/2, -texture_size_.y/2));
-
-  boost::regex re("(\"[^\"]+\")|[#A-Za-z0-9.-]+");
-  for (int i = 0; i < lines.size(); i++) {
-    boost::sregex_token_iterator j(lines[i].begin(), lines[i].end(), re, 0);
-    boost::sregex_token_iterator k;
- 
-    vector<string> tkns;
-    while (j != k) {
-      tkns.push_back(*j++);
-    }
-
-    if (tkns.size() == 0) continue;
-
-    int step = (400 / 20);
-    GLfloat pixels_per_step_ = step;
-
-    string command = tkns[0];
-    if (command == "#") continue;
-    if (command == "2D" || command == "1D") {
-      int max_value;
-      int tick_step;
-      int big_tick_step;
-      
-      max_value = boost::lexical_cast<int>(tkns[1]); 
-      tick_step = boost::lexical_cast<int>(tkns[2]);
-      big_tick_step = boost::lexical_cast<int>(tkns[3]);
-
-      if (command == "2D") {
-        renderer_->DrawCartesianGrid(max_value, tick_step, big_tick_step);
-      } else {
-        renderer_->DrawOneDimensionalSpace(max_value, tick_step, big_tick_step);
-      }
-    }
-
-    if (command == "Arrow" || command == "Line") {
-      vec2 p1; 
-      vec2 p2;
-      GLfloat thickness;
-      vec3 color;
-
-      p1.x = boost::lexical_cast<float>(tkns[1]); 
-      p1.y = boost::lexical_cast<float>(tkns[2]);
-
-      p2.x = boost::lexical_cast<float>(tkns[3]); 
-      p2.y = boost::lexical_cast<float>(tkns[4]);
-
-      thickness = boost::lexical_cast<float>(tkns[5]);
-
-      p1 *= pixels_per_step_;
-      p2 *= pixels_per_step_;
-
-      color = GetColor(tkns[6]);
-      if (command == "Arrow") {
-        renderer_->DrawArrow(p1, p2, thickness, color);
-      } else {
-        renderer_->DrawLine(p1, p2, thickness, color);
-      }
-    }
-
-    if (command == "Point") {
-      vec2 point; 
-      GLfloat thickness;
-      vec3 color;
-
-      point.x = boost::lexical_cast<float>(tkns[1]); 
-      point.y = boost::lexical_cast<float>(tkns[2]);
-      thickness = boost::lexical_cast<float>(tkns[3]);
-      color = GetColor(tkns[4]);
-
-      point *= pixels_per_step_;
-      renderer_->DrawPoint(point, thickness, color);
-    }
-
-    if (command == "Text") {
-      string text;
-      vec2 point; 
-      vec3 color;
-
-      text = tkns[1].substr(1, tkns[1].size() - 2);
-      point.x = boost::lexical_cast<float>(tkns[2]); 
-      point.y = boost::lexical_cast<float>(tkns[3]);
-      color = GetColor(tkns[4]);
-     
-      float scale = 1.0;
-      if (tkns.size() == 6) 
-        scale = boost::lexical_cast<float>(tkns[5]);
-
-      point *= pixels_per_step_;
-      renderer_->DrawText(text, point.x, point.y, color, scale);
-    }
-  }
-
-  renderer_->set_projection();
 }
 
 void EntityManager::Update() {
@@ -251,7 +135,7 @@ void EntityManager::Update() {
   if (text_editor_->update_object) {
     for (auto& p : plots_) {
       if (p.id == active_object_id_) {
-        UpdatePlot(p);
+        plotter_->UpdatePlot(p.filename, p.filename);
         break;
       }
     }

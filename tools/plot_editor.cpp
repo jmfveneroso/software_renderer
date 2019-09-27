@@ -9,12 +9,15 @@ void Run(
   shared_ptr<GameState> game_state_,  
   shared_ptr<TextEditor> text_editor_, 
   shared_ptr<Renderer> renderer_, 
+  shared_ptr<Plotter> plotter_, 
   string filename
 ) {
   game_state_->ChangeMode(TXT);
-  text_editor_->Enable();
   text_editor_->OpenFile(filename);
+  text_editor_->Enable();
   renderer_->CreateFramebuffer("screen", game_state_->width(), game_state_->height());
+  renderer_->CreateFramebuffer("plot", 1024, 1024);
+  plotter_->UpdatePlot(filename, "plot");
 
   double last_time = glfwGetTime();
   int frames = 0;
@@ -32,7 +35,10 @@ void Run(
 
     renderer_->SetFBO("screen");
     renderer_->Clear(0.3f, 0.5f, 0.6f);
-    text_editor_->Draw();
+    // text_editor_->Draw();
+
+    // renderer_->DrawFBO("plot", ivec2(100, 100));
+
     renderer_->DrawScreen(false);
 
     // Swap buffers.
@@ -51,10 +57,12 @@ int main(int argc, char** argv) {
   container.RegisterInstance<GameState, GameState>();
   container.RegisterInstance<Renderer, Renderer>();
   container.RegisterInstance<TextEditor, TextEditor, GameState, Renderer>();
+  container.RegisterInstance<Plotter, Plotter, GameState, Renderer, TextEditor>();
 
   shared_ptr<GameState> game_state = container.Resolve<GameState>();
   shared_ptr<TextEditor> text_editor = container.Resolve<TextEditor>();
   shared_ptr<Renderer> renderer = container.Resolve<Renderer>();
-  Run(game_state, text_editor, renderer, string(argv[1]));
+  shared_ptr<Plotter> plotter = container.Resolve<Plotter>();
+  Run(game_state, text_editor, renderer, plotter, string(argv[1]));
   return 0;
 }

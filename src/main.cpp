@@ -11,7 +11,8 @@ int main() {
   container.RegisterInstance<Renderer, Renderer>();
   container.RegisterInstance<TextEditor, TextEditor, GameState, Renderer>();
   container.RegisterInstance<Building, Building, Renderer>();
-  container.RegisterInstance<EntityManager, EntityManager, GameState, Renderer, TextEditor, Building>();
+  container.RegisterInstance<Plotter, Plotter, GameState, Renderer, TextEditor>();
+  container.RegisterInstance<EntityManager, EntityManager, GameState, Renderer, TextEditor, Building, Plotter>();
   container.RegisterInstance<Engine, Engine, GameState, Renderer, EntityManager, TextEditor>();
 
   container.Resolve<Engine>()->Run();

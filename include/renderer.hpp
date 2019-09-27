@@ -67,6 +67,7 @@ class Renderer {
   Shader shader_;
   GLuint text_vbo_;
   GLuint vbo_;
+  GLuint uv_;
   unordered_map<string, GLuint> vbos_;
   unordered_map<string, Mesh> meshes_;
   glm::mat4 projection_;
@@ -88,6 +89,7 @@ class Renderer {
     projection_ = projection; 
   }
 
+  vec3 GetColor(const string&);
   void CreateFramebuffer(const string&, int, int);
   void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0}, GLfloat = 1.0);
   void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0}, GLfloat = 1.0);
@@ -104,6 +106,7 @@ class Renderer {
   void LoadMesh(const string&, vector<glm::vec3>&, vector<glm::vec2>&, vector<glm::vec3>&, vector<unsigned int>&);
   void DrawHighlightedObject(string, mat4, mat4, vec3, vec3, GLfloat, bool, GLuint, GLfloat alpha = 1.0);
   FBO GetFBO(const string& name) { return fbos_[name]; }
+  void DrawFBO(const string&, ivec2);
 
   void SetFBO(const string& name) {
     glBindFramebuffer(GL_FRAMEBUFFER, fbos_[name].framebuffer);

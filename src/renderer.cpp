@@ -37,12 +37,17 @@ void Renderer::CreateShaders() {
   shaders_["intersect"] = Shader("intersect");
   shaders_["mask"     ] = Shader("mask");
   shaders_["screen"   ] = Shader("screen");
+  shaders_["plot"   ] = Shader("plot");
 }
 
 void Renderer::CreateVBOs() {
   glGenBuffers(1, &vbo_);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_);
   glBufferData(GL_ARRAY_BUFFER, 32 * sizeof(glm::vec3), nullptr, GL_DYNAMIC_DRAW);
+
+  glGenBuffers(1, &uv_);
+  glBindBuffer(GL_ARRAY_BUFFER, uv_);
+  glBufferData(GL_ARRAY_BUFFER, 32 * sizeof(glm::vec2), nullptr, GL_DYNAMIC_DRAW);
 
   vbos_["cube_v"] = 0;
   glGenBuffers(1, &vbos_["cube_v"]);
@@ -782,6 +787,60 @@ void Renderer::DrawScreen(bool blur) {
   shaders_["screen"].BindBuffer(m.uv_buffer_, 1, 2);
   glDrawArrays(GL_TRIANGLES, 0, 6);
   shaders_["screen"].Clear();
+  glEnable(GL_CULL_FACE);
+}
+
+vec3 Renderer::GetColor(const string& color_name) {
+  unordered_map<string, vec3> colors {
+    { "red",  vec3(1, 0, 0) },
+    { "green",  vec3(0, 1, 0) },
+    { "blue",  vec3(0, 0, 1) },
+    { "yellow",  vec3(1, 1, 0) },
+    { "magenta",  vec3(1, 0, 1) },
+    { "white",  vec3(1, 1, 1) },
+    { "black",  vec3(0, 0, 0) }
+  };
+  return colors[color_name];
+}
+
+void Renderer::DrawFBO(const string& fbo_name, ivec2 position) {
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
+
+  FBO& fbo = fbos_[fbo_name];
+  glUseProgram(shaders_["plot"].program_id());
+
+  int x = position.x;
+  int y = position.y;
+  int width = 200;
+  int height= 200;
+
+  vector<vec3> vertices = {
+    { x        , y         , 0.0 },
+    { x        , y - height, 0.0 },
+    { x + width, y         , 0.0 },
+    { x + width, y         , 0.0 },
+    { x        , y - height, 0.0 },
+    { x + width, y - height, 0.0 }
+  };
+
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(glm::vec3), &vertices[0]); 
+  shaders_["plot"].BindBuffer(vbo_, 0, 3);
+
+  vector<vec2> uvs = {
+    { 0, 0 }, { 0, 1 }, { 1, 0 },
+    { 1, 0 }, { 0, 1 }, { 1, 1 }
+  };
+
+  glBindBuffer(GL_ARRAY_BUFFER, uv_);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, uvs.size() * sizeof(glm::vec2), &uvs[0]); 
+  shaders_["plot"].BindBuffer(uv_, 1, 2);
+
+  shaders_["plot"].BindTexture("TextureSampler", fbo.texture);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  shaders_["plot"].Clear();
+  glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
 }
 
