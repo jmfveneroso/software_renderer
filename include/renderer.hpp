@@ -92,14 +92,13 @@ class Renderer {
   vec3 GetColor(const string&);
   void CreateFramebuffer(const string&, int, int);
   void DrawChar(char, float, float, vec3 = {1.0, 1.0, 1.0}, GLfloat = 1.0);
-  void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0}, GLfloat = 1.0);
+  void DrawText(const string&, float, float, vec3 = {1.0, 1.0, 1.0}, GLfloat = 1.0, bool center = false);
   void DrawMesh(string, glm::mat4, glm::mat4, glm::vec3, glm::vec3, GLfloat, bool);
   void DrawRectangle(GLfloat, GLfloat, GLfloat, GLfloat, vec3);
   void DrawCube(mat4, mat4, vec3, vec3, vec3, GLfloat);
   void DrawPoint(vec2, GLfloat, vec3);
   void DrawLine(vec2, vec2, GLfloat, vec3);
   void DrawArrow(vec2, vec2, GLfloat, vec3);
-  void DrawOneDimensionalSpace(int, int, int);
   void DrawCartesianGrid(int, int, int);
   void LoadMesh(const string&);
   void LoadMesh(const string&, vector<glm::vec3>&, vector<glm::vec2>&, vector<unsigned int>&);

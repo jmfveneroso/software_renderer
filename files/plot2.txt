@@ -1,16 +1,39 @@
-1D 20 1 5
-
-Text "Red: 12" 10 10 red
-Text "Blue: -5" 10 8 blue
-
-Arrow 0 0 10 0 3 red
-Arrow 0 0 -5 0 3 blue
-
-# Plot 2
+Grid 20
+XAxis 10
+YAxis 10
+Arrow 4 5 red
+Arrow 9 6 blue
+Arrow 4 5 9 6 green
 
 
 
-# Plot 3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

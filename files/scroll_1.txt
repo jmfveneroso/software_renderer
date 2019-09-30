@@ -1,6 +1,6 @@
 25/09/2019
 
-Estou pensando no proposito das ferramentas de organização.
+Estou pensando no proposito das ferramentas de organizacao.
 Gerar informacao e fácil, mas é difícil organizá-la. Eu tenho
 vontade de fazer três ferramentas:
 
@@ -118,7 +118,6 @@ Descobri o site atual do Drunkeynesian https://economia.estadao.com.br/blogs/luc
 
 Agora ele é do movimento Acredito (da Tábata Amaral)
 
-
 Checklist para o P-score:
 
 [] Implementar buscas iniciais com os 12 departamentos de mais renome.
@@ -126,3 +125,4 @@ Checklist para o P-score:
 [] Alocar host.
 [] Achar venue para publicar o paper.
 [] Escrever o paper.
+

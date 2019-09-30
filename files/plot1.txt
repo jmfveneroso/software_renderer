@@ -1,5 +1,30 @@
-Text "Linear Algebra Room Test" -21 19 black 3
-Text "Null Space of a Matrix" -21 15 black 3
+Text "XYZA" 3 3 red 1
+
+Plot 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

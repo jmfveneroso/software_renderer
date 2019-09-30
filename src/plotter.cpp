@@ -25,7 +25,7 @@ void Plotter::UpdatePlot(const string& filename, const string& fbo_name) {
 
   renderer_->SetFBO(fbo_name);
   renderer_->Clear(1.0, 1.0, 1.0);
-  vec2 texture_size_(1024, 1024);
+  vec2 texture_size_(512, 512);
   renderer_->set_projection(glm::ortho(-texture_size_.x/2, texture_size_.x/2, texture_size_.y/2, -texture_size_.y/2));
 
   boost::regex re("(\"[^\"]+\")|[#A-Za-z0-9.-]+");
@@ -45,40 +45,65 @@ void Plotter::UpdatePlot(const string& filename, const string& fbo_name) {
 
     string command = tkns[0];
     if (command == "#") continue;
-    if (command == "2D" || command == "1D") {
-      int max_value;
-      int tick_step;
-      int big_tick_step;
-      
-      max_value = boost::lexical_cast<int>(tkns[1]); 
-      tick_step = boost::lexical_cast<int>(tkns[2]);
-      big_tick_step = boost::lexical_cast<int>(tkns[3]);
 
-      if (command == "2D") {
-        renderer_->DrawCartesianGrid(max_value, tick_step, big_tick_step);
-      } else {
-        renderer_->DrawOneDimensionalSpace(max_value, tick_step, big_tick_step);
-      }
+    if (command == "XAxis") {
+      int max_value = 10;
+      int tick_step = 1;
+      int big_tick_step = 5;
+     
+      max_value = boost::lexical_cast<int>(tkns[1]); 
+      if (tkns.size() > 2) {
+        tick_step = boost::lexical_cast<int>(tkns[2]);
+        big_tick_step = boost::lexical_cast<int>(tkns[3]);
+      } 
+
+      DrawXAxis(max_value, tick_step, big_tick_step);
+    }
+
+    if (command == "YAxis") {
+      int max_value = 10;
+      int tick_step = 1;
+      int big_tick_step = 5;
+     
+      max_value = boost::lexical_cast<int>(tkns[1]); 
+      if (tkns.size() > 2) {
+        tick_step = boost::lexical_cast<int>(tkns[2]);
+        big_tick_step = boost::lexical_cast<int>(tkns[3]);
+      } 
+
+      DrawYAxis(max_value, tick_step, big_tick_step);
+    }
+
+    if (command == "Grid") {
+      int num_tiles = boost::lexical_cast<int>(tkns[1]); 
+      DrawGrid(num_tiles);
     }
 
     if (command == "Arrow" || command == "Line") {
-      vec2 p1; 
-      vec2 p2;
-      GLfloat thickness;
-      vec3 color;
+      int size = 440;
 
-      p1.x = boost::lexical_cast<float>(tkns[1]); 
-      p1.y = boost::lexical_cast<float>(tkns[2]);
+      vec2 p1(0, 0); 
+      vec2 p2(0, 0);
+      GLfloat thickness = 1;
+      vec3 color(0, 0, 0);
 
-      p2.x = boost::lexical_cast<float>(tkns[3]); 
-      p2.y = boost::lexical_cast<float>(tkns[4]);
+      if (tkns.size() == 4) {
+        p2.x = boost::lexical_cast<float>(tkns[1]); 
+        p2.y = boost::lexical_cast<float>(tkns[2]);
+        color = renderer_->GetColor(tkns[3]);
+      } else {
+        p1.x = boost::lexical_cast<float>(tkns[1]); 
+        p1.y = boost::lexical_cast<float>(tkns[2]);
+        p2.x = boost::lexical_cast<float>(tkns[3]); 
+        p2.y = boost::lexical_cast<float>(tkns[4]);
+        color = renderer_->GetColor(tkns[5]);
+      }
 
-      thickness = boost::lexical_cast<float>(tkns[5]);
+      // thickness = boost::lexical_cast<float>(tkns[5]);
 
-      p1 *= pixels_per_step_;
-      p2 *= pixels_per_step_;
+      p1 *= size / 20;
+      p2 *= size / 20;
 
-      color = renderer_->GetColor(tkns[6]);
       if (command == "Arrow") {
         renderer_->DrawArrow(p1, p2, thickness, color);
       } else {
@@ -119,7 +144,74 @@ void Plotter::UpdatePlot(const string& filename, const string& fbo_name) {
     }
   }
 
+  renderer_->SetFBO("screen");
   renderer_->set_projection();
+}
+
+void Plotter::DrawGrid(int num_tiles) {
+  int size = 440;
+  int padding = (512 - size) / 2;
+  int start = -256 + padding;
+
+  for (int x = 0; x <= num_tiles; x++) {
+    int cur_x = start + (x * size) / num_tiles;
+    renderer_->DrawLine(vec2(-size/2, cur_x), vec2(size/2, cur_x), 1, vec3(0.8));
+    renderer_->DrawLine(vec2(cur_x, -size/2), vec2(cur_x, size/2), 1, vec3(0.8));
+  }
+}
+
+void Plotter::DrawXAxis(
+  int max_value, int tick_step, int big_tick_step
+) {
+  int size = 440 / 2;
+
+  renderer_->DrawLine(vec2(0, -9), vec2(0, 9), 1, vec3(0));
+  renderer_->DrawLine(vec2(-size, 0), vec2(size, 0), 1, vec3(0));
+
+  // Small ticks.
+  for (int x = -max_value; x <= max_value; x += tick_step) {
+    int cur_x = (x * size) / max_value;
+    renderer_->DrawLine(vec2(cur_x, -2), vec2(cur_x, 2), 1, vec3(0));
+  }
+
+  // Big ticks.
+  for (int x = -max_value; x <= max_value; x += big_tick_step) {
+    if (x == 0) continue;
+
+    int cur_x = (x * size) / max_value;
+    renderer_->DrawLine(vec2(cur_x, -4), vec2(cur_x, 4), 1, vec3(0));
+
+    stringstream ss;
+    ss << x;
+    renderer_->DrawText(ss.str(), cur_x, -30, vec3(0), 1, true);
+  }
+}
+
+void Plotter::DrawYAxis(
+  int max_value, int tick_step, int big_tick_step
+) {
+  int size = 440 / 2;
+
+  renderer_->DrawLine(vec2(0, -9), vec2(0, 9), 1, vec3(0));
+  renderer_->DrawLine(vec2(1, -size), vec2(1, size), 1, vec3(0));
+
+  // Small ticks.
+  for (int y = -max_value; y <= max_value; y += tick_step) {
+    int cur_y = (y * size) / max_value;
+    renderer_->DrawLine(vec2(-2, cur_y), vec2(2, cur_y), 1, vec3(0));
+  }
+
+  // Big ticks.
+  for (int y = -max_value; y <= max_value; y += big_tick_step) {
+    if (y == 0) continue;
+
+    int cur_y = (y * size) / max_value;
+    renderer_->DrawLine(vec2(-4, cur_y), vec2(4, cur_y), 1, vec3(0));
+
+    stringstream ss;
+    ss << y;
+    renderer_->DrawText(ss.str(), -30, cur_y - 5, vec3(0), 1, false);
+  }
 }
 
 } // End of namespace.

@@ -9,6 +9,7 @@ Renderer::Renderer()  {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS); 
   glEnable(GL_CULL_FACE);
+  glEnable(GL_MULTISAMPLE);
 
   // Why is this necessary? Should look on shaders. 
   // Vertex arrays group VBOs.
@@ -228,12 +229,17 @@ void Renderer::CreateFramebuffer(const string& name, int width, int height) {
   fbo.height = height;
 
   glGenTextures(1, &fbo.texture);
-  glBindTexture(GL_TEXTURE_2D, fbo.texture);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, fbo.width, fbo.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  if (name == "error screen") {
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fbo.texture);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 1, GL_RGBA8, fbo.width, fbo.height, false);
+  } else {
+    glBindTexture(GL_TEXTURE_2D, fbo.texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, fbo.width, fbo.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+  }
   glBindTexture(GL_TEXTURE_2D, 0);
 
   glGenRenderbuffers(1, &fbo.depth_rbo);
@@ -243,11 +249,16 @@ void Renderer::CreateFramebuffer(const string& name, int width, int height) {
 
   glGenFramebuffers(1, &fbo.framebuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo.framebuffer);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo.texture, 0);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo.depth_rbo);
-  
-  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+  if (name == "error screen") {
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, fbo.texture, 0);
+  } else {
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo.texture, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo.depth_rbo);
+  }
+
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
     throw;
+  }
 
   fbos_[name] = fbo;
 }
@@ -427,7 +438,13 @@ void Renderer::DrawChar(char c, float x, float y, vec3 color, GLfloat scale) {
   glEnable(GL_DEPTH_TEST);
 }
 
-void Renderer::DrawText(const string& text, float x, float y, vec3 color, GLfloat scale) {
+void Renderer::DrawText(
+  const string& text, float x, float y, vec3 color, GLfloat scale,
+  bool center
+) {
+  int step = (characters_['a'].Advance >> 6);
+  x -= (text.size() * step) / 2 + 1;
+
   // Iterate through all characters
   for (const auto& c : text) {
     DrawChar(c, x, y, color, scale);
@@ -642,7 +659,7 @@ void Renderer::DrawArrow(
 
   std::vector<glm::vec3> lines = {
     vec3(v[0], 0), vec3(v[1], 0), vec3(v[2], 0),
-    vec3(v[0], 0), vec3(v[1], 0), vec3(v[3], 0)
+    vec3(v[3], 0), vec3(v[1], 0), vec3(v[0], 0)
   };
 
   shaders_["polygon"].BindBuffer(vbo_, 0, 3);
@@ -652,62 +669,6 @@ void Renderer::DrawArrow(
   glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   shaders_["polygon"].Clear();
-}
-
-void Renderer::DrawOneDimensionalSpace(
-  int max_value, int tick_step, int big_tick_step
-) {
-  vec3 color = vec3(0.8, 0.8, 0.8);
-
-  int size = 400;
-
-  DrawLine(vec2(0, -size), vec2(0, size), 1, vec3(0));
-  DrawLine(vec2(-size, 0), vec2(size, 0), 1, vec3(0));
-
-  int step = (size / max_value);
-  for (int y = -max_value; y <= max_value; y += tick_step) {
-    DrawLine(vec2(y * step, -5), vec2(y * step, 4), 1, vec3(0));
-  }
-
-  for (int y = -max_value; y <= max_value; y += big_tick_step) {
-    DrawLine(vec2(y*step, -10), vec2(y*step, 9), 1, vec3(0));
-
-    stringstream ss;
-    ss << y;
-    DrawText(ss.str(), y * step -10, -30, vec3(0));
-  }
-}
-
-void Renderer::DrawCartesianGrid(
-  int max_value, int tick_step, int big_tick_step
-) {
-  set_projection(glm::ortho(-512, 512, 512, -512));
-  vec3 color = vec3(0.8, 0.8, 0.8);
-
-  int size = 400;
-
-  DrawLine(vec2(0, -size), vec2(0, size), 1, vec3(0));
-  DrawLine(vec2(-size, 0), vec2(size, 0), 1, vec3(0));
-  int step = (size / max_value);
-  for (int y = -max_value; y <= max_value; y += tick_step) {
-    DrawLine(vec2(y * step, -5), vec2(y * step, 4), 1, vec3(0));
-    DrawLine(vec2(-5, y * step), vec2(4, y * step), 1, vec3(0));
-  }
-
-  for (int y = -max_value; y <= max_value; y += big_tick_step) {
-    DrawLine(vec2(-size, y*step), vec2(size, y*step), 1, vec3(0.8));
-    DrawLine(vec2(y*step, -size), vec2(y*step, size), 1, vec3(0.8));
-
-    DrawLine(vec2(y*step, -10), vec2(y*step, 9), 1, vec3(0));
-    DrawLine(vec2(-10, y*step), vec2(9, y*step), 1, vec3(0));
-
-    if (y == 0) continue;
-    stringstream ss;
-    ss << y;
-    DrawText(ss.str(), y * step -10, -30, vec3(0));
-    DrawText(ss.str(), -40, y * step - 5, vec3(0));
-  }
-  set_projection();
 }
 
 void Renderer::DrawHighlightedObject(
@@ -777,6 +738,11 @@ void Renderer::DrawScreen(bool blur) {
   glViewport(0, 0, fbos_["screen"].width, fbos_["screen"].height);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);                           // Make sure no FBO is set as the draw framebuffer
+  // glBindFramebuffer(GL_READ_FRAMEBUFFER, fbos_["screen"].framebuffer); // Make sure your multisampled FBO is the read framebuffer
+  // glDrawBuffer(GL_BACK);                                               // Set the back buffer as the draw buffer
+  // glBlitFramebuffer(0, 0, fbos_["screen"].width, fbos_["screen"].height, 0, 0, fbos_["screen"].width, fbos_["screen"].height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
   Mesh& m = meshes_["screen"];
 
   glDisable(GL_CULL_FACE);
@@ -812,8 +778,8 @@ void Renderer::DrawFBO(const string& fbo_name, ivec2 position) {
 
   int x = position.x;
   int y = position.y;
-  int width = 200;
-  int height= 200;
+  int width = fbo.width;
+  int height= fbo.height;
 
   vector<vec3> vertices = {
     { x        , y         , 0.0 },
@@ -823,6 +789,11 @@ void Renderer::DrawFBO(const string& fbo_name, ivec2 position) {
     { x        , y - height, 0.0 },
     { x + width, y - height, 0.0 }
   };
+
+  glm::mat4 projection = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT);
+  for (int i = 0; i < vertices.size(); i++) {
+    vertices[i] = vec3(projection * vec4(vertices[i], 1.0));
+  }
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo_);
   glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(glm::vec3), &vertices[0]); 

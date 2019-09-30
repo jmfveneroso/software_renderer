@@ -1,4 +1,6 @@
-Sybil Goals
+Sybil Planning
+
+[ ] Create scroll
 
 VIM:
 
@@ -14,20 +16,8 @@ VIM:
 [ ] Fazer explicacao de Row Eschelon Form.
 
 Ideias gerais:
-[ ] corrigir bug do quadrado preto em cima desse scroll.
-[ ] highlight de scroll.
+[ ] corrigir bug do quadrado preto em cima da escultura.
 [ ] fazer plot 3d.
 [ ] seguir link dentro do VIM usando a tecla "e".
-[ ] mudar internamente o mapa da casa. (Pensar melhor como fazer).
-[ ] adicionar objetos na casa e criar novos arquivos.
-[ ] fazer highlight de scrolls.
-[ ] fazer book de pdf.
-[ ] fazer uma estatua.
-
-Week Planning:
-
-[ ] Ler os filhos de Anansi.
-[ ] Fazer planejamento do forro.
-[ ] Olhar aula de Yoga.
-
+[ ] adicionar scroll.
 

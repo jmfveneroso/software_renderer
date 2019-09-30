@@ -10,10 +10,6 @@ void TextEditor::PressCharCallback(string buffer) {
   if (!enabled) return;
   if (buffer.size() == 0) return;
   if (mode == 0) return;
-  if (ignore) { 
-    ignore = false;
-    return;
-  }
 
   switch (mode) {
     case 1:
@@ -247,7 +243,7 @@ void TextEditor::PressKeyCallback(int key, int scancode, int action, int mods) {
       case GLFW_KEY_SLASH: // For Portuguese keyboards.
         if (mods & GLFW_MOD_SHIFT) {
           mode = 2;
-          command = "";
+          command = ":";
         }
         break;
       default:
@@ -357,13 +353,15 @@ void TextEditor::SetContent(string text) {
     content_.push_back("");
 }
 
-void TextEditor::Draw() {
+void TextEditor::Draw(int win_x, int win_y) {
   if (!enabled)
     return;
 
   string buffer;
   if (game_state_->ReadBuffer(&buffer)) {
-    PressCharCallback(buffer);
+    for (char c : buffer) {
+      PressCharCallback(string() + c);
+    }
   }
 
   KeyPress kp;
@@ -371,8 +369,8 @@ void TextEditor::Draw() {
     PressKeyCallback(kp.key, kp.scancode, kp.action, kp.mods);
   }
 
-  renderer_->DrawRectangle(199, WINDOW_HEIGHT - 99, 802, 602, vec3(1, 0.69, 0.23));
-  renderer_->DrawRectangle(200, WINDOW_HEIGHT - 100, 800, 600, vec3(0.3));
+  renderer_->DrawRectangle(win_x-1, WINDOW_HEIGHT - 99, win_x + 602, 602, vec3(1, 0.69, 0.23));
+  renderer_->DrawRectangle(win_x, WINDOW_HEIGHT - 100, win_x + 600, 600, vec3(0.3));
 
   double current_time = glfwGetTime();
   vector<string> lines = content_;
@@ -381,11 +379,11 @@ void TextEditor::Draw() {
   for (int aux = lines.size(); aux; aux /= 10) { digits++; }
   digits = std::max(digits, 3);
 
-  int base_x = 200 + digits * 9 + 8;
+  int base_x = win_x + digits * 9 + 8;
   int base_y = WINDOW_HEIGHT - 100 - LINE_HEIGHT;
   int height = 0;
   if (mode_ == CREATE_OBJECT) {
-    renderer_->DrawRectangle(200 + 2, base_y - LINE_HEIGHT * (cursor_row_ - 1) - 3, 796, LINE_HEIGHT, vec3(1, 1, 1));
+    renderer_->DrawRectangle(win_x + 2, base_y - LINE_HEIGHT * (cursor_row_ - 1) - 3, win_x + 596, LINE_HEIGHT, vec3(1, 1, 1));
   }
 
   for (int y = start_line; y < start_line + 30; ++y) {
@@ -396,7 +394,7 @@ void TextEditor::Draw() {
     int digits_ = 0;
     for (int aux = y + 1; aux; aux /= 10) { digits_++; }
     int offset_x = (digits - digits_) * 9;
-    renderer_->DrawText(ss.str(), 200 + 2 + offset_x, base_y - height, vec3(1, 0.69, 0.23));
+    renderer_->DrawText(ss.str(), win_x + 2 + offset_x, base_y - height, vec3(1, 0.69, 0.23));
 
     if (lines[y].size() == 0 && cursor_row_ == y && mode != 2) {
       renderer_->DrawChar((char) 150, base_x + 2, base_y - height);
@@ -430,21 +428,21 @@ void TextEditor::Draw() {
   }
 
   for (int y = lines.size(); y < 30; ++y) {
-    renderer_->DrawText("~", 200 + 2, base_y - height, vec3(1, 0.69, 0.23));
+    renderer_->DrawText("~", win_x + 2, base_y - height, vec3(1, 0.69, 0.23));
     height += LINE_HEIGHT;
   }
 
-  renderer_->DrawRectangle(200 + 2, base_y - LINE_HEIGHT * 29 - 3, 796, LINE_HEIGHT, vec3(1, 0.69, 0.23));
-  renderer_->DrawText(filename, 200 + 2, base_y - LINE_HEIGHT * 30, vec3(0.3));
+  renderer_->DrawRectangle(win_x + 2, base_y - LINE_HEIGHT * 29 - 3, win_x + 596, LINE_HEIGHT, vec3(1, 0.69, 0.23));
+  renderer_->DrawText(filename, win_x + 2, base_y - LINE_HEIGHT * 30, vec3(0.3));
 
   if (mode == 1) {
-    renderer_->DrawText("-- INSERT --", 200 + 2, base_y - LINE_HEIGHT * 32, vec3(1, 0.69, 0.23));
+    renderer_->DrawText("-- INSERT --", win_x + 2, base_y - LINE_HEIGHT * 32, vec3(1, 0.69, 0.23));
   }
 
   // Cursor.
   if (mode == 2) {
-    renderer_->DrawText(command, 200 + 2, base_y - LINE_HEIGHT * 31, vec3(1, 0.69, 0.23));
-    renderer_->DrawChar((char) 150, 200 + 2 + command.size() * 9, base_y - LINE_HEIGHT * 31, vec3(1, 0.69, 0.23));
+    renderer_->DrawText(command, win_x + 2, base_y - LINE_HEIGHT * 31, vec3(1, 0.69, 0.23));
+    renderer_->DrawChar((char) 150, win_x + 2 + command.size() * 9, base_y - LINE_HEIGHT * 31, vec3(1, 0.69, 0.23));
   }
 }
 

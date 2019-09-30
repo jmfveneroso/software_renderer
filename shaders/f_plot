@@ -12,6 +12,5 @@ layout(location = 0) out vec3 color;
 
 void main(){
   float time = 1.0;
-  color = texture(TextureSampler, in_data.uv + blur*0.005*vec2(sin(time+1024.0*in_data.uv.x),cos(time+768.0*in_data.uv.y))).xyz;
-  color = mix(color, vec3(0.6, 0.6, 0.3), blur * 0.5);
+  color = texture(TextureSampler, in_data.uv).xyz;
 }

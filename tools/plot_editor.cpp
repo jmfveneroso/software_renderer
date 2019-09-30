@@ -12,12 +12,13 @@ void Run(
   shared_ptr<Plotter> plotter_, 
   string filename
 ) {
+  renderer_->CreateFramebuffer("screen", game_state_->width(), game_state_->height());
+  renderer_->CreateFramebuffer("plot", 512, 512);
+  plotter_->UpdatePlot(filename, "plot");
+
+  text_editor_->Enable();
   game_state_->ChangeMode(TXT);
   text_editor_->OpenFile(filename);
-  text_editor_->Enable();
-  renderer_->CreateFramebuffer("screen", game_state_->width(), game_state_->height());
-  renderer_->CreateFramebuffer("plot", 1024, 1024);
-  plotter_->UpdatePlot(filename, "plot");
 
   double last_time = glfwGetTime();
   int frames = 0;
@@ -35,10 +36,13 @@ void Run(
 
     renderer_->SetFBO("screen");
     renderer_->Clear(0.3f, 0.5f, 0.6f);
-    // text_editor_->Draw();
+    renderer_->DrawFBO("plot", ivec2(660, 656));
 
-    // renderer_->DrawFBO("plot", ivec2(100, 100));
-
+    if (text_editor_->update_object) {
+      plotter_->UpdatePlot(filename, "plot");
+      text_editor_->update_object = false;
+    }
+    text_editor_->Draw(10, 100);
     renderer_->DrawScreen(false);
 
     // Swap buffers.

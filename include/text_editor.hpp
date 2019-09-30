@@ -75,7 +75,7 @@ class TextEditor {
     filename = "";
   }
 
-  void Draw();
+  void Draw(int win_x = 200, int win_y = 100);
   void SetContent(string);
   void OpenFile(string);
   void WriteFile();

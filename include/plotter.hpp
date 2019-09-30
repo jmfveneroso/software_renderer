@@ -33,6 +33,10 @@ class Plotter {
   shared_ptr<Renderer> renderer_;
   shared_ptr<TextEditor> text_editor_;
 
+  void DrawXAxis(int, int tick_step = 1, int big_tick_step = 5);
+  void DrawYAxis(int, int tick_step = 1, int big_tick_step = 5);
+  void DrawGrid(int);
+
  public:
   Plotter(
     shared_ptr<GameState>,

@@ -13,3 +13,6 @@ Text "LINEAR ALGEBRA" -19 1 blue 6
 
 
 
+
+
+
