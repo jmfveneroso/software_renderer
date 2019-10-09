@@ -1,8 +1,8 @@
-Scroll 2009.25 206 2000.5 -90 files/scroll_1.txt
-Scroll 2009.25 206 2001.5 -90 files/scroll_2.txt
-Scroll 2009.25 206 2002.5 -90 files/scroll_3.txt
-Scroll 2009.25 206 2003.5 -90 files/scroll_4.txt
-Scroll 2009.25 206 2004.5 -90 files/scroll_5.txt
+Scroll 2009.25 206 2000.5 -90 files/short_term_planning.txt
+Scroll 2009.25 206 2001.5 -90 files/trash.txt
+Scroll 2009.25 206 2002.5 -90 files/forro_planning.txt
+Scroll 2009.25 206 2003.5 -90 files/fitness_planning.txt
+Scroll 2009.25 206 2004.5 -90 files/sybil_planning.txt
 
 Plot 2009.95 207.984 1998.02 -90 files/plot9.txt
 Plot 1995.05 206.978 2005.74 -270 files/plot1.txt

@@ -2,3 +2,4 @@ build
 *.swp
 assets/height_maps/*
 **/.DS_Store
+files
